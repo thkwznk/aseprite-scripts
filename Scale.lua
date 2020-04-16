@@ -1,9 +1,9 @@
--- Copyright (C) 2018 Kacper Woźniak
+-- Copyright (C) 2020 Kacper Woźniak
 --
 -- This file is released under the terms of the CC BY 4.0 license.
 -- See https://creativecommons.org/licenses/by/4.0/ for more information.
 --
--- Version: 1.0.1, May 24, 2019
+-- Version: 1.0.2, April 16, 2020
 
 -- Check is UI available
 if not app.isUIAvailable then
@@ -25,54 +25,23 @@ function invokeAndUpdate(action)
     -- Hack to update workspace view
     app.command.Undo()
     app.command.Redo()
-end    
+end
 
-function NearestNeighbour(sprite, scale)
-    local sizeFactor = scale
+function Resize(sprite, sizeFactor)
+    sprite.width = sprite.width * sizeFactor
+    sprite.height = sprite.height * sizeFactor
+end
 
+function NearestNeighbour(sprite, sizeFactor)
     -- Resize canvas
     sprite:resize(sprite.width * sizeFactor, sprite.height * sizeFactor)
-
-    for i, cel in ipairs(sprite.cels) do
-        -- Move cel
-        cel.position = Point(cel.position.x * sizeFactor, cel.position.y * sizeFactor)
-
-        local image = cel.image
-
-        local width = image.width
-        local height = image.height
-
-        local width2 = width * sizeFactor
-        local height2 = height * sizeFactor
-
-        local imageResult = Image(width2, height2, sprite.colorMode)
-
-        -- Use algorithm to create new image
-        for ix = 0, width - 1 do
-            for iy = 0, height - 1 do
-                local center = image:getPixel(ix, iy)
-
-                local x = ix * sizeFactor
-                local y = iy * sizeFactor
-
-                for ixx = 0, sizeFactor do
-                    for iyy = 0, sizeFactor do
-                        imageResult:putPixel(x + ixx, y + iyy, center)
-                    end
-                end
-            end
-        end
-
-        -- Save new image to the current one
-        cel.image = imageResult
-    end
 end
 
 function Eagle(sprite)
     local sizeFactor = 2
 
     -- Resize canvas
-    sprite:resize(sprite.width * sizeFactor, sprite.height * sizeFactor)
+    Resize(sprite, sizeFactor)
 
     for i, cel in ipairs(sprite.cels) do
         -- Move cel
@@ -83,10 +52,10 @@ function Eagle(sprite)
         local width = image.width
         local height = image.height
 
-        local width2 = width * sizeFactor
-        local height2 = height * sizeFactor
+        local newWidth = width * sizeFactor
+        local newHeight = height * sizeFactor
 
-        local imageResult = Image(width2, height2, sprite.colorMode)
+        local imageResult = Image(newWidth, newHeight, sprite.colorMode)
 
         -- Use algorithm to create new image
         for ix = 0, width - 1 do
@@ -111,8 +80,8 @@ function Eagle(sprite)
                 -- Place pixels in a new image
                 local x = ix * sizeFactor;
                 local y = iy * sizeFactor;
-                local xRight = math.min(x + 1, width2 - 1)
-                local yDown = math.min(y + 1, height2 - 1)
+                local xRight = math.min(x + 1, newWidth - 1)
+                local yDown = math.min(y + 1, newHeight - 1)
 
                 imageResult:putPixel(x, y, Color:areEqual(upperLeft, upperCenter, middleLeft) and upperLeft or middleCenter);
                 imageResult:putPixel(xRight, y, Color:areEqual(upperCenter, upperRight, middleRight) and upperRight or middleCenter);
@@ -130,7 +99,7 @@ function Scale2x(sprite)
     local sizeFactor = 2
 
     -- Resize canvas
-    sprite:resize(sprite.width * sizeFactor, sprite.height * sizeFactor)
+    Resize(sprite, sizeFactor)
 
     for i, cel in ipairs(sprite.cels) do
         -- Move cel
@@ -140,10 +109,10 @@ function Scale2x(sprite)
 
         local width = image.width
         local height = image.height
-        local width2 = width * sizeFactor
-        local height2 = height * sizeFactor
+        local newWidth = width * sizeFactor
+        local newHeight = height * sizeFactor
 
-        local imageResult = Image(width2, height2, sprite.colorMode)
+        local imageResult = Image(newWidth, newHeight, sprite.colorMode)
 
         -- Use algorithm to create new image
         for ix = 0, width - 1 do
@@ -203,7 +172,7 @@ function Hawk(sprite, focusOnDark)
     end
 
     -- Resize canvas
-    sprite:resize(sprite.width * sizeFactor, sprite.height * sizeFactor)
+    Resize(sprite, sizeFactor)
 
     for i, cel in ipairs(sprite.cels) do
         -- Move cel
@@ -213,10 +182,10 @@ function Hawk(sprite, focusOnDark)
 
         local width = image.width
         local height = image.height
-        local width2 = width * sizeFactor
-        local height2 = height * sizeFactor
+        local newWidth = width * sizeFactor
+        local newHeight = height * sizeFactor
 
-        local imageResult = Image(width2, height2, sprite.colorMode)
+        local imageResult = Image(newWidth, newHeight, sprite.colorMode)
 
         -- Use algorithm to create new image
         for ix = 0, width - 1 do
@@ -237,8 +206,8 @@ function Hawk(sprite, focusOnDark)
                 local h = image:getPixel(ix, iyDown)
 
                 -- Calculate new pixels
-                local xRight = math.min(x + 1, width2 - 1)
-                local yDown = math.min(y + 1, height2 - 1)
+                local xRight = math.min(x + 1, newWidth - 1)
+                local yDown = math.min(y + 1, newHeight - 1)
 
                 local bIsBetterThanE = isBetter(b, e)
                 local dIsBetterThanE = isBetter(d, e)
