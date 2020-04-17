@@ -1,4 +1,4 @@
-param ($sourcePath='.', $outputPath='.\dest')
+param ($sourcePath='.', $outputPath='.\output')
 
 function EscapeString($string)
 {
