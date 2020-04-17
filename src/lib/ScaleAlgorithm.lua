@@ -1,3 +1,5 @@
+include("Color")
+
 local ScaleAlgorithm = {}
 
 function ScaleAlgorithm:Resize(sprite, sizeFactor)

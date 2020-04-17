@@ -6,7 +6,6 @@
 -- Version: 1.0.2, April 16, 2020
 
 include("lib/Run")
-include("lib/Color")
 include("lib/ScaleAlgorithm")
 
 -- Check is UI available

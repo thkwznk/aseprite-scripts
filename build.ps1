@@ -5,37 +5,71 @@ function EscapeString($string)
     $string -replace '\\', '\\' -replace '\(', '\(' -replace '\)', '\)'
 }
 
-Write-Host Building scripts
-
-$includeDirectivePattern = '^include\("([a-zA-Z/]+)"\)$'
-
-$fileNames = Get-ChildItem -Path $sourcePath -Filter *.lua -Name
-
-foreach ($fileName in $fileNames)
+function Pad($depth)
 {
-    Write-Host `tProcessing $fileName
+    "|" + "--" * $depth
+}
 
-    $fileContent = Get-Content $fileName
+$includeDirectivePattern = 'include\("([a-zA-Z/]+)"\)'
 
-    $requires = $fileContent | Select-String -Pattern $includeDirectivePattern
+function GetFileWithIncludes($basePath, $relativeFilePath, $depth)
+{    
+    $filePath = Join-Path $basePath $relativeFilePath
+    
+    Write-Host (Pad $depth)Processing $filePath
+
+    $fileContent = Get-Content $filePath -Raw
+
+    $requires = $fileContent | Select-String -Pattern $includeDirectivePattern -AllMatches
+
+    $depth++
 
     foreach ($require in $requires.matches)
     {
-        Write-Host `t`tLinking $require.groups[1]
+        Write-Host (Pad $depth)Linking $require.groups[1]
 
-        $requirePath = $require.groups[1]
-        $requireRelativePath = "$sourcePath\$requirePath.lua"
+        $requirePath = $require.groups[1] -replace '/', '\'
+        $requireRelativePath = "$basePath\$requirePath.lua"
 
-        $dependencyContent = (Get-Content -Path $requireRelativePath -Encoding UTF8 -Raw)
-        $requireLine = EscapeString($require)
+        $dir = Split-Path -Path $requireRelativePath
+        $file = Split-Path -Path $requireRelativePath -Leaf
+
+        $dependencyContent = GetFileWithIncludes $dir $file (++$depth)
+        $requireLine = EscapeString $require
 
         $fileContent = $fileContent -replace $requireLine, $dependencyContent
     }
 
-    New-Item -ItemType Directory -Force -Path $outputPath
-
-    Set-Content -Path "$outputPath\$fileName" -Value $fileContent
+    return $fileContent
 }
 
+Write-Host Building LUA scripts...
+
+$fileNames = Get-ChildItem -Path $sourcePath -Filter *.lua -Name
+$depth = 1
+
+$outputDirectoryExists = Test-Path -Path $outputPath
+
+if ($outputDirectoryExists -eq $False)
+{
+    Write-Host Creating directory for output...
+
+    New-Item -ItemType Directory -Force -Path $outputPath > $null
+
+    Write-Host Created directory $outputPath
+}
+
+foreach ($fileName in $fileNames)
+{
+    # Write-Host Processing $fileName
+
+    $outputFilePath = Join-Path $outputPath $fileName
+
+    GetFileWithIncludes $sourcePath $fileName $depth | Out-File -FilePath $outputFilePath -Encoding UTF8
+
+    Write-Host (Pad $depth)Saved $outputFilePath
+}
+
+# TODO: Remove comments
 # TODO: Remove duplicate new lines
 # TODO: Recursive GetDependency function which can join relative path should solve the problem
