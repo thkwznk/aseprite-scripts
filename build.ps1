@@ -1,3 +1,4 @@
+param ($sourcePath='.', $outputPath='.\dest')
 
 function EscapeString($string)
 {
@@ -6,9 +7,9 @@ function EscapeString($string)
 
 Write-Host Building scripts
 
-$includeDirectivePattern = '^include\("([a-zA-Z\\]+)"\)$'
+$includeDirectivePattern = '^include\("([a-zA-Z/]+)"\)$'
 
-$fileNames = Get-ChildItem -Path '.\*.lua' -Name
+$fileNames = Get-ChildItem -Path $sourcePath -Filter *.lua -Name
 
 foreach ($fileName in $fileNames)
 {
@@ -23,7 +24,7 @@ foreach ($fileName in $fileNames)
         Write-Host `t`tLinking $require.groups[1]
 
         $requirePath = $require.groups[1]
-        $requireRelativePath = ".\$requirePath.lua"
+        $requireRelativePath = "$sourcePath\$requirePath.lua"
 
         $dependencyContent = (Get-Content -Path $requireRelativePath -Encoding UTF8 -Raw)
         $requireLine = EscapeString($require)
@@ -31,9 +32,10 @@ foreach ($fileName in $fileNames)
         $fileContent = $fileContent -replace $requireLine, $dependencyContent
     }
 
-    Set-Content -Path "..\$fileName" -Value $fileContent
+    New-Item -ItemType Directory -Force -Path $outputPath
+
+    Set-Content -Path "$outputPath\$fileName" -Value $fileContent
 }
 
 # TODO: Remove duplicate new lines
 # TODO: Recursive GetDependency function which can join relative path should solve the problem
-# TODO: Add output path parameter
