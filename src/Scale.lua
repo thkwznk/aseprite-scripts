@@ -5,9 +5,9 @@
 --
 -- Version: 1.0.2, April 16, 2020
 
-local Run = require("lib.Run")
-local Color = require("lib.Color")
-local ScaleAlgorithm = require("lib.ScaleAlgorithm")
+include("lib\Run")
+include("lib\Color")
+include("lib\ScaleAlgorithm")
 
 -- Check is UI available
 if not app.isUIAvailable then

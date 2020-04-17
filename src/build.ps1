@@ -1,7 +1,12 @@
 
+function EscapeString($string)
+{
+    $string -replace '\\', '\\' -replace '\(', '\(' -replace '\)', '\)'
+}
+
 Write-Host Building scripts
 
-$requirePattern = '^local ([a-zA-Z0-9]+) = require\("([a-zA-Z.]+)"\)$'
+$includeDirectivePattern = '^include\("([a-zA-Z\\]+)"\)$'
 
 $fileNames = Get-ChildItem -Path '.\*.lua' -Name
 
@@ -11,17 +16,17 @@ foreach ($fileName in $fileNames)
 
     $fileContent = Get-Content $fileName
 
-    $requires = $fileContent | Select-String -Pattern $requirePattern
+    $requires = $fileContent | Select-String -Pattern $includeDirectivePattern
 
     foreach ($require in $requires.matches)
     {
-        Write-Host `t`tLinking $require.groups[2]
+        Write-Host `t`tLinking $require.groups[1]
 
-        $requirePath = $require.groups[2] -replace '\.', '\'
+        $requirePath = $require.groups[1]
         $requireRelativePath = ".\$requirePath.lua"
 
         $dependencyContent = (Get-Content -Path $requireRelativePath -Encoding UTF8 -Raw)
-        $requireLine = $require -replace '\(', '\(' -replace '\)', '\)'
+        $requireLine = EscapeString($require)
 
         $fileContent = $fileContent -replace $requireLine, $dependencyContent
     }
