@@ -1,47 +1,20 @@
--- Copyright (C) 2020 Kacper Woźniak
---
--- This file is released under the terms of the CC BY 4.0 license.
--- See https://creativecommons.org/licenses/by/4.0/ for more information.
---
--- Version: 1.0.2, April 16, 2020
+local ScaleAlgorithm = {}
 
--- Check is UI available
-if not app.isUIAvailable then
-    return
-end
-
-local Color = {}
-function Color:gray(c) return app.pixelColor.grayaV(c) end
-function Color:getLightValue(c) return self:gray(c) end
-function Color:isLighter(ca, cb) return self:getLightValue(ca) > self:getLightValue(cb) end
-function Color:isDarker(ca, cb) return self:getLightValue(ca) < self:getLightValue(cb) end
-function Color:areEqual(ca, cb, cc) return ca == cb and cb == cc and cc == ca end
-function Color:getLighter(ca, cb) return self:isLighter(ca, cb) and ca or cb end
-function Color:getDarker(ca, cb) return self:isDarker(ca, cb) and ca or cb end
-
-function invokeAndUpdate(action)
-    app.transaction(action)
-
-    -- Hack to update workspace view
-    app.command.Undo()
-    app.command.Redo()
-end
-
-function Resize(sprite, sizeFactor)
+function ScaleAlgorithm:Resize(sprite, sizeFactor)
     sprite.width = sprite.width * sizeFactor
     sprite.height = sprite.height * sizeFactor
 end
 
-function NearestNeighbour(sprite, sizeFactor)
+function ScaleAlgorithm:NearestNeighbour(sprite, sizeFactor)
     -- Resize canvas
     sprite:resize(sprite.width * sizeFactor, sprite.height * sizeFactor)
 end
 
-function Eagle(sprite)
+function ScaleAlgorithm:Eagle(sprite)
     local sizeFactor = 2
 
     -- Resize canvas
-    Resize(sprite, sizeFactor)
+    ScaleAlgorithm:Resize(sprite, sizeFactor)
 
     for i, cel in ipairs(sprite.cels) do
         -- Move cel
@@ -95,11 +68,11 @@ function Eagle(sprite)
     end
 end
 
-function Scale2x(sprite)
+function ScaleAlgorithm:Scale2x(sprite)
     local sizeFactor = 2
 
     -- Resize canvas
-    Resize(sprite, sizeFactor)
+    ScaleAlgorithm:Resize(sprite, sizeFactor)
 
     for i, cel in ipairs(sprite.cels) do
         -- Move cel
@@ -160,7 +133,7 @@ function Scale2x(sprite)
     end
 end
 
-function Hawk(sprite, focusOnDark)
+function ScaleAlgorithm:Hawk(sprite, focusOnDark)
     local sizeFactor = 2
 
     function isBetter(a, b)
@@ -172,7 +145,7 @@ function Hawk(sprite, focusOnDark)
     end
 
     -- Resize canvas
-    Resize(sprite, sizeFactor)
+    ScaleAlgorithm:Resize(sprite, sizeFactor)
 
     for i, cel in ipairs(sprite.cels) do
         -- Move cel
@@ -252,87 +225,4 @@ function Hawk(sprite, focusOnDark)
         -- Save new image to the current one
         cel.image = imageResult
     end
-end
-
--- Run script
-do
-    local dlg = Dialog("Scale")
-    dlg
-        :separator{
-            text="Nearest Neighbour"
-        }
-        :number{
-            id="scale",
-            label="Scale",
-            text="2",
-            decimals=false
-        }
-        :button{
-            text="Scale",
-            onclick=function()
-                local sprite = app.activeSprite
-
-                if sprite == nil then return end
-
-                invokeAndUpdate(function()
-                    NearestNeighbour(sprite, dlg.data["scale"])
-                end)
-            end
-        }
-        :separator{
-            text="Advanced"
-        }
-        :button{
-            text="Eagle",
-            onclick=function()
-                local sprite = app.activeSprite
-
-                if sprite == nil then return end
-
-                invokeAndUpdate(function()
-                    Eagle(sprite)
-                end)
-            end
-        }
-        :button{
-            text="Scale2x",
-            onclick=function()
-                local sprite = app.activeSprite
-
-                if sprite == nil then return end
-
-                invokeAndUpdate(function()
-                    Scale2x(sprite)
-                end)
-            end}
-        :newrow()
-        :button{
-            text="Hawk D",
-            onclick=function()
-                local sprite = app.activeSprite
-
-                if sprite == nil then return end
-
-                invokeAndUpdate(function()
-                    Hawk(sprite, false)
-                end)
-            end}
-        :button{
-            text="Hawk N",
-            onclick=function()
-                local sprite = app.activeSprite
-
-                if sprite == nil then return end
-
-                invokeAndUpdate(function()
-                    Hawk(sprite, true)
-                end)
-            end}
-        :separator()
-        :button{
-            text="Undo",
-            onclick=function()
-                app.command.Undo()
-            end}
-        :show{wait=false}
 end
