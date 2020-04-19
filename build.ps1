@@ -24,20 +24,20 @@ function GetFileWithIncludes($basePath, $relativeFilePath, $depth)
 
     $depth++
 
-    foreach ($require in $requires.matches)
+    foreach ($include in $requires.matches)
     {
-        Write-Host (Pad $depth)Linking $require.groups[1]
+        $relativePath = $include.groups[1] -replace '/', '\'
+        $path = "$basePath\$relativePath.lua"
 
-        $requirePath = $require.groups[1] -replace '/', '\'
-        $requireRelativePath = "$basePath\$requirePath.lua"
+        Write-Host (Pad $depth)Linking $path
 
-        $dir = Split-Path -Path $requireRelativePath
-        $file = Split-Path -Path $requireRelativePath -Leaf
+        $directory = Split-Path -Path $path
+        $file = Split-Path -Path $path -Leaf
 
-        $dependencyContent = GetFileWithIncludes $dir $file (++$depth)
-        $requireLine = EscapeString $require
+        $includeContent = GetFileWithIncludes $directory $file (++$depth)
+        $requireLine = EscapeString $include
 
-        $fileContent = $fileContent -replace $requireLine, $dependencyContent
+        $fileContent = $fileContent -replace $requireLine, $includeContent
     }
 
     return $fileContent
@@ -61,11 +61,9 @@ if ($outputDirectoryExists -eq $False)
 
 foreach ($fileName in $fileNames)
 {
-    # Write-Host Processing $fileName
-
     $outputFilePath = Join-Path $outputPath $fileName
 
-    GetFileWithIncludes $sourcePath $fileName $depth | Out-File -FilePath $outputFilePath -Encoding UTF8
+    GetFileWithIncludes $sourcePath $fileName $depth | Out-File -FilePath $outputFilePath -Encoding ASCII
 
     Write-Host (Pad $depth)Saved $outputFilePath
 }
