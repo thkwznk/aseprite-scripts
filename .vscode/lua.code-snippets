@@ -1,0 +1,27 @@
+{
+	"Aseprite Script Template": {
+		"scope": "lua",
+		"prefix": "init",
+		"body": [
+			"-- Check is UI available",
+			"if not app.isUIAvailable then",
+			"\treturn",
+			"end",
+			"",
+			"do",
+			"\tlocal dialog = Dialog(\"${1}\")",
+			"",
+			"\tdialog",
+			"\t\t:label{",
+			"\t\t\tid=\"text\",",
+			"\t\t\tlabel=\"Text\",",
+			"\t\t\ttext=\"$1\"",
+			"\t\t}",
+			"\t\t:show{",
+			"\t\t\twait=false",
+			"\t\t}",
+			"end"
+		],
+		"description": "Log output to console"
+	}
+}
