@@ -10,21 +10,24 @@ function Pad($depth)
     "|" + "--" * $depth
 }
 
-$includeDirectivePattern = 'include\("([a-zA-Z/]+)"\)'
+function GetIncludeDirectives($fileContent)
+{
+    $fileContent | Select-String -Pattern 'include\("([a-zA-Z/]+)"\)' -AllMatches
+}
 
 function GetFileWithIncludes($basePath, $relativeFilePath, $depth)
 {    
+    $depth++
+
     $filePath = Join-Path $basePath $relativeFilePath
     
     Write-Host (Pad $depth)Processing $filePath
 
     $fileContent = Get-Content $filePath -Raw
 
-    $requires = $fileContent | Select-String -Pattern $includeDirectivePattern -AllMatches
+    $includes = GetIncludeDirectives $fileContent
 
-    $depth++
-
-    foreach ($include in $requires.matches)
+    foreach ($include in $includes.matches)
     {
         $relativePath = $include.groups[1] -replace '/', '\'
         $path = "$basePath\$relativePath.lua"
