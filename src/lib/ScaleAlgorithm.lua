@@ -2,9 +2,13 @@ include("Color")
 
 local ScaleAlgorithm = {}
 
-function ScaleAlgorithm:Resize(sprite, sizeFactor)
+function ScaleAlgorithm:ResizeCanvas(sprite, sizeFactor)
     sprite.width = sprite.width * sizeFactor
     sprite.height = sprite.height * sizeFactor
+end
+
+function ScaleAlgorithm:MoveCel(cel, sizeFactor)
+    cel.position = Point(cel.position.x * sizeFactor, cel.position.y * sizeFactor)
 end
 
 function ScaleAlgorithm:NearestNeighbour(sprite, sizeFactor)
@@ -15,12 +19,10 @@ end
 function ScaleAlgorithm:Eagle(sprite)
     local sizeFactor = 2
 
-    -- Resize canvas
-    ScaleAlgorithm:Resize(sprite, sizeFactor)
+    ScaleAlgorithm:ResizeCanvas(sprite, sizeFactor)
 
     for i, cel in ipairs(sprite.cels) do
-        -- Move cel
-        cel.position = Point(cel.position.x * sizeFactor, cel.position.y * sizeFactor)
+        ScaleAlgorithm:MoveCel(cel, sizeFactor)
 
         local image = cel.image
 
@@ -73,12 +75,10 @@ end
 function ScaleAlgorithm:Scale2x(sprite)
     local sizeFactor = 2
 
-    -- Resize canvas
-    ScaleAlgorithm:Resize(sprite, sizeFactor)
+    ScaleAlgorithm:ResizeCanvas(sprite, sizeFactor)
 
     for i, cel in ipairs(sprite.cels) do
-        -- Move cel
-        cel.position = Point(cel.position.x * sizeFactor, cel.position.y * sizeFactor)
+        ScaleAlgorithm:MoveCel(cel, sizeFactor)
 
         local image = cel.image
 
@@ -146,12 +146,10 @@ function ScaleAlgorithm:Hawk(sprite, focusOnDark)
         return focusOnDark and Color:getLighter(a, b) or Color:getDarker(a, b)
     end
 
-    -- Resize canvas
-    ScaleAlgorithm:Resize(sprite, sizeFactor)
+    ScaleAlgorithm:ResizeCanvas(sprite, sizeFactor)
 
     for i, cel in ipairs(sprite.cels) do
-        -- Move cel
-        cel.position = Point(cel.position.x * sizeFactor, cel.position.y * sizeFactor)
+        ScaleAlgorithm:MoveCel(cel, sizeFactor)
 
         local image = cel.image
 
