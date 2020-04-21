@@ -22,6 +22,28 @@
 			"\t\t}",
 			"end"
 		],
-		"description": "Log output to console"
+		"description": "Initialize Aseprite LUA script with boilerplate code"
+	},
+	"Button Widget": {
+		"scope": "lua",
+		"prefix": ":button",
+		"body": [
+			":button{",
+			"\tid=\"${1}\",",
+			"\tlabel=\"${2}\",",
+			"\ttext=\"${3}\",",
+			"\tselected=false,",
+			"\tfocus=false,",
+			"\tonclick=function()",
+			"\t\t",
+			"\tend",
+			"}"
+		],
+		"description": "Add a button widget for Aseprite dialog"
+	},
+	"New Row Widget": {
+		"scope": "lua",
+		"prefix": ":newrow",
+		"body": ":newrow()"
 	}
 }
