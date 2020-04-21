@@ -29,11 +29,7 @@
 		"prefix": ":button",
 		"body": [
 			":button{",
-			"\tid=\"${1}\",",
-			"\tlabel=\"${2}\",",
-			"\ttext=\"${3}\",",
-			"\tselected=false,",
-			"\tfocus=false,",
+			"\ttext=\"${1}\",",
 			"\tonclick=function()",
 			"\t\t",
 			"\tend",
@@ -45,5 +41,24 @@
 		"scope": "lua",
 		"prefix": ":newrow",
 		"body": ":newrow()"
+	},
+	"Separator Widget": {
+		"scope": "lua",
+		"prefix": ":separator",
+		"body": [
+			":separator{",
+			"\ttext=\"${1}\"",
+			"}"
+		]
+	},
+	"Entry Widget": {
+		"scope": "lua",
+		"prefix": ":entry",
+		"body": [
+			":entry{",
+			"\tid=\"${1}\"",
+			"\tlabel=\"${2}\"",
+			"}"
+		]
 	}
 }
