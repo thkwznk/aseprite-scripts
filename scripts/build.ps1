@@ -12,7 +12,7 @@ function Pad($depth)
 
 function GetIncludeDirectives($fileContent)
 {
-    $fileContent | Select-String -Pattern 'include\("([a-zA-Z/]+)"\)' -AllMatches
+    $fileContent | Select-String -Pattern 'include\("([a-zA-Z/.]+)"\)' -AllMatches
 }
 
 function GetFileWithIncludes($basePath, $relativeFilePath, $depth)
@@ -73,4 +73,3 @@ foreach ($fileName in $fileNames)
 
 # TODO: Remove comments
 # TODO: Remove duplicate new lines
-# TODO: Recursive GetDependency function which can join relative path should solve the problem

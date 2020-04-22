@@ -6,7 +6,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": ".\\build.ps1 -sourcePath '.\\src' -outputPath '.\\output'",
+            "command": ".\\scripts\\build.ps1 -sourcePath '.\\src' -outputPath '.\\output'",
             "group": {
                 "kind": "build",
                 "isDefault": true
