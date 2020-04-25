@@ -160,7 +160,7 @@ function GetCommands (prefix)
     local result = {}
 
     for _, command in ipairs(commands) do
-        if command:lower():startsWith(prefix:lower()) then
+        if command:lower():match(prefix:lower()) then
             table.insert(result, command);
         end
     end
