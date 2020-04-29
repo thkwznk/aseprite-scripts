@@ -5,6 +5,8 @@
 --
 -- Version: 1.0.1, May 24, 2019
 
+include("extensions/String")
+
 -- Check is UI available
 if not app.isUIAvailable then
     return
@@ -152,8 +154,6 @@ end
 function table:last(t) return t[#t] end
 function table:removeLast(t) table.remove(t, #t) end
 function table:any(t) return #t > 0 end
-
-function string:first(s) return string.sub(s, 1, 1) end
 
 local OutputPathProvider = {
     outputFileName=".output"
