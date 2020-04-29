@@ -4,7 +4,7 @@ include("tween/TweenDialog")
 if not app.isUIAvailable then return end
 
 do
-    local dialog = CreateTweenDialog();
+    local dialog = CreateTweenDialog("NxTween");
 
-    dialog:show{wait = false}
+    dialog:show{wait = false};
 end

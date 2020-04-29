@@ -1,7 +1,7 @@
 include("KeyboardDialog")
 
-function CreateTouchScreenHelperDialog()
-    local dialog = Dialog("TSHelper")
+function CreateTouchScreenHelperDialog(dialogTitle)
+    local dialog = Dialog(dialogTitle)
 
     addCommandButton(dialog, "Undo")
     addCommandButton(dialog, "Redo")

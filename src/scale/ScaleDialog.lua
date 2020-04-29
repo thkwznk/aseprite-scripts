@@ -1,8 +1,8 @@
 include("../common/Transaction")
 include("ScaleAlgorithm")
 
-function CreateScaleDialog()
-    local dialog = Dialog("Scale");
+function CreateScaleDialog(dialogTitle)
+    local dialog = Dialog(dialogTitle);
 
     dialog:separator{text = "Nearest Neighbour"}:number{
         id = "scale",

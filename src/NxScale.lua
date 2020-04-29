@@ -4,7 +4,7 @@ include("scale/ScaleDialog")
 if not app.isUIAvailable then return end
 
 do
-    local dialog = CreateScaleDialog();
+    local dialog = CreateScaleDialog("NxScale");
 
     dialog:show{wait = false};
 end

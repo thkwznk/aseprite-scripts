@@ -4,7 +4,7 @@ if not app.isUIAvailable then return end
 include("touch-screen-helper/TouchScreenHelperDialog")
 
 do
-    local dialog = CreateTouchScreenHelperDialog()
+    local dialog = CreateTouchScreenHelperDialog("NxTSHelper");
 
-    dialog:show{wait = false}
+    dialog:show{wait = false};
 end

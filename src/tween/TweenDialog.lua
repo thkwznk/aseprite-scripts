@@ -1,7 +1,7 @@
 include("Tweener")
 
-function CreateTweenDialog()
-    local dialog = Dialog("Tween");
+function CreateTweenDialog(dialogTitle)
+    local dialog = Dialog(dialogTitle);
 
     dialog:number{
         id = "frames",
