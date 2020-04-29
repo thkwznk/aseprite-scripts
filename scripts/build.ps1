@@ -1,34 +1,29 @@
-param ($sourcePath='.', $outputPath='.\output')
+param ($sourcePath = '.', $outputPath = '.\output')
 
-function EscapeString($string)
-{
+function EscapeString($string) {
     $string -replace '\\', '\\' -replace '\(', '\(' -replace '\)', '\)'
 }
 
-function Pad($depth)
-{
+function Pad($depth) {
     "|" + "--" * $depth
 }
 
-function GetIncludeDirectives($fileContent)
-{
-    $fileContent | Select-String -Pattern 'include\("([a-zA-Z/.]+)"\)' -AllMatches
+function GetIncludeDirectives($fileContent) {
+    $fileContent | Select-String -Pattern 'include\("([a-zA-Z/.-]+)"\)' -AllMatches
 }
 
-function GetFileWithIncludes($basePath, $relativeFilePath, $depth)
-{    
-    $depth++
-
+function GetFileWithIncludes($basePath, $relativeFilePath, $depth) {    
     $filePath = Join-Path $basePath $relativeFilePath
     
     Write-Host (Pad $depth)Processing $filePath
+
+    $depth++
 
     $fileContent = Get-Content $filePath -Raw
 
     $includes = GetIncludeDirectives $fileContent
 
-    foreach ($include in $includes.matches)
-    {
+    foreach ($include in $includes.matches) {
         $relativePath = $include.groups[1] -replace '/', '\'
         $path = "$basePath\$relativePath.lua"
 
@@ -53,8 +48,7 @@ $depth = 1
 
 $outputDirectoryExists = Test-Path -Path $outputPath
 
-if ($outputDirectoryExists -eq $False)
-{
+if ($outputDirectoryExists -eq $False) {
     Write-Host Creating directory for output...
 
     New-Item -ItemType Directory -Force -Path $outputPath > $null
@@ -62,8 +56,7 @@ if ($outputDirectoryExists -eq $False)
     Write-Host Created directory $outputPath
 }
 
-foreach ($fileName in $fileNames)
-{
+foreach ($fileName in $fileNames) {
     $outputFilePath = Join-Path $outputPath $fileName
 
     GetFileWithIncludes $sourcePath $fileName $depth | Out-File -FilePath $outputFilePath -Encoding ASCII
@@ -71,5 +64,6 @@ foreach ($fileName in $fileNames)
     Write-Host (Pad $depth)Saved $outputFilePath
 }
 
+# TODO: Add parameter for building a single file?
 # TODO: Remove comments
 # TODO: Remove duplicate new lines
