@@ -3,7 +3,7 @@ if not app.isUIAvailable then
     return
 end
 
-include("lib/Commands/KeyboardDialog")
+include("lib/commands/KeyboardDialog")
 
 do
     local dialog = Dialog("TSHelper")
