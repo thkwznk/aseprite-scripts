@@ -1,5 +1,4 @@
 include("../extensions/String")
-include("../extensions/Table")
 
 local commands = {
     "About", "AddColor", "AdvancedMode", "AutocropSprite",
@@ -39,39 +38,14 @@ local commands = {
     "ToggleTimelineThumbnails", "UndoHistory", "Undo", "UnlinkCel", "Zoom"
 };
 
-function GetPattern(text)
-    local pattern = "";
+function GetCommands(prefix)
+    local result = {}
 
-    for i = 1, #text do
-        local v = text:sub(i, i)
-        pattern = pattern .. v .. ".*"
-    end
-
-    return pattern;
-end
-
-function GetCommands(searchText)
-    local pattern = GetPattern(searchText):lower()
-
-    local results = {}
-
-    for i, value in ipairs(commands) do
-        local searchResult = {text = value, weight = 0};
-
-        local command = value:lower();
-
-        if command:startsWith(searchText:lower()) then
-            searchResult.weight = 1;
-        elseif command:match(pattern) then
-            searchResult.weight = searchText:len() / command:len()
-        end
-
-        if searchResult.weight > 0 then
-            table.insert(results, searchResult)
+    for _, command in ipairs(commands) do
+        if command:matchCaseInsensitive(prefix) then
+            table.insert(result, command);
         end
     end
 
-    table.sort(results, function(a, b) return a.weight > b.weight end)
-
-    return table.map(results, function(result) return result.text end)
+    return result;
 end
