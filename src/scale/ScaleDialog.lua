@@ -4,26 +4,20 @@ include("ScaleAlgorithm")
 function CreateScaleDialog(dialogTitle)
     local dialog = Dialog(dialogTitle);
 
-    dialog:separator{text = "Nearest Neighbour"}:number{
-        id = "scale",
-        label = "Scale",
-        text = "2",
-        decimals = false
-    }:button{
-        text = "Scale",
-        onclick = Transaction(function()
-            ScaleAlgorithm:NearestNeighbour(app.activeSprite,
-                                            dialog.data["scale"])
-        end)
-    }:separator{text = "Advanced"}:button{
+    dialog:separator{text = "Algorithm:"}:button{
         text = "Eagle",
         onclick = Transaction(function()
             ScaleAlgorithm:Eagle(app.activeSprite)
         end)
-    }:button{
+    }:newrow():button{
         text = "Scale2x",
         onclick = Transaction(function()
             ScaleAlgorithm:Scale2x(app.activeSprite)
+        end)
+    }:newrow():button{
+        text = "Scale3x",
+        onclick = Transaction(function()
+            ScaleAlgorithm:Scale3x(app.activeSprite)
         end)
     }:newrow():button{
         text = "Hawk D",
@@ -35,10 +29,7 @@ function CreateScaleDialog(dialogTitle)
         onclick = Transaction(function()
             ScaleAlgorithm:Hawk(app.activeSprite, true)
         end)
-    }:separator():button{
-        text = "Undo",
-        onclick = function() app.command.Undo() end
-    }
+    }:separator():button{text = "Cancel"}
 
     return dialog;
 end

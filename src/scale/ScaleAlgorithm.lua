@@ -8,7 +8,8 @@ function ScaleAlgorithm:ResizeCanvas(sprite, sizeFactor)
 end
 
 function ScaleAlgorithm:MoveCel(cel, sizeFactor)
-    cel.position = Point(cel.position.x * sizeFactor, cel.position.y * sizeFactor)
+    cel.position = Point(cel.position.x * sizeFactor,
+                         cel.position.y * sizeFactor)
 end
 
 function ScaleAlgorithm:NearestNeighbour(sprite, sizeFactor)
@@ -60,10 +61,22 @@ function ScaleAlgorithm:Eagle(sprite)
                 local xRight = math.min(x + 1, newWidth - 1)
                 local yDown = math.min(y + 1, newHeight - 1)
 
-                imageResult:putPixel(x, y, Color:areEqual(upperLeft, upperCenter, middleLeft) and upperLeft or middleCenter);
-                imageResult:putPixel(xRight, y, Color:areEqual(upperCenter, upperRight, middleRight) and upperRight or middleCenter);
-                imageResult:putPixel(x, yDown, Color:areEqual(middleLeft, downLeft, downCenter) and downLeft or middleCenter);
-                imageResult:putPixel(xRight, yDown, Color:areEqual(downCenter, downRight, middleRight) and downRight or middleCenter);
+                imageResult:putPixel(x, y,
+                                     Color:areEqual(upperLeft, upperCenter,
+                                                    middleLeft) and upperLeft or
+                                         middleCenter);
+                imageResult:putPixel(xRight, y,
+                                     Color:areEqual(upperCenter, upperRight,
+                                                    middleRight) and upperRight or
+                                         middleCenter);
+                imageResult:putPixel(x, yDown, Color:areEqual(middleLeft,
+                                                              downLeft,
+                                                              downCenter) and
+                                         downLeft or middleCenter);
+                imageResult:putPixel(xRight, yDown,
+                                     Color:areEqual(downCenter, downRight,
+                                                    middleRight) and downRight or
+                                         middleCenter);
             end
         end
 
@@ -126,6 +139,107 @@ function ScaleAlgorithm:Scale2x(sprite)
 
                 if right == down and right ~= up and down ~= left then
                     imageResult:putPixel(x + 1, y + 1, down)
+                end
+            end
+        end
+
+        -- Save new image to the current one
+        cel.image = imageResult
+    end
+end
+
+function ScaleAlgorithm:Scale3x(sprite)
+    local sizeFactor = 3;
+
+    ScaleAlgorithm:ResizeCanvas(sprite, sizeFactor)
+
+    for _, cel in ipairs(sprite.cels) do
+        ScaleAlgorithm:MoveCel(cel, sizeFactor)
+
+        local width = cel.image.width
+        local height = cel.image.height
+
+        local imageResult = Image(width * sizeFactor, height * sizeFactor,
+                                  sprite.colorMode)
+
+        -- Use algorithm to create new image
+        for ix = 0, width - 1 do
+            for iy = 0, height - 1 do
+                local x = ix * sizeFactor
+                local y = iy * sizeFactor
+
+                local iyUp = math.max(iy - 1, 0)
+                local iyDown = math.min(iy + 1, height - 1)
+                local ixRight = math.min(ix + 1, width - 1)
+                local ixLeft = math.max(ix - 1, 0)
+
+                local A = cel.image:getPixel(ixLeft, iyUp)
+                local B = cel.image:getPixel(ix, iyUp)
+                local C = cel.image:getPixel(ixRight, iyUp)
+
+                local D = cel.image:getPixel(ixLeft, iy)
+                local E = cel.image:getPixel(ix, iy)
+                local F = cel.image:getPixel(ixRight, iy)
+
+                local G = cel.image:getPixel(ixLeft, iyDown)
+                local H = cel.image:getPixel(ix, iyDown)
+                local I = cel.image:getPixel(ixRight, iyDown)
+
+                -- 1=E; 2=E; 3=E; 4=E; 5=E; 6=E; 7=E; 8=E; 9=E;
+                imageResult:putPixel(x, y, E)
+                imageResult:putPixel(x, y + 1, E)
+                imageResult:putPixel(x, y + 2, E)
+                imageResult:putPixel(x + 1, y, E)
+                imageResult:putPixel(x + 1, y + 1, E)
+                imageResult:putPixel(x + 1, y + 2, E)
+                imageResult:putPixel(x + 2, y, E)
+                imageResult:putPixel(x + 2, y + 1, E)
+                imageResult:putPixel(x + 2, y + 2, E)
+
+                -- IF D==B AND D!=H AND B!=F => 1=D
+                if D == B and D ~= H and B ~= F then
+                    imageResult:putPixel(x, y, D);
+                end
+
+                -- IF (D==B AND D!=H AND B!=F AND E!=C) OR (B==F AND B!=D AND F!=H AND E!=A) => 2=B
+                if (D == B and D ~= H and B ~= F and E ~= C) or
+                    (B == F and B ~= D and F ~= H and E ~= A) then
+                    imageResult:putPixel(x + 1, y, B);
+                end
+
+                -- IF B==F AND B!=D AND F!=H => 3=F
+                if B == F and B ~= D and F ~= H then
+                    imageResult:putPixel(x + 2, y, F);
+                end
+
+                -- IF (H==D AND H!=F AND D!=B AND E!=A) OR (D==B AND D!=H AND B!=F AND E!=G) => 4=D
+                if (H == D and H ~= F and D ~= B and E ~= A) or
+                    (D == B and D ~= H and B ~= F and E ~= G) then
+                    imageResult:putPixel(x, y + 1, D);
+                end
+
+                -- 5=E
+
+                -- IF (B==F AND B!=D AND F!=H AND E!=I) OR (F==H AND F!=B AND H!=D AND E!=C) => 6=F
+                if (B == F and B ~= D and F ~= H and E ~= I) or
+                    (F == H and F ~= B and H ~= D and E ~= C) then
+                    imageResult:putPixel(x + 2, y + 1, F);
+                end
+
+                -- IF H==D AND H!=F AND D!=B => 7=D
+                if H == D and H ~= F and D ~= B then
+                    imageResult:putPixel(x, y + 2, D);
+                end
+
+                -- IF (F==H AND F!=B AND H!=D AND E!=G) OR (H==D AND H!=F AND D!=B AND E!=I) => 8=H
+                if (F == H and F ~= B and H ~= D and E ~= G) or
+                    (H == D and H ~= F and D ~= B and E ~= I) then
+                    imageResult:putPixel(x + 1, y + 2, H);
+                end
+
+                -- IF F==H AND F!=B AND H!=D => 9=F
+                if F == H and F ~= B and H ~= D then
+                    imageResult:putPixel(x + 2, y + 2, F);
                 end
             end
         end
@@ -207,9 +321,9 @@ function ScaleAlgorithm:Hawk(sprite, focusOnDark)
                 end
 
                 if hIsBetterThanE then
-                    if d == h then 
+                    if d == h then
                         imageResult:putPixel(x, yDown, d)
-                    elseif dIsBetterThanE then 
+                    elseif dIsBetterThanE then
                         imageResult:putPixel(x, yDown, getBetter(d, h))
                     end
 
