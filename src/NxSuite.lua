@@ -3,7 +3,7 @@ include("tween/TweenDialog")
 include("touch-screen-helper/TouchScreenHelperDialog")
 
 function init(plugin)
-    -- TODO: User plugin.preferences to save data:
+    -- TODO: Use plugin.preferences to save data:
     -- -- Last window position
     -- -- Data for Note script & remove dependency on file system access
 

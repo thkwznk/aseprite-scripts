@@ -62,8 +62,14 @@ foreach ($fileName in $fileNames) {
     GetFileWithIncludes $sourcePath $fileName $depth | Out-File -FilePath $outputFilePath -Encoding ASCII
 
     Write-Host (Pad $depth)Saved $outputFilePath
+
+    if ($fileName -ne $fileNames[-1]) {
+        Write-Host (Pad 0)
+    }
 }
 
-# TODO: Add parameter for building a single file?
-# TODO: Remove comments
-# TODO: Remove duplicate new lines
+Write-Host Built ($fileNames.Count) scripts
+
+# TODO: Add a parameter for building a single file
+# TODO: Remove comments when processing files
+# TODO: Remove duplicate new lines when processing files
