@@ -28,17 +28,6 @@ function init(plugin)
             dialog:show{wait = false};
         end
     }
-
-    plugin:newCommand{
-        id = "touch-screen-helper",
-        title = "Touch Screen Helper",
-        group = "view_controls",
-        onclick = function()
-            local dialog = CreateTouchScreenHelperDialog("TSHelper");
-
-            dialog:show{wait = false};
-        end
-    }
 end
 
 function exit(plugin) end
