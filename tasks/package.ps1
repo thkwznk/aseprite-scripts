@@ -1,4 +1,8 @@
-param ($profilePath, $scriptsDirectory, $outputFilename = "package")
+param ($profilesDirectory, $scriptsDirectory, $profileName)
+
+Write-Host "Packaging ${profileName}..."
+
+$profilePath = Join-Path $profilesDirectory "${profileName}.json" | Resolve-Path
 
 if (([string]::IsNullOrEmpty($profilePath)) -or (Test-Path -Path $profilePath) -eq $false) {
     Write-Host "Profile ${profilePath} does not exist" 
@@ -17,16 +21,18 @@ Copy-Item -Path $profilePath -Destination $packageConfigurationPath
 $scripts = $profileConfiguration.contributes.scripts | ForEach-Object { Join-Path $scriptsDirectory $_.path | Resolve-Path }
 
 # Create ZIP archive
-$outputPath = Resolve-NewPath ".\${outputFilename}.zip"
+$archivePath = Resolve-NewPath ".\${profileName}.zip"
 $compress = @{
     Path            = $scripts, $packageConfigurationPath
-    DestinationPath = $outputPath
+    DestinationPath = $archivePath
 }
 Compress-Archive @compress -Force
 
 # Rename ZIP to ASEPRITE-EXTENSION
-$extensionPath = Resolve-NewPath ".\${outputFilename}.aseprite-extension"
-Move-Item $outputPath $extensionPath -Force
+$extensionPath = Resolve-NewPath ".\${profileName}.aseprite-extension"
+Move-Item $archivePath $extensionPath -Force
 
 # Remove package.json created before
 Remove-Item $packageConfigurationPath
+
+Write-Host "Package ${profileName} created"

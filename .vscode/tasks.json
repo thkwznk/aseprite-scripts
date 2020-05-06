@@ -1,22 +1,29 @@
 {
-    // See https://go.microsoft.com/fwlink/?LinkId=733558
-    // for the documentation about the tasks.json format
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "build",
-            "type": "shell",
-            "command": "${workspaceFolder}\\tasks\\build.ps1 -sourcePath '${workspaceFolder}\\src' -outputPath '${workspaceFolder}\\output'",
-            "group": {
-                "kind": "build",
-                "isDefault": true
-            }
-        },
-        {
-            "label": "package",
-            "type": "shell",
-            "command": "${workspaceFolder}\\tasks\\package.ps1 -ProfilePath  '${workspaceFolder}\\profiles\\NxPA Studio.json' -ScriptsDirectory '${workspaceFolder}\\output\\' -OutputFilename 'NxPA Studio'",
-            "group": "none"
-        }
-    ]
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "${workspaceFolder}\\tasks\\build.ps1 -sourcePath '${workspaceFolder}\\src' -outputPath '${workspaceFolder}\\output'",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "package",
+      "type": "shell",
+      "command": "${workspaceFolder}\\tasks\\package.ps1 -ProfilesDirectory  '${workspaceFolder}\\profiles\\' -ScriptsDirectory '${workspaceFolder}\\output\\' -ProfileName '${input:profileName}'"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "profileName",
+      "type": "pickString",
+      "description": "Select package profile",
+      "options": ["NxPA Studio", "OnScreenControls"]
+    }
+  ]
 }
