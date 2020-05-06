@@ -18,5 +18,5 @@ An experimental project trying to implements basic applications as [Aseprite](ht
 Contains:
 * **Note** - a to-do list app inside Aseprite.
 
-## How add Scripts to Aseprite
+# How add Scripts to Aseprite
 In order to add LUA scripts open Aseprite and select _File_ > _Scripts_ > _Open Scripts Folder_. Next, copy script files to the opened directory.

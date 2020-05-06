@@ -6,11 +6,17 @@
         {
             "label": "build",
             "type": "shell",
-            "command": ".\\tasks\\build.ps1 -sourcePath '.\\src' -outputPath '.\\output'",
+            "command": "${workspaceFolder}\\tasks\\build.ps1 -sourcePath '${workspaceFolder}\\src' -outputPath '${workspaceFolder}\\output'",
             "group": {
                 "kind": "build",
                 "isDefault": true
             }
+        },
+        {
+            "label": "package",
+            "type": "shell",
+            "command": "${workspaceFolder}\\tasks\\package.ps1 -ProfilePath  '${workspaceFolder}\\profiles\\NxPA Studio.json' -ScriptsDirectory '${workspaceFolder}\\output\\' -OutputFilename 'NxPA Studio'",
+            "group": "none"
         }
     ]
 }
