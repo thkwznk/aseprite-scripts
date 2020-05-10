@@ -1,6 +1,5 @@
 include("scale/ScaleDialog")
 include("tween/TweenDialog")
-include("touch-screen-helper/TouchScreenHelperDialog")
 
 function init(plugin)
     -- TODO: Use plugin.preferences to save data:

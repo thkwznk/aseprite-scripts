@@ -33,8 +33,8 @@ function CreateTouchScreenHelperDialog(dialogTitle)
     dialog:button{
         text = "Command",
         onclick = function()
-            keyboardDialog = CreateKeyboardDialog(commandPrefix)
-            keyboardDialog:show{wait = false}
+            KeyboardDialog:Create(commandPrefix)
+            KeyboardDialog:Show()
         end
     }
 

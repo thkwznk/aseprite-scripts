@@ -1,4 +1,4 @@
-include("touch-screen-helper/TouchScreenHelperDialog")
+include("on-screen-controls/ControlsDialog")
 
 function init(plugin)
     plugin:newCommand{
