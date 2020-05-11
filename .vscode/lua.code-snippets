@@ -1,64 +1,7 @@
 {
-	"Aseprite Script Template": {
-		"scope": "lua",
-		"prefix": "init",
-		"body": [
-			"-- Check is UI available",
-			"if not app.isUIAvailable then",
-			"\treturn",
-			"end",
-			"",
-			"do",
-			"\tlocal dialog = Dialog(\"${1}\")",
-			"",
-			"\tdialog",
-			"\t\t:label{",
-			"\t\t\tid=\"text\",",
-			"\t\t\tlabel=\"Text\",",
-			"\t\t\ttext=\"$1\"",
-			"\t\t}",
-			"\t\t:show{",
-			"\t\t\twait=false",
-			"\t\t}",
-			"end"
-		],
-		"description": "Initialize Aseprite LUA script with boilerplate code"
-	},
-	"Button Widget": {
-		"scope": "lua",
-		"prefix": ":button",
-		"body": [
-			":button{",
-			"\ttext=\"${1}\",",
-			"\tonclick=function()",
-			"\t\t",
-			"\tend",
-			"}"
-		],
-		"description": "Add a button widget for Aseprite dialog"
-	},
-	"New Row Widget": {
-		"scope": "lua",
-		"prefix": ":newrow",
-		"body": ":newrow()"
-	},
-	"Separator Widget": {
-		"scope": "lua",
-		"prefix": ":separator",
-		"body": [
-			":separator{",
-			"\ttext=\"${1}\"",
-			"}"
-		]
-	},
-	"Entry Widget": {
-		"scope": "lua",
-		"prefix": ":entry",
-		"body": [
-			":entry{",
-			"\tid=\"${1}\"",
-			"\tlabel=\"${2}\"",
-			"}"
-		]
-	}
+  "For Loop with ipairs": {
+    "scope": "lua",
+    "prefix": "fori",
+    "body": "for i, $2 in ipairs($1) do end"
+  }
 }

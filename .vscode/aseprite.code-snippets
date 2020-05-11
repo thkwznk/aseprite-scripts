@@ -1,0 +1,74 @@
+{
+  "Aseprite Script Template": {
+    "scope": "lua",
+    "prefix": "init",
+    "body": [
+      "-- Check is UI available",
+      "if not app.isUIAvailable then",
+      "\treturn",
+      "end",
+      "",
+      "do",
+      "\tlocal dialog = Dialog(\"${1}\")",
+      "",
+      "\tdialog",
+      "\t\t:label{",
+      "\t\t\tid=\"text\",",
+      "\t\t\tlabel=\"Text\",",
+      "\t\t\ttext=\"$1\"",
+      "\t\t}",
+      "\t\t:show{",
+      "\t\t\twait=false",
+      "\t\t}",
+      "end"
+    ],
+    "description": "Initialize Aseprite LUA script with boilerplate code"
+  },
+  "Button Widget": {
+    "scope": "lua",
+    "prefix": ":button",
+    "body": [
+      ":button{",
+      "\ttext=\"${1}\",",
+      "\tonclick=function()",
+      "\t\t",
+      "\tend",
+      "}"
+    ],
+    "description": "Add a button widget to Aseprite dialog"
+  },
+  "New Row Widget": {
+    "scope": "lua",
+    "prefix": ":newrow",
+    "body": ":newrow()",
+    "description": "Add a new row to Aseprite dialog"
+  },
+  "Separator Widget": {
+    "scope": "lua",
+    "prefix": ":separator",
+    "body": [":separator{", "\ttext=\"${1}\"", "}"],
+    "description": "Add a separator to Aseprite dialog"
+  },
+  "Entry Widget": {
+    "scope": "lua",
+    "prefix": ":entry",
+    "body": [":entry{", "\tid=\"${1}\"", "\tlabel=\"${2}\"", "}"],
+    "description": "Add an entry widget to Aseprite dialog"
+  },
+  "Check Widget": {
+    "scope": "lua",
+    "prefix": ":check",
+    "body": [
+      ":check{",
+      "\tid=\"${1}\"",
+      "label=\"${2}\"",
+      "text=\"${3}\"",
+      "selected=${4}",
+      "\tonclick=function()",
+      "\t\t",
+      "\tend",
+      "}"
+    ],
+    "description": "Add a check widget to Aseprite dialog"
+  }
+}
