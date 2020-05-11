@@ -6,7 +6,10 @@ function init(plugin)
         title = "On-Screen Controls",
         group = "view_controls",
         onclick = function()
-            ControlsDialog:Create("On-Screen Controls");
+            ControlsDialog:Create("On-Screen Controls", plugin.preferences,
+                                  function(newPreferences)
+                plugin.preferences = newPreferences;
+            end);
             ControlsDialog:Show();
         end
     }

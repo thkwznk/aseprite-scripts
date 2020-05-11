@@ -1,6 +1,6 @@
 include("KeyboardDialog")
 
-local ControlsDialog = {dialog = nil, keyboardDialog = nil};
+local ControlsDialog = {dialog = nil, preferences = nil};
 
 function ControlsDialog:ToggleWidgets(widgetIds, areVisible)
     for _, widgetId in ipairs(widgetIds) do
@@ -8,10 +8,17 @@ function ControlsDialog:ToggleWidgets(widgetIds, areVisible)
     end
 end
 
-function ControlsDialog:Create(dialogTitle)
+function ControlsDialog:Create(dialogTitle, preferences, savePreferences)
+    self.preferences = preferences;
+
     self.dialog = Dialog {
         title = dialogTitle,
-        onclose = function() KeyboardDialog:Close() end
+        onclose = function()
+            KeyboardDialog:Close();
+
+            self.preferences.dialogBounds = self.dialog.bounds;
+            savePreferences(self.preferences);
+        end
     };
 
     self:AddCommandButton("Undo");
@@ -101,4 +108,10 @@ function ControlsDialog:AddCommandButton(text, command)
     addCommandButton(self.dialog, text, command);
 end
 
-function ControlsDialog:Show() self.dialog:show{wait = false}; end
+function ControlsDialog:Show()
+    self.dialog:show{wait = false};
+
+    if self.preferences and self.preferences.dialogBounds then
+        self.dialog.bounds = self.preferences.dialogBounds;
+    end
+end
