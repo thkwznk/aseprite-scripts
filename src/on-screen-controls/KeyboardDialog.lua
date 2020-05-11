@@ -53,8 +53,6 @@ function KeyboardDialog:Create()
 
     self.dialog:newrow()
     self.dialog:button{text = "Close"}
-
-    return self;
 end
 
 function KeyboardDialog:UpdateSearchText(text)
@@ -75,6 +73,7 @@ function KeyboardDialog:AddLetterButton(letter)
 end
 
 function KeyboardDialog:Show() self.dialog:show{wait = false}; end
+function KeyboardDialog:Close() if self.dialog then self.dialog:close() end end
 
 function KeyboardDialog:CreateCommandsDialog(commands)
     self.commandsDialog = Dialog("Commands")

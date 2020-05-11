@@ -6,8 +6,8 @@ function init(plugin)
         title = "On-Screen Controls",
         group = "view_controls",
         onclick = function()
-            local dialog = CreateTouchScreenHelperDialog("On-Screen Controls");
-            dialog:show{wait = false};
+            ControlsDialog:Create("On-Screen Controls");
+            ControlsDialog:Show();
         end
     }
 end
