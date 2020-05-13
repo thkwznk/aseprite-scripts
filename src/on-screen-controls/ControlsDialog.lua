@@ -2,7 +2,10 @@ include("KeyboardDialog")
 
 local ControlsDialog = {dialog = nil, preferences = nil};
 
-function ControlsDialog:ToggleWidgets(widgetIds, areVisible)
+function ControlsDialog:ToggleWidgets(toggleId, widgetIds)
+    local areVisible = self.dialog.data[toggleId];
+    self.preferences[toggleId] = areVisible;
+
     for _, widgetId in ipairs(widgetIds) do
         self.dialog:modify{id = widgetId, visible = areVisible};
     end
@@ -16,7 +19,8 @@ function ControlsDialog:Create(dialogTitle, preferences, savePreferences)
         onclose = function()
             KeyboardDialog:Close();
 
-            self.preferences.dialogBounds = self.dialog.bounds;
+            self.preferences.x = self.dialog.bounds.x;
+            self.preferences.y = self.dialog.bounds.y;
             savePreferences(self.preferences);
         end
     };
@@ -45,54 +49,25 @@ function ControlsDialog:Create(dialogTitle, preferences, savePreferences)
     self.dialog:separator();
 
     -- Grid Controls
-    self.dialog:check{
-        id = "isGridEnabled",
-        text = "Grid",
-        selected = true,
-        onclick = function()
-            self:ToggleWidgets({"ShowGrid", "SnapToGrid", "GridSettings"},
-                               self.dialog.data["isGridEnabled"]);
-        end
-    }
-
-    self:AddCommandButton("Toggle", "ShowGrid");
-    self:AddCommandButton("Snap to", "SnapToGrid");
-    self.dialog:newrow()
-    self:AddCommandButton("Settings", "GridSettings");
-    self.dialog:separator()
+    self:AddSection("Grid", {
+        {text = "Toggle", command = "ShowGrid"},
+        {text = "Snap to", command = "SnapToGrid", newRow = true},
+        {text = "Settings", command = "GridSettings"}
+    });
 
     -- Frame Controls
-    self.dialog:check{
-        id = "isFrameEnabled",
-        text = "Frame",
-        selected = true,
-        onclick = function()
-            self:ToggleWidgets({
-                "GotoFirstFrame", "GotoPreviousFrame", "GotoNextFrame",
-                "GotoLastFrame", "NewFrame", "RemoveFrame"
-            }, self.dialog.data["isFrameEnabled"]);
-        end
-    }
-    self:AddCommandButton("|<", "GotoFirstFrame");
-    self:AddCommandButton("<", "GotoPreviousFrame");
-    self:AddCommandButton(">", "GotoNextFrame");
-    self:AddCommandButton(">|", "GotoLastFrame");
-    self.dialog:newrow();
-    self:AddCommandButton("+", "NewFrame");
-    self:AddCommandButton("-", "RemoveFrame");
-    self.dialog:separator();
+    self:AddSection("Frame", {
+        {text = "|<", command = "GotoFirstFrame"},
+        {text = "<", command = "GotoPreviousFrame"},
+        {text = ">", command = "GoToNextFrame"},
+        {text = ">|", command = "GoToLastFrame", newRow = true},
+        {text = "+", command = "NewFrame"},
+        {text = "-", command = "RemoveFrame"}
+    });
 
     -- Layer Controls
-    self.dialog:check{
-        id = "isLayerEnabled",
-        text = "Layer",
-        selected = true,
-        onclick = function()
-            self:ToggleWidgets({"NewLayer"}, self.dialog.data["isLayerEnabled"]);
-        end
-    }
-    self:AddCommandButton("New Layer", "NewLayer");
-    self.dialog:separator()
+    self:AddSection("Layer", {{text = "New Layer", command = "NewLayer"}});
+
     self:AddCommandButton("Save", "SaveFile");
     self.dialog:separator()
     self.dialog:button{
@@ -104,6 +79,31 @@ function ControlsDialog:Create(dialogTitle, preferences, savePreferences)
     };
 end
 
+function ControlsDialog:AddSection(section, widgets)
+    local sectionId = section .. "Section";
+
+    local widgetCommands = table.map(widgets, function(w) return w.command end);
+
+    self.dialog:check{
+        id = sectionId,
+        text = section,
+        selected = self.preferences[sectionId],
+        onclick = function()
+            self:ToggleWidgets(sectionId, widgetCommands);
+        end
+    }
+
+    for _, widget in ipairs(widgets) do
+        self:AddCommandButton(widget.text, widget.command);
+
+        if widget.newRow then self.dialog:newrow(); end
+    end
+
+    self:ToggleWidgets(sectionId, widgetCommands);
+
+    self.dialog:separator();
+end
+
 function ControlsDialog:AddCommandButton(text, command)
     addCommandButton(self.dialog, text, command);
 end
@@ -111,7 +111,10 @@ end
 function ControlsDialog:Show()
     self.dialog:show{wait = false};
 
-    if self.preferences and self.preferences.dialogBounds then
-        self.dialog.bounds = self.preferences.dialogBounds;
+    if self.preferences.x and self.preferences.y then
+        local bounds = self.dialog.bounds;
+        bounds.x = self.preferences.x;
+        bounds.y = self.preferences.y;
+        self.dialog.bounds = bounds;
     end
 end
