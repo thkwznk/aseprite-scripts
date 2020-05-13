@@ -2,7 +2,7 @@
 This repository is my workspace for developing LUA scripts and extensions for [Aseprite](https://www.aseprite.org/).
 
 ## NxPA Studio
-A script suite for [Aseprite](https://www.aseprite.org/) that adds image processing functionalities.
+A script suite/extension for [Aseprite](https://www.aseprite.org/) that adds image processing functionalities.
 
 Contains:
 * **NxScale / Advanced Scaling** - allows for upscaling pixel art without introducing new colors using a variety of algorithms: Nearest Neighbor, Eagle, Scale2x, Scale3x and a custom algorithm named Hawk.
