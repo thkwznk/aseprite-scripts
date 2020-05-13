@@ -34,10 +34,15 @@ function ControlsDialog:Create(dialogTitle, preferences, savePreferences)
     self:AddCommandButton("Cut");
     self:AddCommandButton("Clear");
     self.dialog:newrow()
-    self:AddCommandButton("Cancel");
+    self.dialog:button{
+        text = "Cancel",
+        selected = false,
+        focus = false,
+        onclick = function() app.command.Cancel {type = "all"}; end
+    };
     self.dialog:separator()
 
-    self.dialog:newrow():button{
+    self.dialog:button{
         text = "Select All",
         selected = false,
         focus = false,
@@ -45,7 +50,7 @@ function ControlsDialog:Create(dialogTitle, preferences, savePreferences)
             app.activeSprite.selection:selectAll()
             app.refresh()
         end
-    }:newrow();
+    };
     self.dialog:separator();
 
     -- Grid Controls
