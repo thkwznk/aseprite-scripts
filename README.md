@@ -5,9 +5,9 @@ This repository is my workspace for developing LUA scripts and extensions for [A
 A script suite/extension for [Aseprite](https://www.aseprite.org/) that adds image processing functionalities.
 
 Contains:
-* **NxScale / Advanced Scaling** - allows for upscaling pixel art without introducing new colors using a variety of algorithms: Nearest Neighbor, Eagle, Scale2x, Scale3x and a custom algorithm named Hawk.
+* **Advanced Scaling** - allows for upscaling pixel art without introducing new colors using a variety of algorithms: Nearest Neighbor, Eagle, Scale2x, Scale3x and a custom algorithm named Hawk.
 
-* **NxTween / Add Inbetween Frames** - adds in between frames based on position.
+* **Add Inbetween Frames** - adds in between frames based on position.
 
 ## On-Screen Controls
 An extension that adds On-Screen Controls for touch screen users.
