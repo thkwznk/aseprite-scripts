@@ -1,4 +1,4 @@
-include("on-screen-controls/ControlsDialog")
+ControlsDialog = dofile("./src/ControlsDialog.lua");
 
 function init(plugin)
     plugin:newCommand{

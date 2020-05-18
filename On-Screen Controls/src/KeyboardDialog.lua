@@ -1,5 +1,4 @@
-include("Commands")
-include("CommandButton")
+Commands = dofile("./Commands.lua");
 
 local KeyboardDialog = {dialog = nil, commandsDialog = nil, searchText = ""};
 
@@ -79,8 +78,11 @@ function KeyboardDialog:CreateCommandsDialog(commands)
     self.commandsDialog = Dialog("Commands")
 
     for i, command in ipairs(commands) do
-        addCommandButton(self.commandsDialog, command)
-        self.commandsDialog:newrow()
+        self.commandsDialog:button{
+            id = command,
+            text = command,
+            onclick = function() app.command[command]() end
+        }:newrow();
     end
 end
 
@@ -92,7 +94,7 @@ function KeyboardDialog:RefreshDialogs()
     self:CloseCommandsDialog();
 
     if self.searchText:len() > 0 then
-        local availableCommands = GetCommands(self.searchText)
+        local availableCommands = Commands:Search(self.searchText);
 
         if #availableCommands > 0 then
             self:CreateCommandsDialog(availableCommands)
@@ -107,3 +109,5 @@ function KeyboardDialog:RefreshDialogs()
         end
     end
 end
+
+return KeyboardDialog;

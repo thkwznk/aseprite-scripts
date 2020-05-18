@@ -2,7 +2,7 @@
   "name": "on-screen-controls",
   "displayName": "On-Screen Controls",
   "description": "Floating on-screen controls for Aseprite.",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": {
     "name": "Kacper Woźniak",
     "email": "kac.wozniak@gmail.com",
@@ -13,6 +13,6 @@
   "license": "CC-BY-4.0",
   "categories": ["Scripts"],
   "contributes": {
-    "scripts": [{ "path": "./OSCPackage.lua" }]
+    "scripts": [{ "path": "./OnScreenControls.lua" }]
   }
 }

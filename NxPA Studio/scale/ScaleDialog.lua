@@ -1,7 +1,7 @@
-include("../common/Transaction")
-include("ScaleAlgorithm")
+Transaction = dofile("./Transaction.lua");
+ScaleAlgorithm = dofile("./ScaleAlgorithm.lua");
 
-function CreateScaleDialog(dialogTitle)
+return function(dialogTitle)
     local dialog = Dialog(dialogTitle);
 
     dialog:separator{text = "Algorithm:"}:button{

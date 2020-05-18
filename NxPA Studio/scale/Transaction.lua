@@ -1,4 +1,4 @@
-function Transaction(action)
+return function(action)
     return function()
         if app.activeSprite == nil then return end
 

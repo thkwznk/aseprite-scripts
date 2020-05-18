@@ -1,7 +1,9 @@
-include("../extensions/String")
-include("../extensions/Table")
+dofile("../extensions/String.lua");
+dofile("../extensions/Table.lua");
 
-local commands = {
+local Commands = {};
+
+Commands.all = {
     "About", "AddColor", "AdvancedMode", "AutocropSprite",
     "BackgroundFromLayer", "BrightnessContrast", "Cancel", "CanvasSize",
     "CelOpacity", "CelProperties", "ChangeBrush", "ChangeColor",
@@ -39,7 +41,7 @@ local commands = {
     "ToggleTimelineThumbnails", "UndoHistory", "Undo", "UnlinkCel", "Zoom"
 };
 
-function GetPattern(text)
+function Commands.GetPattern(text)
     local pattern = "";
 
     for i = 1, #text do
@@ -50,12 +52,12 @@ function GetPattern(text)
     return pattern;
 end
 
-function GetCommands(searchText)
-    local pattern = GetPattern(searchText):lower()
+function Commands:Search(searchText)
+    local pattern = self.GetPattern(searchText):lower();
 
     local results = {}
 
-    for i, value in ipairs(commands) do
+    for i, value in ipairs(self.all) do
         local searchResult = {text = value, weight = 0};
 
         local command = value:lower();
@@ -75,3 +77,5 @@ function GetCommands(searchText)
 
     return table.map(results, function(result) return result.text end)
 end
+
+return Commands;

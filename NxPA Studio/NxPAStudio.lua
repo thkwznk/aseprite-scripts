@@ -1,18 +1,13 @@
-include("scale/ScaleDialog")
-include("tween/TweenDialog")
+ScaleDialog = dofile("./scale/ScaleDialog.lua");
+TweenDialog = dofile("./tween/TweenDialog.lua");
 
 function init(plugin)
-    -- TODO: Use plugin.preferences to save data:
-    -- -- Last window position
-    -- -- Data for Note script & remove dependency on file system access
-
     plugin:newCommand{
         id = "advanced-scaling",
         title = "Advanced Scaling",
         group = "sprite_size",
         onclick = function()
-            local dialog = CreateScaleDialog("Advanced Scaling");
-
+            local dialog = ScaleDialog("Advanced Scaling");
             dialog:show{wait = false};
         end
     }
@@ -22,8 +17,7 @@ function init(plugin)
         title = "Add Inbetween Frames",
         group = "cel_delete",
         onclick = function()
-            local dialog = CreateTweenDialog("Add Inbetween Frames");
-
+            local dialog = TweenDialog("Add Inbetween Frames");
             dialog:show{wait = false};
         end
     }

@@ -1,4 +1,4 @@
-include("Color")
+Color = dofile("./Color.lua");
 
 local ScaleAlgorithm = {}
 
@@ -340,3 +340,5 @@ function ScaleAlgorithm:Hawk(sprite, focusOnDark)
         cel.image = imageResult
     end
 end
+
+return ScaleAlgorithm;

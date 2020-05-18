@@ -1,17 +1,13 @@
 local Tweener = {}
 
 function Tweener:tween(config)
-    if not config or
-        not config["sprite"] or
-        not config["frames"] then
-        return
-    end
+    if not config or not config["sprite"] or not config["frames"] then return end
 
     app.transaction(function()
         local sprite = config["sprite"]
         local loop = config["loop"]
         local numberOfFramesToAdd = config["frames"]
-        
+
         self:addInbetweenFrames(sprite, numberOfFramesToAdd, loop)
         self:moveInbetweenFrames(sprite, numberOfFramesToAdd + 1, loop)
     end)
@@ -28,9 +24,7 @@ function Tweener:addInbetweenFrames(sprite, numberOfFramesToAdd, loop)
     for i = firstFrameIndex, numberOfFramesToClone do
         local frameToClone = i + (i - firstFrameIndex) * numberOfFramesToAdd
 
-        for j = 1, numberOfFramesToAdd do
-            sprite:newFrame(frameToClone)
-        end
+        for j = 1, numberOfFramesToAdd do sprite:newFrame(frameToClone) end
     end
 end
 
@@ -45,13 +39,13 @@ function Tweener:moveInbetweenFrames(sprite, originalNumberOfFrames, loop)
             if step == 0 then
                 local next = layer.cels[j + originalNumberOfFrames]
 
-                if loop and not next then
-                    next = layer.cels[1]
-                end
+                if loop and not next then next = layer.cels[1] end
 
                 if next then
-                    stepX = (next.position.x - cel.position.x) / originalNumberOfFrames
-                    stepY = (next.position.y - cel.position.y) / originalNumberOfFrames
+                    stepX = (next.position.x - cel.position.x) /
+                                originalNumberOfFrames
+                    stepY = (next.position.y - cel.position.y) /
+                                originalNumberOfFrames
                 end
             else
                 cel.position = {
@@ -62,3 +56,5 @@ function Tweener:moveInbetweenFrames(sprite, originalNumberOfFrames, loop)
         end
     end
 end
+
+return Tweener;

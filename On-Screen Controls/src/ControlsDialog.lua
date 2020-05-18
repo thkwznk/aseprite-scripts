@@ -1,4 +1,4 @@
-include("KeyboardDialog")
+KeyboardDialog = dofile("./KeyboardDialog.lua");
 
 local ControlsDialog = {dialog = nil, preferences = nil};
 
@@ -110,7 +110,11 @@ function ControlsDialog:AddSection(section, widgets)
 end
 
 function ControlsDialog:AddCommandButton(text, command)
-    addCommandButton(self.dialog, text, command);
+    self.dialog:button{
+        id = command,
+        text = text,
+        onclick = function() app.command[command or text]() end
+    };
 end
 
 function ControlsDialog:Show()
@@ -123,3 +127,5 @@ function ControlsDialog:Show()
         self.dialog.bounds = bounds;
     end
 end
+
+return ControlsDialog;

@@ -1,6 +1,6 @@
-include("Tweener")
+Tweener = dofile("./Tweener.lua");
 
-function CreateTweenDialog(dialogTitle)
+return function(dialogTitle)
     local dialog = Dialog(dialogTitle);
 
     dialog:number{
