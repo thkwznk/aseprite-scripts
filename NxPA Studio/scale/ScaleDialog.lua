@@ -1,4 +1,4 @@
-Transaction = dofile("./Transaction.lua");
+Transaction = dofile("../shared/Transaction.lua");
 ScaleAlgorithm = dofile("./ScaleAlgorithm.lua");
 
 return function(dialogTitle)
