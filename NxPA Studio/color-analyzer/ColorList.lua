@@ -18,7 +18,30 @@ function ColorList:Add(value)
         end
     end
 
-    table.insert(self, {value = value, count = 1});
+    local palette = app.activeSprite.palettes[1];
+
+    local paletteIndex = 0;
+
+    local color = Color(value);
+
+    for i = 0, #palette - 1 do
+        local paletteColor = palette:getColor(i);
+
+        if paletteColor.rgbaPixel == color.rgbaPixel then
+            paletteIndex = i;
+            break
+        end
+    end
+
+    table.insert(self, {
+        paletteIndex = paletteIndex,
+        value = value,
+        red = color.red,
+        green = color.green,
+        blue = color.blue,
+        alpha = color.alpha,
+        count = 1
+    });
 end
 
 function ColorList:Sort()
