@@ -38,8 +38,8 @@ function init(plugin)
             if not app.isUIAvailable then return end
             if app.activeSprite == nil then return end
 
-            local dialog = ColorAnalyzerDialog:Create("Analyze Colors");
-            dialog:Show{wait = false};
+            ColorAnalyzerDialog:Create("Analyze Colors");
+            ColorAnalyzerDialog:Show(false);
         end
     }
 end
