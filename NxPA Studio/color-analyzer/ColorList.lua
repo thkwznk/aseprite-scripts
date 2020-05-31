@@ -1,5 +1,9 @@
 local ColorList = {};
 
+ColorList.SortOptions = {
+    "Usage Desc.", "Usage Asc.", "Value Desc.", "Value Asc."
+};
+
 function ColorList:GetColorsFromImage(image)
     for x = 0, image.width - 1 do
         for y = 0, image.height - 1 do
@@ -33,6 +37,7 @@ function ColorList:Add(value)
         end
     end
 
+    -- Saving separate values for r, g, b and a is the only way I found to preserve color in Indexed Color Mode
     table.insert(self, {
         paletteIndex = paletteIndex,
         value = value,
@@ -40,12 +45,25 @@ function ColorList:Add(value)
         green = color.green,
         blue = color.blue,
         alpha = color.alpha,
+        colorValue = color.value,
         count = 1
     });
 end
 
-function ColorList:Sort()
-    table.sort(self, function(a, b) return a.count > b.count end);
+function ColorList:Sort(sortOption)
+    local sortFunction = nil;
+
+    if sortOption == self.SortOptions[1] then
+        sortFunction = function(a, b) return a.count > b.count end;
+    elseif sortOption == self.SortOptions[2] then
+        sortFunction = function(a, b) return a.count < b.count end;
+    elseif sortOption == self.SortOptions[3] then
+        sortFunction = function(a, b) return a.colorValue > b.colorValue end;
+    elseif sortOption == self.SortOptions[4] then
+        sortFunction = function(a, b) return a.colorValue < b.colorValue end;
+    end
+
+    table.sort(self, sortFunction);
 end
 
 function ColorList:CopyToPalette(palette)

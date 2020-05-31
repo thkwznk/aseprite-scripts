@@ -31,15 +31,15 @@ function init(plugin)
 
     plugin:newCommand{
         id = "color-analyzer",
-        title = "Analyze Image",
+        title = "Analyze Colors",
         group = "sprite_color",
         onclick = function()
             -- Check are UI and sprite available
             if not app.isUIAvailable then return end
             if app.activeSprite == nil then return end
 
-            local dialog = ColorAnalyzerDialog("Analyze Image");
-            dialog:show{wait = false};
+            local dialog = ColorAnalyzerDialog:Create("Analyze Colors");
+            dialog:Show{wait = false};
         end
     }
 end
