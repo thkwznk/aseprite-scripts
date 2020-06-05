@@ -16,6 +16,8 @@ Contains:
 
 * **Add Inbetween Frames** - adds in between frames based on position.
 
+* **Analyze Colors** - analyzes color usage, allows for changing any of the used colors and palette sorting
+
 ## On-Screen Controls
 An extension that adds On-Screen Controls for touch screen users.
 
