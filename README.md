@@ -1,6 +1,13 @@
 # Aseprite Script
 This repository is my workspace for developing LUA scripts and extensions for [Aseprite](https://www.aseprite.org/).
 
+## Versioning
+`{major}.{minor}.{patch}`
+
+Major version changes when a new script is added.  
+Minor version changes when new functionality is added to an existing script.  
+Patch version changes when a bug is fixed in an existing script.
+
 ## NxPA Studio
 A script suite/extension for [Aseprite](https://www.aseprite.org/) that adds image processing functionalities.
 
