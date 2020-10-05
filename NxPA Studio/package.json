@@ -1,19 +1,24 @@
 {
-    "name": "nxpa-studio",
-    "displayName": "NxPA Studio",
-    "description": "A powerful script suite for Aseprite.",
-    "version": "2.0.0",
-    "author": {
-      "name": "Kacper Woźniak",
-      "email": "kac.wozniak@gmail.com",
-      "url": "https://thkaspar.itch.io/"
-    },
-    "contributors": [],
-    "publisher": "",
-    "license": "CC-BY-4.0",
-    "categories": ["Scripts"],
-    "contributes": {
-      "scripts": [{ "path": "./NxPAStudio.lua" }]
-    }
+  "name": "nxpa-studio",
+  "displayName": "NxPA Studio",
+  "description": "A powerful script suite for Aseprite.",
+  "version": "2.1.0",
+  "author": {
+    "name": "Kacper Woźniak",
+    "email": "kac.wozniak@gmail.com",
+    "url": "https://thkaspar.itch.io/"
+  },
+  "contributors": [],
+  "publisher": "",
+  "license": "CC-BY-4.0",
+  "categories": [
+    "Scripts"
+  ],
+  "contributes": {
+    "scripts": [
+      {
+        "path": "./NxPAStudio.lua"
+      }
+    ]
   }
-  
+}
