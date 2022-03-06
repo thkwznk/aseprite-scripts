@@ -16,22 +16,23 @@ A script suite/extension for [Aseprite](https://www.aseprite.org/) that adds ima
 
 Contains:
 
-- **Advanced Scaling** - allows for upscaling pixel art without introducing new colors using a variety of algorithms: Nearest Neighbor, Eagle, Scale2x, Scale3x and a custom algorithm named Hawk.
+- **Advanced Scaling** (in _Sprite_ menu) - allows for upscaling pixel art without introducing new colors using a variety of algorithms: Nearest Neighbor, Eagle, Scale2x, Scale3x and a custom algorithm named Hawk.
 
-- **Add Inbetween Frames** - adds in between frames based on position.
+- **Add Inbetween Frames** (in _Frame_ menu) - adds in between frames based on position.
 
-- **Analyze Colors** - provides statistics regarding color usage, allows for changing any of the used colors and palette sorting.
+- **Analyze Colors** (in _Sprite_ menu) - provides statistics regarding color usage, allows for changing any of the used colors and palette sorting.
 
 ## On-Screen Controls
 
 An extension for [Aseprite](https://www.aseprite.org/) that adds on-screen controls for touch screen users.
+Can be launched from _View_ menu.
 
 ## Animation Suite
 
 An extension for [Aseprite](https://www.aseprite.org/) that adds animation-related functionalities:
 
-- **Import Animation** - allows for importing an animation from another sprite with an on-screen guide. Source animation can be based on a layer, a tag, or a selection. Imported animation can be static or move in a linear or sine pattern.
-- **Loop Animation** - generates a perfect loop from multiple animations on separate layers with a different number of frames.
+- **Import Animation** (in _Edit_ menu) - allows for importing an animation from another sprite with an on-screen guide. Source animation can be based on a layer, a tag, or a selection. Imported animation can be static or move in a linear or sine pattern.
+- **Loop Animation** (in _Edit_ menu) - generates a perfect loop from multiple animations on separate layers with a different number of frames.
 
 Known issues:
 
