@@ -1,0 +1,24 @@
+{
+  "name": "animation-suite",
+  "displayName": "Animation Suite",
+  "description": "Extension that supercharges Aseprite's animation capabilities.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kacper Woźniak",
+    "email": "kac.wozniak@gmail.com",
+    "url": "https://thkaspar.itch.io/"
+  },
+  "contributors": [],
+  "publisher": "",
+  "license": "CC-BY-4.0",
+  "categories": [
+    "Scripts"
+  ],
+  "contributes": {
+    "scripts": [
+      {
+        "path": "./AnimationSuite.lua"
+      }
+    ]
+  }
+}
