@@ -20,17 +20,17 @@ Contains:
 
 - **Add Inbetween Frames** - adds in between frames based on position.
 
-- **Analyze Colors** - analyzes color usage, allows for changing any of the used colors and palette sorting
+- **Analyze Colors** - provides statistics regarding color usage, allows for changing any of the used colors and palette sorting.
 
 ## On-Screen Controls
 
-An extension that adds On-Screen Controls for touch screen users.
+An extension for [Aseprite](https://www.aseprite.org/) that adds on-screen controls for touch screen users.
 
 ## Animation Suite
 
 An extension for [Aseprite](https://www.aseprite.org/) that adds animation-related functionalities:
 
-- **Import Animation** - allows for importing an animation from another sprite with an on-screen guide. Source animation can be based on a layer, a tags, or a selection. Imported animation can be static or move in a linear or sine pattern.
+- **Import Animation** - allows for importing an animation from another sprite with an on-screen guide. Source animation can be based on a layer, a tag, or a selection. Imported animation can be static or move in a linear or sine pattern.
 - **Loop Animation** - generates a perfect loop from multiple animations on separate layers with a different number of frames.
 
 Known issues:
