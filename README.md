@@ -18,7 +18,7 @@ Contains:
 
 - **Advanced Scaling** (in _Sprite_ menu) - allows for upscaling pixel art without introducing new colors using a variety of algorithms: Nearest Neighbor, Eagle, Scale2x, Scale3x and a custom algorithm named Hawk.
 
-- **Add Inbetween Frames** (in _Frame_ menu) - adds in between frames based on position.
+- **Add Inbetween Frames** (in _Frame_ menu) - adds in-between frames based on position.
 
 - **Analyze Colors** (in _Sprite_ menu) - provides statistics regarding color usage, allows for changing any of the used colors and palette sorting.
 
@@ -36,7 +36,7 @@ An extension for [Aseprite](https://www.aseprite.org/) that adds animation-relat
 
 Known issues:
 
-- Background layers aren't in general cause issues for the extension, it's recommended to avoid them.
+- Background layers in general cause issues for the extension, it's recommended to avoid them.
 
 ## AsepriteOS
 
