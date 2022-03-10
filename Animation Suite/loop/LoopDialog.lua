@@ -5,7 +5,8 @@ local LoopDialog = {
     dialog = nil,
     bounds = nil,
     layers = {},
-    layersToLoop = {}
+    layersToLoop = {},
+    maxNumberOfFrames = 1024
 }
 
 function LoopDialog:GetAvailableLayers()
@@ -72,15 +73,18 @@ function LoopDialog:Show()
     }:number{
         id = "maxNumberOfFrames",
         label = "Max # of Frames",
-        text = tostring(1024),
-        decimals = 0
+        text = tostring(self.maxNumberOfFrames),
+        decimals = 0,
+        onchange = function()
+            self.maxNumberOfFrames = self.dialog.data["maxNumberOfFrames"]
+        end
     }:button{
         text = "Loop Animations",
         enabled = #self.layersToLoop > 1,
         onclick = function()
             app.transaction(function()
                 Looper:Loop(app.activeSprite, self.layersToLoop,
-                            self.dialog.data["maxNumberOfFrames"])
+                            self.maxNumberOfFrames)
             end)
             self.dialog:close()
         end
