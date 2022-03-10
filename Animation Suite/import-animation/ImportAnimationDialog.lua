@@ -300,12 +300,16 @@ function ImportAnimationDialog:_InitializeData()
     -- Start Position Section
     local previousCel = self.targetLayer and self.targetFrameNumber > 1 and
                             self.targetLayer:cel(self.targetFrameNumber - 1)
+    local previousCelX = previousCel and
+                             (previousCel.position.x +
+                                 (previousCel.bounds.width / 2))
+    local previousCelY = previousCel and
+                             (previousCel.position.y +
+                                 (previousCel.bounds.height / 2))
 
-    self.data.startPositionX = self.data.startPositionX or
-                                   (previousCel and previousCel.position.x) or
+    self.data.startPositionX = self.data.startPositionX or previousCelX or
                                    self.targetSprite.width / 2
-    self.data.startPositionY = self.data.startPositionY or
-                                   (previousCel and previousCel.position.y) or
+    self.data.startPositionY = self.data.startPositionY or previousCelY or
                                    self.targetSprite.height / 2
 
     -- End Position Section
