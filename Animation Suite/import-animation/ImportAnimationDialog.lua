@@ -290,6 +290,19 @@ function ImportAnimationDialog:_UpdateEndPosition()
     }
 end
 
+function ImportAnimationDialog:_GetPreviousCel()
+    if self.targetLayer == nil then return nil end
+
+    -- Return current cel if it exists
+    local currentCel = self.targetLayer:cel(self.targetFrameNumber)
+    if currentCel ~= nil then return currentCel end
+
+    -- Else, return the previous cel if it exists
+    local previousCel = self.targetFrameNumber > 1 and
+                            self.targetLayer:cel(self.targetFrameNumber - 1)
+    if previousCel ~= nil then return previousCel end
+end
+
 function ImportAnimationDialog:_InitializeData()
     -- Source Section
     self.data.sourceType = self.data.sourceType or SourceType.Layer
@@ -298,8 +311,7 @@ function ImportAnimationDialog:_InitializeData()
     self.data.movementType = self.data.movementType or MovementType.Linear
 
     -- Start Position Section
-    local previousCel = self.targetLayer and self.targetFrameNumber > 1 and
-                            self.targetLayer:cel(self.targetFrameNumber - 1)
+    local previousCel = self:_GetPreviousCel()
     local previousCelX = previousCel and
                              (previousCel.position.x +
                                  (previousCel.bounds.width / 2))
