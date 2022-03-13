@@ -36,6 +36,7 @@ An extension for [Aseprite](https://www.aseprite.org/) that adds animation-relat
 
 Known issues:
 
+- **Extension doesn't work with the BETA version of Aseprite** - at least not by default, in relation to an open issue on GitHub the extension crashes if used with an experimental option "UI with multiple windows". This can be disabled in _Edit_ > _Preferences_ > _Experimental_ > _UI with multiple windows_.
 - Background layers in general cause issues for the extension, it's recommended to avoid them.
 
 ## AsepriteOS
