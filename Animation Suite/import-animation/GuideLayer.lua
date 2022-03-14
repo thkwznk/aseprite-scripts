@@ -38,7 +38,7 @@ function GuideLayer:_CreateLayer(sprite)
 end
 
 function GuideLayer:_CreateBackgroundImage(sprite)
-    local image = Image(sprite.width, sprite.height, sprite.colorMode)
+    local image = Image(sprite.spec)
 
     for x = 0, sprite.width - 1 do
         for y = 0, sprite.height - 1 do
@@ -74,49 +74,43 @@ end
 function GuideLayer:Update(imageProvider, positionCalculator)
     self:_RevertLastUpdate()
 
-    local timer = Logger:StartTimer("Updating Guide Layer")
-
     if self.layer == nil then return end
 
     local drawImageTimer = Logger:StartTimer("Drawing new background image")
 
     local newImage = self.backgroundImage:clone()
 
-    local firstX = nil
-    local firstY = nil
-    local lastX = 0
-    local lastY = 0
-
-    -- Draw a guide to show how the sprite will move
-    for x, y in positionCalculator:GetPositions() do
-        firstX = firstX or x
-        firstY = firstY or y
-        lastX = x
-        lastY = y
-
-        newImage:drawPixel(x, y, self.guideColor)
-    end
+    local firstX = positionCalculator.startPosition.X
+    local firstY = positionCalculator.startPosition.Y
 
     -- Draw source sprite preview
-    if firstX ~= nil and firstY ~= nil then
-        local previewImage = imageProvider:GetPreviewImage()
+    local previewImage = imageProvider:GetPreviewImage()
+    if previewImage ~= nil then
+        local previewX = firstX - (previewImage.width / 2)
+        local previewY = firstY - (previewImage.height / 2)
 
-        if previewImage ~= nil then
-            local previewX = firstX - (previewImage.width / 2)
-            local previewY = firstY - (previewImage.height / 2)
+        newImage:drawImage(previewImage, Point(previewX, previewY))
 
-            newImage:drawImage(previewImage, Point(previewX, previewY))
-
-            Drawer:DrawRectangle(newImage, previewX - 2, previewY - 2,
-                                 previewImage.width + 4,
-                                 previewImage.height + 4, self.guideColor)
-        end
+        Drawer:DrawRectangle(newImage, previewX - 2, previewY - 2,
+                             previewImage.width + 4, previewImage.height + 4,
+                             self.guideColor)
     end
 
     -- Draw the sprite center crosshair
     if firstX ~= nil and firstY ~= nil then
         Drawer:DrawCrosshair(newImage, firstX, firstY, self.guideColor,
                              self.backgroundColor)
+    end
+
+    local lastX = 0
+    local lastY = 0
+
+    -- Draw a guide to show how the sprite will move
+    for x, y in positionCalculator:GetPositions() do
+        lastX = x
+        lastY = y
+
+        newImage:drawPixel(x, y, self.guideColor)
     end
 
     -- Draw the "end on" line
@@ -133,9 +127,6 @@ function GuideLayer:Update(imageProvider, positionCalculator)
     Logger:EndTimer(drawImageTimer)
 
     app.transaction(function() self.layer.cels[1].image = newImage end)
-
-    Logger:EndTimer(timer)
-
     app.refresh()
 end
 
