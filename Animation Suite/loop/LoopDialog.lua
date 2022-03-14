@@ -88,7 +88,8 @@ function LoopDialog:Show()
             end)
             self.dialog:close()
         end
-    }
+    } --
+    :button{text = "Cancel"}
 
     -- Reset bounds
     if self.bounds ~= nil then

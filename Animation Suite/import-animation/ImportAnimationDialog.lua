@@ -235,7 +235,8 @@ function ImportAnimationDialog:Create(config)
         text = "Import",
         focus = true,
         onclick = function() self:_HandleImportButtonClick() end
-    }
+    } --
+    :button{text = "Cancel"}
 
     -- Update visibility
     self:_UpdateEndPosition()
