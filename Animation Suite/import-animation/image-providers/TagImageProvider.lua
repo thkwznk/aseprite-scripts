@@ -41,6 +41,11 @@ function TagImageProvider:_GetImage(frameNumber)
     image = ImageConverter:Convert(image, self.sprite.palettes[1],
                                    self.targetSprite.palettes[1],
                                    self.targetSprite.colorMode)
+
+    local fh = self.sourceParams.FlipHorizontal
+    local fv = self.sourceParams.FlipVertical
+    if fh or fv then image = ImageConverter:Flip(image, fh, fv) end
+
     return image
 end
 

@@ -1,46 +1,97 @@
 local ImageConverter = {}
 
-function ImageConverter:Convert(sourceImage, sourcePalette, targetPalette,
-                                targetColorMode)
-    local sourceColorMode = sourceImage.colorMode
-
-    if sourceColorMode == targetColorMode then return sourceImage end
-
-    if sourceColorMode == ColorMode.INDEXED and targetColorMode == ColorMode.RGB then
-        return self:ConvertIndexedToRGB(sourceImage, sourcePalette)
-    end
-
-    if sourceColorMode == ColorMode.GRAY and targetColorMode == ColorMode.RGB then
-        return self:ConvertGrayToRGB(sourceImage)
-    end
-
-    if sourceColorMode == ColorMode.INDEXED and targetColorMode ==
-        ColorMode.GRAY then
-        return self:ConvertIndexedToGray(sourceImage, sourcePalette)
-    end
-
-    if sourceColorMode == ColorMode.RGB and targetColorMode == ColorMode.GRAY then
-        return self:ConvertRGBToGray(sourceImage)
-    end
-
-    if sourceColorMode == ColorMode.GRAY and targetColorMode ==
-        ColorMode.INDEXED then
-        return self:ConvertGrayToIndexed(sourceImage, targetPalette)
-    end
-
-    if sourceColorMode == ColorMode.RGB and targetColorMode == ColorMode.INDEXED then
-        return self:ConvertRGBToIndexed(sourceImage, targetPalette)
-    end
-end
-
-function ImageConverter:ConvertIndexedToRGB(sourceImage, sourcePalette)
-    local convertedImage = Image(sourceImage.width, sourceImage.height,
-                                 ColorMode.RGB)
+function ImageConverter:Flip(sourceImage, flipHorizontal, flipVertical)
+    local flippedImage = Image(sourceImage.spec)
 
     for pixel in sourceImage:pixels() do
         local pixelValue = pixel()
+        local x = flipHorizontal and (sourceImage.width - 1 - pixel.x) or
+                      pixel.x
+        local y = flipVertical and (sourceImage.height - 1 - pixel.y) or
+                      pixel.y
+
+        flippedImage:drawPixel(x, y, pixelValue)
+    end
+
+    return flippedImage
+end
+
+function ImageConverter:Convert(sourceImage, sourcePalette, targetPalette,
+                                targetColorMode)
+    if sourceImage.colorMode == targetColorMode then return sourceImage end
+
+    if sourceImage.colorMode == ColorMode.RGB then
+        if targetColorMode == ColorMode.GRAY then
+            return self:ConvertRGBToGray(sourceImage)
+        elseif targetColorMode == ColorMode.INDEXED then
+            return self:ConvertRGBToIndexed(sourceImage, targetPalette)
+        end
+    end
+
+    if sourceImage.colorMode == ColorMode.INDEXED then
+        return
+            self:ConvertIndexedTo(sourceImage, sourcePalette, targetColorMode)
+    end
+
+    if sourceImage.colorMode == ColorMode.GRAY then
+        if targetColorMode == ColorMode.RGB then
+            return self:ConvertGrayToRGB(sourceImage)
+        elseif targetColorMode == ColorMode.INDEXED then
+            return self:ConvertGrayToIndexed(sourceImage, targetPalette)
+        end
+    end
+end
+
+function ImageConverter:ConvertRGBToGray(sourceImage)
+    local convertedImage = Image(sourceImage.width, sourceImage.height,
+                                 ColorMode.GRAY)
+
+    for pixel in sourceImage:pixels() do
+        local pixelValue = pixel()
+        convertedImage:drawPixel(pixel.x, pixel.y, Color {
+            r = app.pixelColor.rgbaR(pixelValue),
+            g = app.pixelColor.rgbaG(pixelValue),
+            b = app.pixelColor.rgbaB(pixelValue),
+            a = app.pixelColor.rgbaA(pixelValue)
+        })
+    end
+
+    return convertedImage
+end
+
+function ImageConverter:ConvertRGBToIndexed(sourceImage, targetPalette)
+    local convertedImage = Image(sourceImage.width, sourceImage.height,
+                                 ColorMode.INDEXED)
+
+    local cache = {}
+
+    for pixel in sourceImage:pixels() do
+        local pixelValue = pixel()
+
+        if cache[pixelValue] == nil then
+            local r = app.pixelColor.rgbaR(pixelValue)
+            local g = app.pixelColor.rgbaG(pixelValue)
+            local b = app.pixelColor.rgbaB(pixelValue)
+            local a = app.pixelColor.rgbaA(pixelValue)
+            cache[pixelValue] = self:_GetClosestColorFromPalette(r, g, b, a,
+                                                                 targetPalette)
+        end
+
+        convertedImage:drawPixel(pixel.x, pixel.y, cache[pixelValue])
+    end
+
+    return convertedImage
+end
+
+function ImageConverter:ConvertIndexedTo(sourceImage, sourcePalette,
+                                         targetColorMode)
+    local convertedImage = Image(sourceImage.width, sourceImage.height,
+                                 targetColorMode)
+
+    for pixel in sourceImage:pixels() do
+        local paletteIndex = pixel()
         convertedImage:drawPixel(pixel.x, pixel.y,
-                                 sourcePalette:getColor(pixelValue))
+                                 sourcePalette:getColor(paletteIndex))
     end
 
     return convertedImage
@@ -61,20 +112,7 @@ function ImageConverter:ConvertGrayToRGB(sourceImage)
     return convertedImage
 end
 
-function ImageConverter:ConvertIndexedToGray(sourceImage, sourcePalette)
-    local convertedImage = Image(sourceImage.width, sourceImage.height,
-                                 ColorMode.GRAY)
-
-    for pixel in sourceImage:pixels() do
-        local pixelValue = pixel()
-        convertedImage:drawPixel(pixel.x, pixel.y,
-                                 sourcePalette:getColor(pixelValue))
-    end
-
-    return convertedImage
-end
-
-function ImageConverter:ConvertRGBToIndexed(sourceImage, targetPalette)
+function ImageConverter:ConvertGrayToIndexed(sourceImage, targetPalette)
     local convertedImage = Image(sourceImage.width, sourceImage.height,
                                  ColorMode.INDEXED)
 
@@ -84,19 +122,10 @@ function ImageConverter:ConvertRGBToIndexed(sourceImage, targetPalette)
         local pixelValue = pixel()
 
         if cache[pixelValue] == nil then
-            cache[pixelValue] = self:_GetClosestColorFromPalette(app.pixelColor
-                                                                     .rgbaR(
-                                                                     pixelValue),
-                                                                 app.pixelColor
-                                                                     .rgbaG(
-                                                                     pixelValue),
-                                                                 app.pixelColor
-                                                                     .rgbaB(
-                                                                     pixelValue),
-                                                                 app.pixelColor
-                                                                     .rgbaA(
-                                                                     pixelValue),
-                                                                 targetPalette)
+            local v = app.pixelColor.grayaV(pixelValue)
+            local a = app.pixelColor.grayaA(pixelValue)
+            cache[pixelValue] = self:_GetClosestGrayFromPalette(v, a,
+                                                                targetPalette)
         end
 
         convertedImage:drawPixel(pixel.x, pixel.y, cache[pixelValue])
@@ -123,31 +152,6 @@ function ImageConverter:_GetClosestColorFromPalette(r, g, b, a, palette)
     return resultIndex
 end
 
-function ImageConverter:ConvertGrayToIndexed(sourceImage, targetPalette)
-    local convertedImage = Image(sourceImage.width, sourceImage.height,
-                                 ColorMode.INDEXED)
-
-    local cache = {}
-
-    for pixel in sourceImage:pixels() do
-        local pixelValue = pixel()
-
-        if cache[pixelValue] == nil then
-            cache[pixelValue] = self:_GetClosestGrayFromPalette(app.pixelColor
-                                                                    .grayaV(
-                                                                    pixelValue),
-                                                                app.pixelColor
-                                                                    .grayaA(
-                                                                    pixelValue),
-                                                                targetPalette)
-        end
-
-        convertedImage:drawPixel(pixel.x, pixel.y, cache[pixelValue])
-    end
-
-    return convertedImage
-end
-
 function ImageConverter:_GetClosestGrayFromPalette(g, a, palette)
     local resultIndex = 0
     local closestValue = math.maxinteger
@@ -163,23 +167,6 @@ function ImageConverter:_GetClosestGrayFromPalette(g, a, palette)
     end
 
     return resultIndex
-end
-
-function ImageConverter:ConvertRGBToGray(sourceImage)
-    local convertedImage = Image(sourceImage.width, sourceImage.height,
-                                 ColorMode.GRAY)
-
-    for pixel in sourceImage:pixels() do
-        local pixelValue = pixel()
-        convertedImage:drawPixel(pixel.x, pixel.y, Color {
-            r = app.pixelColor.rgbaR(pixelValue),
-            g = app.pixelColor.rgbaG(pixelValue),
-            b = app.pixelColor.rgbaB(pixelValue),
-            a = app.pixelColor.rgbaA(pixelValue)
-        })
-    end
-
-    return convertedImage
 end
 
 return ImageConverter

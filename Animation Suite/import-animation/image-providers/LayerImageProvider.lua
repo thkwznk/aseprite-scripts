@@ -53,6 +53,10 @@ function LayerImageProvider:_GetImage(cel)
                         self.targetSprite.colorMode)
     image:drawImage(convertedImage, cel.position)
 
+    local fh = self.sourceParams.FlipHorizontal
+    local fv = self.sourceParams.FlipVertical
+    if fh or fv then image = ImageConverter:Flip(image, fh, fv) end
+
     return image
 end
 

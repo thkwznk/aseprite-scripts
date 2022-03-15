@@ -71,6 +71,10 @@ function SelectionImageProvider:_GetImage(index)
                         self.targetSprite.colorMode)
     image:drawImage(selectedImage, Point(-positionDelta, 0))
 
+    local fh = self.sourceParams.FlipHorizontal
+    local fv = self.sourceParams.FlipVertical
+    if fh or fv then image = ImageConverter:Flip(image, fh, fv) end
+
     return image
 end
 

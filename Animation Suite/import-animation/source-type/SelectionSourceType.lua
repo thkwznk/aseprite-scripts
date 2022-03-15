@@ -11,6 +11,8 @@ function SelectionSourceType:SetSourceDialogSection(sprite, dialog, onchange,
     self.sourceSprite = self.sourceSprite or sprite
     self.frameWidth = self.frameWidth or sprite.selection.bounds.height
     self.frameHeight = self.frameHeight or sprite.selection.bounds.height
+    self.flipHorizontal = self.flipHorizontal or false
+    self.flipVertical = self.flipVertical or false
 
     dialog:slider{
         id = "source-frame-width",
@@ -35,11 +37,34 @@ function SelectionSourceType:SetSourceDialogSection(sprite, dialog, onchange,
             onchange()
         end,
         onrelease = onrelease
+    } --
+    :check{
+        id = "source-flip-horizontal",
+        label = "Flip",
+        text = "Horizontal",
+        selected = self.flipHorizontal,
+        onclick = function()
+            self.flipHorizontal = dialog.data["source-flip-horizontal"]
+            onchange()
+        end
+    } --
+    :check{
+        id = "source-flip-vertical",
+        text = "Vertical",
+        selected = self.flipVertical,
+        onclick = function()
+            self.flipVertical = dialog.data["source-flip-vertical"]
+            onchange()
+        end
     }
 end
 
 function SelectionSourceType:GetSourceParams()
-    return {Frame = {width = self.frameWidth, height = self.frameHeight}}
+    return {
+        Frame = {width = self.frameWidth, height = self.frameHeight},
+        FlipHorizontal = self.flipHorizontal,
+        FlipVertical = self.flipVertical
+    }
 end
 
 function SelectionSourceType:GetSourceSize()
