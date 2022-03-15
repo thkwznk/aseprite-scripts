@@ -1,23 +1,15 @@
 Tweener = dofile("./Tweener.lua");
 
-function getFirstAndLastFrameNumber(sprite)
-    if app.range.isEmpty then return {first = 1, last = #sprite.frames} end
-
-    local first = #sprite.frames;
-    local last = 1;
-
-    for _, frame in ipairs(app.range.frames) do
-        local frameNumber = frame.frameNumber;
-        if frameNumber < first then first = frameNumber; end
-        if frameNumber > last then last = frameNumber; end
-    end
-
-    return {first = first, last = last}
+function SelectFrames(from, to)
+    local frames = {}
+    for i = from, to do table.insert(frames, i) end
+    app.range.frames = frames
 end
 
 return function(dialogTitle)
     local dialog = Dialog(dialogTitle)
-    local frameNumbers = getFirstAndLastFrameNumber(app.activeSprite)
+
+    if app.range.isEmpty then SelectFrames(1, #app.activeSprite.frames) end
 
     local function onchange()
         local firstFrame = dialog.data["firstFrame"]
@@ -26,9 +18,7 @@ return function(dialogTitle)
         dialog:modify{id = "tweenButton", enabled = firstFrame < lastFrame}
 
         -- Highlight selected frames
-        local frames = {}
-        for i = firstFrame, lastFrame do table.insert(frames, i) end
-        app.range.frames = frames
+        SelectFrames(firstFrame, lastFrame)
     end
 
     dialog --
@@ -38,7 +28,7 @@ return function(dialogTitle)
         label = "From",
         min = 1,
         max = #app.activeSprite.frames,
-        value = frameNumbers.first,
+        value = app.range.frames[1].frameNumber,
         onchange = onchange
     } --
     :slider{
@@ -46,7 +36,7 @@ return function(dialogTitle)
         label = "To",
         min = 1,
         max = #app.activeSprite.frames,
-        value = frameNumbers.last,
+        value = app.range.frames[#app.range.frames].frameNumber,
         onchange = onchange
     } --
     :separator() --
