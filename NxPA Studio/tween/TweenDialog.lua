@@ -19,11 +19,16 @@ return function(dialogTitle)
     local dialog = Dialog(dialogTitle)
     local frameNumbers = getFirstAndLastFrameNumber(app.activeSprite)
 
-    local function validateButton()
-        dialog:modify{
-            id = "tweenButton",
-            enabled = dialog.data["firstFrame"] < dialog.data["lastFrame"]
-        }
+    local function onchange()
+        local firstFrame = dialog.data["firstFrame"]
+        local lastFrame = dialog.data["lastFrame"]
+
+        dialog:modify{id = "tweenButton", enabled = firstFrame < lastFrame}
+
+        -- Highlight selected frames
+        local frames = {}
+        for i = firstFrame, lastFrame do table.insert(frames, i) end
+        app.range.frames = frames
     end
 
     dialog --
@@ -34,7 +39,7 @@ return function(dialogTitle)
         min = 1,
         max = #app.activeSprite.frames,
         value = frameNumbers.first,
-        onchange = validateButton
+        onchange = onchange
     } --
     :slider{
         id = "lastFrame",
@@ -42,7 +47,7 @@ return function(dialogTitle)
         min = 1,
         max = #app.activeSprite.frames,
         value = frameNumbers.last,
-        onchange = validateButton
+        onchange = onchange
     } --
     :separator() --
     :number{id = "framesToAdd", label = "# of frames to add", text = "1"} --
