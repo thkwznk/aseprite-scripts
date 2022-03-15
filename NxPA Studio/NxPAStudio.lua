@@ -20,12 +20,13 @@ function init(plugin)
         id = "add-inbetween-frame",
         title = "Add Inbetween Frames",
         group = "cel_delete",
+        onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             -- Check is UI available
             if not app.isUIAvailable then return end
 
-            local dialog = TweenDialog("Add Inbetween Frames");
-            dialog:show{wait = false};
+            local dialog = TweenDialog("Add Inbetween Frames")
+            dialog:show{wait = true}
         end
     }
 
