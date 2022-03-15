@@ -1,0 +1,12 @@
+{
+    "Lua.diagnostics.globals": [
+        "Dialog",
+        "app",
+        "Image",
+        "Color",
+        "Point",
+        "ColorMode",
+        "Sprite",
+        "ColorSpace"
+    ]
+}
