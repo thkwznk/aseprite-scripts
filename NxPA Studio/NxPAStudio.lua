@@ -7,12 +7,13 @@ function init(plugin)
         id = "advanced-scaling",
         title = "Advanced Scaling",
         group = "sprite_size",
+        onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             -- Check is UI available
             if not app.isUIAvailable then return end
 
-            local dialog = ScaleDialog("Advanced Scaling");
-            dialog:show{wait = false};
+            local dialog = ScaleDialog("Advanced Scaling")
+            dialog:show{wait = false}
         end
     }
 
