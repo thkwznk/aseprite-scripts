@@ -35,13 +35,14 @@ function init(plugin)
         id = "color-analyzer",
         title = "Analyze Colors",
         group = "sprite_color",
+        onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             -- Check are UI and sprite available
             if not app.isUIAvailable then return end
             if app.activeSprite == nil then return end
 
-            ColorAnalyzerDialog:Create("Analyze Colors");
-            ColorAnalyzerDialog:Show(false);
+            ColorAnalyzerDialog:Create("Analyze Colors")
+            ColorAnalyzerDialog:Show(false)
         end
     }
 end
