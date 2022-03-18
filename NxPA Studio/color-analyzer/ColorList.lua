@@ -2,81 +2,122 @@ SortOptions = dofile("./SortOptions.lua")
 
 local ColorList = {}
 
-function ColorList:GetColorsFromFrame(sprite, frame)
-    local image = Image(sprite.spec)
-    image:drawSprite(sprite, frame)
+function ColorList:LoadColorsFromImage(image)
+    for pixel in image:pixels() do
+        local color = Color(pixel())
 
-    for pixel in image:pixels() do self:Add(pixel()) end
-end
+        -- Skip fully transparent pixels
+        if color.alpha == 0 then goto skipPixel end
 
-function ColorList:Add(value)
-    for i, color in ipairs(self) do
-        if color.value == value then
-            self[i].count = self[i].count + 1
-            return
+        for i, colorEntry in ipairs(self) do
+            if colorEntry.color.rgbaPixel == color.rgbaPixel then
+                self[i].count = self[i].count + 1
+                goto skipPixel
+            end
         end
+
+        table.insert(self, {color = color, count = 1})
+
+        ::skipPixel::
     end
 
+    return self
+end
+
+function ColorList:GetColors(sortOption)
+    local colors = {}
+    for _, color in ipairs(self) do table.insert(colors, color) end
+
+    table.sort(colors, self:GetSortFunction(sortOption))
+
+    return colors
+end
+
+function ColorList:GetSortFunction(sortOption)
+    if sortOption == SortOptions.UsageDesc then
+        return function(a, b) return a.count > b.count end
+    elseif sortOption == SortOptions.UsageAsc then
+        return function(a, b) return a.count < b.count end
+    elseif sortOption == SortOptions.ValueDesc then
+        return function(a, b) return a.color.value > b.color.value end
+    elseif sortOption == SortOptions.ValueAsc then
+        return function(a, b) return a.color.value < b.color.value end
+    end
+end
+
+function ColorList:SortPalette(colorEntries)
+    local colorMode = app.activeImage.spec.colorMode
+
+    if app.activeImage.spec.colorMode == ColorMode.INDEXED then
+        -- Changing format to RGB temporarily to preserve color in the image
+        app.command.ChangePixelFormat {format = "rgb"}
+
+        self:CopyToPalette(colorEntries, colorMode)
+
+        app.command.ChangePixelFormat {format = "indexed"}
+    else
+        self:CopyToPalette(colorEntries, colorMode)
+    end
+end
+
+function ColorList:CopyToPalette(colorEntries, colorMode)
     local palette = app.activeSprite.palettes[1]
+
+    local notUsedPaletteColors = self:GetNotUsedPaletteColors(colorEntries,
+                                                              palette, colorMode)
     local paletteIndex = 0
 
-    local color = Color(value)
+    if colorMode == ColorMode.INDEXED then
+        -- In the INDEXED mode the first colors is transparent, we don't want to move it
+        paletteIndex = 1;
+    end
 
-    for i = 0, #palette - 1 do
+    -- Add "paletteIndex" to accomodate for the ommited transparent color in the INDEXED mode
+    palette:resize(#colorEntries + #notUsedPaletteColors + paletteIndex)
+
+    for _, colorEntry in ipairs(colorEntries) do
+        palette:setColor(paletteIndex, colorEntry.color)
+        paletteIndex = paletteIndex + 1
+    end
+
+    for _, color in ipairs(notUsedPaletteColors) do
+        palette:setColor(paletteIndex, color)
+        paletteIndex = paletteIndex + 1
+    end
+end
+
+function ColorList:GetNotUsedPaletteColors(colorEntries, palette, colorMode)
+    local notUsedPaletteColors = {}
+    local startIndex = 0;
+
+    if colorMode == ColorMode.INDEXED then
+        -- In the INDEXED mode the first colors is transparent, we don't want to move it
+        startIndex = 1;
+    end
+
+    for i = startIndex, #palette - 1 do
         local paletteColor = palette:getColor(i)
+        local paletteColorUsed = false
 
-        if paletteColor.rgbaPixel == color.rgbaPixel then
-            paletteIndex = i
-            break
+        for _, colorEntry in ipairs(colorEntries) do
+            if paletteColor.rgbaPixel == colorEntry.color.rgbaPixel then
+                paletteColorUsed = true
+                break
+            end
+        end
+
+        if not paletteColorUsed then
+            table.insert(notUsedPaletteColors, paletteColor)
         end
     end
 
-    -- Saving separate values for r, g, b and a is the only way I found to preserve color in Indexed Color Mode
-    table.insert(self, {
-        paletteIndex = paletteIndex,
-        value = value,
-        red = color.red,
-        green = color.green,
-        blue = color.blue,
-        alpha = color.alpha,
-        colorValue = color.value,
-        count = 1
-    })
+    return notUsedPaletteColors
 end
 
-function ColorList:Sort(sortOption)
-    if sortOption == SortOptions.UsageDesc then
-        table.sort(self, function(a, b) return a.count > b.count end)
-    elseif sortOption == SortOptions.UsageAsc then
-        table.sort(self, function(a, b) return a.count < b.count end)
-    elseif sortOption == SortOptions.ValueDesc then
-        table.sort(self, function(a, b)
-            return a.colorValue > b.colorValue
-        end)
-    elseif sortOption == SortOptions.ValueAsc then
-        table.sort(self, function(a, b)
-            return a.colorValue < b.colorValue
-        end)
-    end
+function ColorList:Clear()
+    for i, _ in ipairs(self) do self[i] = nil end
+
+    return self
 end
-
-function ColorList:CopyToPalette(palette)
-    for i, color in ipairs(self) do palette:setColor(i, color.value) end
-end
-
-function ColorList:CopyToIndexedPalette(palette)
-    -- Changing format to RGB temporarily to preserve color in the image
-    app.command.ChangePixelFormat {format = "rgb"}
-
-    for i, color in ipairs(self) do
-        color.value = palette:getColor(color.value)
-    end
-
-    self:CopyToPalette(palette)
-
-    app.command.ChangePixelFormat {format = "indexed"}
-end
-
-function ColorList:Clear() for i, _ in ipairs(self) do self[i] = nil end end
 
 return ColorList

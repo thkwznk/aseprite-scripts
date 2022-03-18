@@ -42,7 +42,7 @@ function init(plugin)
             if app.activeSprite == nil then return end
 
             ColorAnalyzerDialog:Create("Analyze Colors")
-            ColorAnalyzerDialog:Show(false)
+            ColorAnalyzerDialog:Show()
         end
     }
 end

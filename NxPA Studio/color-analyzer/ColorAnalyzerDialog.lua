@@ -1,27 +1,23 @@
-Transaction = dofile("../shared/Transaction.lua")
 ColorList = dofile("./ColorList.lua")
 SortOptions = dofile("./SortOptions.lua")
 
+local PageSize<const> = 16
 local MinDialogWidth<const> = 250
 
-local ColorAnalyzerDialog = {
-    title = nil,
-    dialog = nil,
-    sortBy = SortOptions.UsageDesc,
-    page = 1,
-    pageSize = 16
-}
+local ColorAnalyzerDialog = {}
 
 function ColorAnalyzerDialog:Create(title)
     self.title = title or self.title
-
-    local sprite = app.activeSprite
+    self.sortBy = self.sortBy or SortOptions.UsageDesc
+    self.page = self.page or 1
 
     local function onChange()
-        -- Reset page number
         self.page = 1
         self:Refresh()
     end
+
+    -- Saving the active sprite to a variable to reference it in the dialog's "onclose" function
+    local sprite = app.activeSprite
     local onSiteChange = app.events:on('sitechange', onChange)
     local onSpriteChange = sprite and sprite.events:on('change', onChange)
 
@@ -43,11 +39,9 @@ function ColorAnalyzerDialog:Create(title)
         return
     end
 
-    local palette = app.activeSprite.palettes[1]
-    local isIndexedPalette = app.activeImage.spec.colorMode == ColorMode.INDEXED
-
     -- Colors
-    self.dialog:combobox{
+    self.dialog --
+    :combobox{
         id = "sortBy",
         label = "Sort By",
         option = self.sortBy,
@@ -56,18 +50,17 @@ function ColorAnalyzerDialog:Create(title)
             self.sortBy = self.dialog.data["sortBy"]
             self:Refresh()
         end
-    }
+    } --
+    :separator{text = "Colors"}
 
-    self.dialog:separator{text = "Colors"}
+    local image = app.activeCel.image
+    local colorEntries = ColorList --
+    :Clear() --
+    :LoadColorsFromImage(image) --
+    :GetColors(self.sortBy)
+    local numberOfPages = math.ceil(#colorEntries / PageSize)
 
-    ColorList:Clear()
-    ColorList:GetColorsFromFrame(sprite, app.activeFrame)
-    ColorList:Sort(self.sortBy)
-
-    local pageSkip = (self.page - 1) * (self.pageSize)
-    local numberOfColorsOnPage = math.min(self.pageSize, #ColorList - pageSkip)
-    local numberOfPages = math.ceil(#ColorList / self.pageSize)
-
+    -- Page Buttons
     local hasPreviousPage = self.page > 1
     local hasNextPage = self.page < numberOfPages
 
@@ -91,62 +84,24 @@ function ColorAnalyzerDialog:Create(title)
         end
     }
 
+    -- Color List
+    local pageSkip = (self.page - 1) * (PageSize)
+    local numberOfColorsOnPage = math.min(PageSize, #colorEntries - pageSkip)
+
+    local maxColorCount = 0
+    for _, colorEntry in ipairs(colorEntries) do
+        maxColorCount = maxColorCount + colorEntry.count
+    end
+
     for i = 1, numberOfColorsOnPage do
-        local color = ColorList[pageSkip + i]
-        local colorId = tostring(i)
-        local resetButtonId = "reset" .. colorId
-        local colorValue = Color(color.value)
-        local colorUsagePercent =
-            (color.count / (sprite.width * sprite.height)) * 100
+        local colorEntry = colorEntries[pageSkip + i]
+        local colorUsagePercent = (colorEntry.count / maxColorCount) * 100
 
         self.dialog --
         :color{
-            id = colorId,
             label = string.format("%.2f %%", colorUsagePercent),
-            color = colorValue,
-            onchange = function()
-                local newColorValue = self.dialog.data[colorId]
-
-                palette:setColor(color.paletteIndex, newColorValue)
-
-                if not isIndexedPalette then
-                    app.command.ReplaceColor {
-                        ui = false,
-                        from = colorValue,
-                        to = newColorValue,
-                        tolerance = 0
-                    }
-                    colorValue = Color(newColorValue)
-                end
-
-                self.dialog:modify{id = resetButtonId, visible = true}
-            end
-        } --
-        :button{
-            id = resetButtonId,
-            text = "Reset",
-            onclick = function()
-                palette:setColor(color.paletteIndex, Color {
-                    red = color.red,
-                    green = color.green,
-                    blue = color.blue,
-                    alpha = color.alpha
-                })
-
-                if not isIndexedPalette then
-                    app.command.ReplaceColor {
-                        ui = false,
-                        from = colorValue,
-                        to = color.value,
-                        tolerance = 0
-                    }
-                    colorValue = Color(color.value)
-                end
-
-                self.dialog:modify{id = colorId, color = color.value} -- Reset color on widget
-                self.dialog:modify{id = resetButtonId, visible = false} -- Hide reset button
-            end,
-            visible = false
+            color = colorEntry.color,
+            enabled = false
         }
     end
 
@@ -155,37 +110,37 @@ function ColorAnalyzerDialog:Create(title)
     :separator{text = "Palette"} --
     :button{
         text = "Sort",
-        onclick = Transaction(function()
-            if isIndexedPalette then
-                ColorList:CopyToIndexedPalette(palette)
-            else
-                ColorList:CopyToPalette(palette)
-            end
+        onclick = function()
+            app.transaction(function()
+                ColorList:SortPalette(colorEntries)
+            end)
 
             self.dialog:close()
-        end)
+        end
     } --
     :button{text = "Close"}
 end
 
 function ColorAnalyzerDialog:Refresh()
-    local bounds = self.dialog.bounds
+    if self.dialog == nil then return end
+
+    local savedBounds = self.dialog.bounds
 
     self:Close()
     self:Create()
-    self:Show(false)
+    self:Show()
 
-    local newBounds = self.dialog.bounds
-    newBounds.x = bounds.x
-    newBounds.y = bounds.y
-    newBounds.width = math.max(bounds.width, MinDialogWidth)
-    self.dialog.bounds = newBounds
+    savedBounds.height = self.dialog.bounds.height
+    self.dialog.bounds = savedBounds
 end
 
-function ColorAnalyzerDialog:Show(wait)
-    self.dialog:show{wait = wait}
+function ColorAnalyzerDialog:Show()
+    if self.dialog == nil then return end
+
+    self.dialog:show{wait = false}
 
     -- Don't display the dialog in the center of the screen, It covers the image
+    -- Also, it's a coincidence this works - it's set for every show, refresh copies old value, that's the only reson why this doesn't reset on every refresh
     local bounds = self.dialog.bounds
     bounds.x = bounds.x / 2
     bounds.width = MinDialogWidth
@@ -193,7 +148,9 @@ function ColorAnalyzerDialog:Show(wait)
 end
 
 function ColorAnalyzerDialog:Close()
-    if self.dialog ~= nil then self.dialog:close() end
+    if self.dialog == nil then return end
+
+    self.dialog:close()
 end
 
 return ColorAnalyzerDialog
