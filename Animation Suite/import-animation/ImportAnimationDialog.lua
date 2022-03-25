@@ -59,11 +59,13 @@ function ImportAnimationDialog:_GetSprites()
 end
 
 function ImportAnimationDialog:Create(config)
-    self.title = (config and config["title"]) or self.title
-    self.targetSprite = (config and config["targetSprite"]) or self.targetSprite
-    self.targetLayer = (config and config["targetLayer"]) or self.targetLayer
-    self.targetFrameNumber = (config and config["targetFrameNumber"]) or
+    self.title = (config and config.title) or self.title
+    self.targetSprite = (config and config.targetSprite) or self.targetSprite
+    self.targetLayer = (config and config.targetLayer) or self.targetLayer
+    self.targetFrameNumber = (config and config.targetFrameNumber) or
                                  self.targetFrameNumber
+    self.bounds = (config and config.bounds) or self.bounds
+    self.onclose = (config and config.onclose) or self.onclose
 
     if self.guideLayer == nil then
         self.guideLayer = GuideLayer:Create()
@@ -72,7 +74,10 @@ function ImportAnimationDialog:Create(config)
 
     self.dialog = Dialog {
         title = self.title,
-        onclose = function() self:_ClearHistory() end
+        onclose = function()
+            self:_ClearHistory()
+            self.onclose(self.bounds)
+        end
     }
 
     local spriteNames, sprites = self:_GetSprites()
@@ -241,9 +246,21 @@ function ImportAnimationDialog:Create(config)
     :button{
         text = "Import",
         focus = true,
-        onclick = function() self:_HandleImportButtonClick() end
+        onclick = function()
+            self:_HandleImportButtonClick()
+            -- Save dialog bounds to restore when reopened
+            self.bounds = self.dialog.bounds
+        end
     } --
-    :button{text = "Cancel"}
+    :button{
+        text = "Cancel",
+        onclick = function()
+            -- Save dialog bounds to restore when reopened
+            self.bounds = self.dialog.bounds
+
+            self.dialog:close()
+        end
+    }
 
     -- Update visibility
     self:_UpdateEndPosition()

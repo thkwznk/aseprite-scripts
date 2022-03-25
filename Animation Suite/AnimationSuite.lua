@@ -20,7 +20,16 @@ function init(plugin)
                 title = "Import Animation",
                 targetSprite = app.activeSprite,
                 targetLayer = app.activeLayer,
-                targetFrameNumber = app.activeFrame.frameNumber
+                targetFrameNumber = app.activeFrame.frameNumber,
+                bounds = plugin.preferences.bounds and
+                    {
+                        x = plugin.preferences.bounds.x,
+                        y = plugin.preferences.bounds.y
+                    } or nil,
+                onclose = function(bounds)
+                    plugin.preferences.bounds = bounds or
+                                                    plugin.preferences.bounds
+                end
             }
             ImportAnimationDialog:Show()
         end
