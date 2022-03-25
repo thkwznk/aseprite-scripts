@@ -4,6 +4,7 @@ MovementType = dofile("../movement-type/MovementType.lua")
 PositionCalculator = dofile("./PositionCalculator.lua")
 SinePositionCalculator = dofile("./SinePositionCalculator.lua")
 StaticPositionCalculator = dofile("./StaticPositionCalculator.lua")
+ShakePositionCalculator = dofile("./ShakePositionCalculator.lua")
 
 local PositionCalculatorFactory = {}
 
@@ -16,7 +17,8 @@ function PositionCalculatorFactory:CreatePositionCalculator(movementType,
                      startPosition.Y)
     Logger:Trace("End on: Axis = " .. tostring(endOn.Axis) .. ", Value = " ..
                      tostring(endOn.Value))
-    Logger:Trace("Speed: X = " .. params.Speed.X .. ", Y = " .. params.Speed.Y)
+    Logger:Trace("Speed: X = " .. tostring(params.Speed and params.Speed.X) ..
+                     ", Y = " .. tostring(params.Speed and params.Speed.Y))
 
     local calculator = nil
 
@@ -32,8 +34,11 @@ function PositionCalculatorFactory:CreatePositionCalculator(movementType,
         calculator = LinearPositionCalculator:Create()
     end
 
-    calculator:Init(startPosition, endOn, params)
+    if movementType == MovementType.Shake then
+        calculator = ShakePositionCalculator:Create()
+    end
 
+    calculator:Init(startPosition, endOn, params)
     return calculator
 end
 

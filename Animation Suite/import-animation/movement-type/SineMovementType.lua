@@ -88,6 +88,7 @@ function SineMovementType:Clear()
 
     self.xSpeed = 1
     self.ySpeed = 0
+    self.xRange = 0
     self.yRange = 0
 end
 

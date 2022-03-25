@@ -21,9 +21,13 @@ function PositionCalculator:Init(startPosition, endOn, params)
     Logger:Trace(
         "End On, Axis = " .. tostring(self.endOn.Axis) .. ", Value = " ..
             tostring(self.endOn.Value))
-    Logger:Trace(
-        "Movement Params, Speed, X = " .. self.movementParams.Speed.X ..
-            ", Y = " .. self.movementParams.Speed.Y)
+    Logger:Trace("Movement Params, Speed, X = " ..
+                     tostring(
+                         self.movementParams.Speed and
+                             self.movementParams.Speed.X) .. ", Y = " ..
+                     tostring(
+                         self.movementParams.Speed and
+                             self.movementParams.Speed.Y))
 end
 
 function PositionCalculator:GetPositions() end

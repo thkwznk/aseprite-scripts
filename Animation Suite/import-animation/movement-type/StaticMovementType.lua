@@ -13,9 +13,7 @@ function StaticMovementType:SetMovementDialogSection(sourceSize, dialog,
     }
 end
 
-function StaticMovementType:GetMovementParams()
-    return {Speed = {X = 0, Y = 0}, Frames = self.frames}
-end
+function StaticMovementType:GetMovementParams() return {Frames = self.frames} end
 
 function StaticMovementType:Clear() self.frames = 1 end
 
