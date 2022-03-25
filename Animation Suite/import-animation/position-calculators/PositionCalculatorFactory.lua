@@ -5,6 +5,7 @@ PositionCalculator = dofile("./PositionCalculator.lua")
 SinePositionCalculator = dofile("./SinePositionCalculator.lua")
 StaticPositionCalculator = dofile("./StaticPositionCalculator.lua")
 ShakePositionCalculator = dofile("./ShakePositionCalculator.lua")
+ParabolaPositionCalculator = dofile("./ParabolaPositionCalculator.lua")
 
 local PositionCalculatorFactory = {}
 
@@ -36,6 +37,10 @@ function PositionCalculatorFactory:CreatePositionCalculator(movementType,
 
     if movementType == MovementType.Shake then
         calculator = ShakePositionCalculator:Create()
+    end
+
+    if movementType == MovementType.Parabola then
+        calculator = ParabolaPositionCalculator:Create()
     end
 
     calculator:Init(startPosition, endOn, params)

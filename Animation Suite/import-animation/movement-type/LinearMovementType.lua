@@ -6,31 +6,31 @@ local LinearMovementType = {
     ySpeed = 0
 }
 
-function LinearMovementType:SetMovementDialogSection(sourceSize, dialog,
-                                                     onchange)
-    if sourceSize.width ~= self.sourceWidth or sourceSize.height ~=
-        self.sourceHeight then
+function LinearMovementType:SetMovementDialogSection(options)
+    local sourceWidth = options.sourceSize.width
+    local sourceHeight = options.sourceSize.height
+
+    if sourceWidth ~= self.sourceWidth or sourceHeight ~= self.sourceHeight then
         self.sourceWidth = nil
         self.sourceHeight = nil
 
-        self.xSpeed = math.min(math.max(self.xSpeed, -sourceSize.width),
-                               sourceSize.width)
-        self.ySpeed = math.min(math.max(self.ySpeed, -sourceSize.height),
-                               sourceSize.height)
+        self.xSpeed = math.min(math.max(self.xSpeed, -sourceWidth), sourceWidth)
+        self.ySpeed = math.min(math.max(self.ySpeed, -sourceHeight),
+                               sourceHeight)
     end
 
-    self.sourceWidth = self.sourceWidth or sourceSize.width
-    self.sourceHeight = self.sourceHeight or sourceSize.height
+    self.sourceWidth = self.sourceWidth or sourceWidth
+    self.sourceHeight = self.sourceHeight or sourceHeight
 
-    dialog:slider{
+    options.dialog:slider{
         id = "movement-x-speed",
         label = "X Speed",
         min = -self.sourceWidth,
         max = self.sourceWidth,
         value = self.xSpeed,
         onchange = function()
-            self.xSpeed = dialog.data["movement-x-speed"]
-            onchange()
+            self.xSpeed = options.dialog.data["movement-x-speed"]
+            options.onchange()
         end
     } --
     :slider{
@@ -40,8 +40,8 @@ function LinearMovementType:SetMovementDialogSection(sourceSize, dialog,
         max = self.sourceHeight,
         value = self.ySpeed,
         onchange = function()
-            self.ySpeed = dialog.data["movement-y-speed"]
-            onchange()
+            self.ySpeed = options.dialog.data["movement-y-speed"]
+            options.onchange()
         end
     }
 end

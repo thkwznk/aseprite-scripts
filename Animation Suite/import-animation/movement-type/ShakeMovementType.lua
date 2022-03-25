@@ -1,29 +1,31 @@
 local ShakeMovementType = {frames = 1, xRange = 1, yRange = 1}
 
-function ShakeMovementType:SetMovementDialogSection(sourceSize, dialog, onchange)
-    if sourceSize.width ~= self.sourceWidth or sourceSize.height ~=
-        self.sourceHeight then
+function ShakeMovementType:SetMovementDialogSection(options)
+    local sourceWidth = options.sourceSize.width
+    local sourceHeight = options.sourceSize.height
+
+    if sourceWidth ~= self.sourceWidth or sourceHeight ~= self.sourceHeight then
         self.sourceWidth = nil
         self.sourceHeight = nil
 
-        self.xRange = math.min(self.xRange, sourceSize.width)
-        self.yRange = math.min(self.yRange, sourceSize.height)
+        self.xRange = math.min(self.xRange, sourceWidth)
+        self.yRange = math.min(self.yRange, sourceHeight)
     end
 
-    self.sourceWidth = self.sourceWidth or sourceSize.width
-    self.sourceHeight = self.sourceHeight or sourceSize.height
+    self.sourceWidth = self.sourceWidth or sourceWidth
+    self.sourceHeight = self.sourceHeight or sourceHeight
 
     self.frames = self.frames or 1
     self.xRange = self.xRange or 1
     self.yRange = self.yRange or 1
 
-    dialog:number{
+    options.dialog:number{
         id = "frames",
         label = "Frames",
         text = tostring(self.frames),
         onchange = function()
-            self.frames = dialog.data["frames"] or 1
-            onchange()
+            self.frames = options.dialog.data["frames"] or 1
+            options.onchange()
         end
     } --
     :slider{
@@ -33,8 +35,8 @@ function ShakeMovementType:SetMovementDialogSection(sourceSize, dialog, onchange
         max = self.sourceWidth,
         value = self.xRange,
         onchange = function()
-            self.xRange = dialog.data["shake-movement-x-range"]
-            onchange()
+            self.xRange = options.dialog.data["shake-movement-x-range"]
+            options.onchange()
         end
     } --
     :slider{
@@ -44,8 +46,8 @@ function ShakeMovementType:SetMovementDialogSection(sourceSize, dialog, onchange
         max = self.sourceHeight,
         value = self.yRange,
         onchange = function()
-            self.yRange = dialog.data["shake-movement-y-range"]
-            onchange()
+            self.yRange = options.dialog.data["shake-movement-y-range"]
+            options.onchange()
         end
     } --
 end

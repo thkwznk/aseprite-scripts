@@ -1,14 +1,13 @@
 local StaticMovementType = {frames = 1}
 
-function StaticMovementType:SetMovementDialogSection(sourceSize, dialog,
-                                                     onchange)
-    dialog:number{
+function StaticMovementType:SetMovementDialogSection(options)
+    options.dialog:number{
         id = "frames",
         label = "Frames",
         text = tostring(self.frames),
         onchange = function()
-            self.frames = dialog.data["frames"] or 1
-            onchange()
+            self.frames = options.dialog.data["frames"] or 1
+            options.onchange()
         end
     }
 end

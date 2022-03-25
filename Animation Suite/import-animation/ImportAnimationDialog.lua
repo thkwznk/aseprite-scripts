@@ -180,12 +180,19 @@ function ImportAnimationDialog:Create(config)
         end
     }
 
-    self.movementType:SetMovementDialogSection(sourceSize, self.dialog,
-                                               function()
-        self:_UpdatePositionCalculator()
-        self:_UpdateGuideLayer()
-        self:_UpdateEndPosition()
-    end)
+    self.movementType:SetMovementDialogSection{
+        sourceSize = sourceSize,
+        targetSize = {
+            width = self.targetSprite.width,
+            height = self.targetSprite.height
+        },
+        dialog = self.dialog,
+        onchange = function()
+            self:_UpdatePositionCalculator()
+            self:_UpdateGuideLayer()
+            self:_UpdateEndPosition()
+        end
+    }
 
     -- End Position Section
     self.dialog:separator{id = "end-position-separator", text = "End"} --

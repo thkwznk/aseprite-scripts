@@ -8,36 +8,37 @@ local SineMovementType = {
     yRange = 24
 }
 
-function SineMovementType:SetMovementDialogSection(sourceSize, dialog, onchange)
-    if sourceSize.width ~= self.sourceWidth or sourceSize.height ~=
-        self.sourceHeight then
+function SineMovementType:SetMovementDialogSection(options)
+    local sourceWidth = options.sourceSize.width
+    local sourceHeight = options.sourceSize.height
+
+    if sourceWidth ~= self.sourceWidth or sourceHeight ~= self.sourceHeight then
         self.sourceWidth = nil
         self.sourceHeight = nil
 
-        self.xSpeed = math.min(math.max(self.xSpeed, -sourceSize.width),
-                               sourceSize.width)
-        self.ySpeed = math.min(math.max(self.ySpeed, -sourceSize.height),
-                               sourceSize.height)
-        self.xRange = math.min(math.max(self.xRange, -sourceSize.width * 4),
-                               sourceSize.width * 4)
-        self.yRange = math.min(math.max(self.yRange, -sourceSize.height * 4),
-                               sourceSize.height * 4)
+        self.xSpeed = math.min(math.max(self.xSpeed, -sourceWidth), sourceWidth)
+        self.ySpeed = math.min(math.max(self.ySpeed, -sourceHeight),
+                               sourceHeight)
+        self.xRange = math.min(math.max(self.xRange, -sourceWidth * 4),
+                               sourceWidth * 4)
+        self.yRange = math.min(math.max(self.yRange, -sourceHeight * 4),
+                               sourceHeight * 4)
     end
 
-    self.sourceWidth = self.sourceWidth or sourceSize.width
-    self.sourceHeight = self.sourceHeight or sourceSize.height
-    self.xRange = self.xRange or sourceSize.width
-    self.yRange = self.yRange or sourceSize.height
+    self.sourceWidth = self.sourceWidth or sourceWidth
+    self.sourceHeight = self.sourceHeight or sourceHeight
+    self.xRange = self.xRange or sourceWidth
+    self.yRange = self.yRange or sourceHeight
 
-    dialog:slider{
+    options.dialog:slider{
         id = "movement-x-speed",
         label = "X Speed",
         min = -self.sourceWidth,
         max = self.sourceWidth,
         value = self.xSpeed,
         onchange = function()
-            self.xSpeed = dialog.data["movement-x-speed"]
-            onchange()
+            self.xSpeed = options.dialog.data["movement-x-speed"]
+            options.onchange()
         end
     } --
     :slider{
@@ -47,8 +48,8 @@ function SineMovementType:SetMovementDialogSection(sourceSize, dialog, onchange)
         max = self.sourceHeight,
         value = self.ySpeed,
         onchange = function()
-            self.ySpeed = dialog.data["movement-y-speed"]
-            onchange()
+            self.ySpeed = options.dialog.data["movement-y-speed"]
+            options.onchange()
         end
     } --
     :slider{
@@ -58,8 +59,8 @@ function SineMovementType:SetMovementDialogSection(sourceSize, dialog, onchange)
         max = self.sourceWidth * 4,
         value = self.xRange,
         onchange = function()
-            self.xRange = dialog.data["movement-x-range"]
-            onchange()
+            self.xRange = options.dialog.data["movement-x-range"]
+            options.onchange()
         end
     } --
     :slider{
@@ -69,8 +70,8 @@ function SineMovementType:SetMovementDialogSection(sourceSize, dialog, onchange)
         max = self.sourceHeight * 4,
         value = self.yRange,
         onchange = function()
-            self.yRange = dialog.data["movement-y-range"]
-            onchange()
+            self.yRange = options.dialog.data["movement-y-range"]
+            options.onchange()
         end
     }
 end
