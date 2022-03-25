@@ -34,10 +34,11 @@ function AnimationImporter:_ImportFrame(image, x, y, frameNumber)
     -- Shift position to align with the preview
     local position = Point(x - (image.width / 2), y - (image.height / 2))
 
-    local cel = self.layer:cel(frameNumber)
-    if cel ~= nil then
-        image, position = self:_MergeImages(image, position, cel.image,
-                                            cel.position)
+    local originalCel = self.layer:cel(frameNumber)
+    if originalCel ~= nil then
+        image, position = self:_MergeImages(originalCel.image,
+                                            originalCel.position, image,
+                                            position)
     end
 
     self.sprite:newCel(self.layer, frameNumber, image, position)
@@ -56,9 +57,55 @@ function AnimationImporter:_MergeImages(imageA, positionA, imageB, positionB)
     local newPosition = Point(minX, minY)
 
     newImage:drawImage(imageA, Point(positionA.x - minX, positionA.y - minY))
-    newImage:drawImage(imageB, Point(positionB.x - minX, positionB.y - minY))
+    self:_DrawImageOver(newImage, imageB,
+                        Point(positionB.x - minX, positionB.y - minY))
 
     return newImage, newPosition
+end
+
+function AnimationImporter:_DrawImageOver(backgroundImage, image, position)
+    -- TODO: Could be calculated only for the common part
+    for pixel in image:pixels() do
+        local pixelValue = pixel()
+        local pixelColor = Color(pixelValue)
+
+        local x = position.x + pixel.x
+        local y = position.y + pixel.y
+
+        local backgroundPixelValue = backgroundImage:getPixel(x, y)
+        local backgroundColor = Color(backgroundPixelValue)
+
+        if backgroundColor.alpha == 0 then
+            backgroundImage:drawPixel(x, y, pixelValue)
+        else
+            local backgroundAlpha = (backgroundColor.alpha / 255)
+            local pixelAlpha = (pixelColor.alpha / 255)
+
+            local finalAlpha = backgroundColor.alpha + pixelColor.alpha -
+                                   (backgroundAlpha * pixelAlpha * 255)
+
+            local backgroundRed = backgroundColor.red * backgroundAlpha
+            local backgroundGreen = backgroundColor.green * backgroundAlpha
+            local backgroundBlue = backgroundColor.blue * backgroundAlpha
+
+            local pixelRed = pixelColor.red * pixelAlpha
+            local pixelGreen = pixelColor.green * pixelAlpha
+            local pixelBlue = pixelColor.blue * pixelAlpha
+
+            local pixelOpaqueness = ((255 - pixelColor.alpha) / 255)
+
+            local finalRed = pixelRed + backgroundRed * pixelOpaqueness
+            local finalGreen = pixelGreen + backgroundGreen * pixelOpaqueness
+            local finalBlue = pixelBlue + backgroundBlue * pixelOpaqueness
+
+            backgroundImage:drawPixel(x, y, Color {
+                r = finalRed / (finalAlpha / 255),
+                g = finalGreen / (finalAlpha / 255),
+                b = finalBlue / (finalAlpha / 255),
+                a = finalAlpha
+            })
+        end
+    end
 end
 
 return AnimationImporter
