@@ -249,14 +249,14 @@ function ImportAnimationDialog:Create(config)
         onclick = function()
             self:_HandleImportButtonClick()
             -- Save dialog bounds to restore when reopened
-            self.bounds = self.dialog.bounds
+            self.bounds = self.dialog and self.dialog.bounds
         end
     } --
     :button{
         text = "Cancel",
         onclick = function()
             -- Save dialog bounds to restore when reopened
-            self.bounds = self.dialog.bounds
+            self.bounds = self.dialog and self.dialog.bounds
 
             self.dialog:close()
         end
