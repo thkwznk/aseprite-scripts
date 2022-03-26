@@ -13,6 +13,9 @@ function ParabolaPositionCalculator:GetPositions()
     local a = (self.startPosition.Y - self.movementParams.Peak.Y) /
                   ((self.startPosition.X - self.movementParams.Peak.X) ^ 2)
 
+    local direction = self.startPosition.X < self.movementParams.Peak.X and 1 or
+                          -1
+
     return function()
         if not firstPositionReturned then
             firstPositionReturned = true
@@ -24,7 +27,8 @@ function ParabolaPositionCalculator:GetPositions()
 
         i = i + 1
 
-        local x = self.startPosition.X + i * self.movementParams.Speed.X
+        local x = self.startPosition.X + i * self.movementParams.Speed.X *
+                      direction
         local y = a * ((x - self.movementParams.Peak.X) ^ 2) +
                       self.movementParams.Peak.Y
 
