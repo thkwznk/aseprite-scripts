@@ -31,7 +31,14 @@ Can be launched from _View_ menu.
 
 An extension for [Aseprite](https://www.aseprite.org/) that adds animation-related functionalities:
 
-- **Import Animation** (in _Edit_ menu) - allows for importing an animation from another sprite with an on-screen guide. Source animation can be based on a layer, a tag, or a selection. Imported animation can be static or move in a linear or sine pattern.
+- **Import Animation** (in _Edit_ menu) - allows for importing an animation from another sprite with an on-screen guide. Source animation can be based on a layer, a tag, or a selection. Imported animation can have one of the following movement patterns:
+
+  - Static
+  - Shake
+  - Linear
+  - Sine
+  - Parabola
+
 - **Loop Animation** (in _Edit_ menu) - generates a perfect loop from multiple animations on separate layers with a different number of frames.
 
 Known issues:
