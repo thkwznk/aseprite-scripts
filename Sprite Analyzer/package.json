@@ -1,0 +1,24 @@
+{
+  "name": "sprite-analyzer",
+  "displayName": "Sprite Analyzer",
+  "description": "Live preview with a breakdown of a sprite, allowing you to track values, silhouette, outline, and blocked shapes of the sprites.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kacper Woźniak",
+    "email": "kac.wozniak@gmail.com",
+    "url": "https://thkaspar.itch.io/"
+  },
+  "contributors": [],
+  "publisher": "",
+  "license": "CC-BY-4.0",
+  "categories": [
+    "Scripts"
+  ],
+  "contributes": {
+    "scripts": [
+      {
+        "path": "./SpriteAnalyzerExtension.lua"
+      }
+    ]
+  }
+}
