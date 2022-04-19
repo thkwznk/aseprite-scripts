@@ -46,6 +46,10 @@ Known issues:
 - **Extension doesn't work with the BETA version of Aseprite** - at least not by default, in relation to an [open issue](https://github.com/aseprite/aseprite/issues/3019) on GitHub the extension crashes if used with an experimental option "UI with multiple windows". This can be disabled in _Edit_ > _Preferences_ > _Experimental_ > _UI with multiple windows_.
 - Background layers in general cause issues for the extension, it's recommended to avoid them.
 
+## Sprite Analyzer
+
+An extension that creates a live preview with a breakdown of a sprite, allowing you to track values, silhouette, outline, and blocked shapes of the sprites.
+
 ## AsepriteOS
 
 An experimental project trying to implements basic applications as [Aseprite](https://www.aseprite.org/) scripts/extensions.
