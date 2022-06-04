@@ -10,7 +10,7 @@ Please note that most options use magic colors, selected colors will be restored
 
 ## Options
 
-Outline - adds an outline around a closed shape that you click on, works with foreground (left-click) and background (right-click) colors.
+**Outline** - adds an outline around a closed shape that you click on, works with foreground (left-click) and background (right-click) colors.
 
 **Lift** - moves a part of the image into its own layer.
 
