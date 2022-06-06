@@ -240,18 +240,18 @@ function CalculateChange(previous, next, canExtend)
                 -- Next image in some rare cases can be smaller
                 if RectangleContains(next.bounds, Point(x + previous.position.x,
                                                         y + previous.position.y)) then
-                if prevPixelValue ~=
-                    next.image:getPixel(x + shift.x, y + shift.y) then
-                    -- Save X and Y as canvas global
-                    table.insert(pixels, {
-                        x = x + previous.position.x,
-                        y = y + previous.position.y,
-                        color = Color(prevPixelValue)
-                    })
+                    if prevPixelValue ~=
+                        next.image:getPixel(x + shift.x, y + shift.y) then
+                        -- Save X and Y as canvas global
+                        table.insert(pixels, {
+                            x = x + previous.position.x,
+                            y = y + previous.position.y,
+                            color = Color(prevPixelValue)
+                        })
+                    end
                 end
             end
         end
-    end
     end
 
     local bounds = GetBoundsForPixels(pixels)
@@ -352,9 +352,8 @@ function MagicPencil:Execute()
         elseif not change.leftPressed and not change.rightPressed then
             -- Not a user change - most probably an undo action, do nothing
         else
-            self:ProcessMode(selectedMode, change, sprite, lastCel, {
-                shiftPercentage = self.dialog.data.shiftPercentage
-            })
+            self:ProcessMode(selectedMode, change, sprite, lastCel,
+                             self.dialog.data)
         end
 
         app.refresh()
@@ -514,7 +513,12 @@ function MagicPencil:Execute()
 
     self.dialog --
     :slider{id = "shiftPercentage", min = 1, max = 100, value = 5} --
-    :show{wait = false}
+
+    self.dialog --
+    :separator() --
+    :check{id = "indexedMode", text = "Indexed Mode"}
+
+    self.dialog:show{wait = false}
 end
 
 function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
@@ -625,6 +629,10 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
         local averageColor = If(change.leftPressed, AverageColorRGB,
                                 AverageColorHSV)(colors)
 
+        if parameters.indexedMode then
+            averageColor = sprite.palettes[1]:getColor(averageColor.index)
+        end
+
         local newBounds = app.activeCel.bounds
         local shift = Point(cel.bounds.x - newBounds.x,
                             cel.bounds.y - newBounds.y)
@@ -649,9 +657,18 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
             x = pixel.x - cel.position.x
             y = pixel.y - cel.position.y
             c = Color(cel.image:getPixel(x, y))
-            c.hsvHue = hue
 
-            cel.image:drawPixel(x, y, c)
+            if c.alpha > 0 then
+                c.hsvHue = hue
+                c.hsvSaturation =
+                    (c.hsvSaturation + app.fgColor.hsvSaturation) / 2
+
+                if parameters.indexedMode then
+                    c = sprite.palettes[1]:getColor(c.index)
+                end
+
+                cel.image:drawPixel(x, y, c)
+            end
         end
 
         sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, cel.image,
@@ -664,10 +681,18 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
             y = pixel.y - cel.position.y
             c = Color(cel.image:getPixel(x, y))
 
-            cel.image:drawPixel(x, y, Color {
-                gray = 0.299 * c.red + 0.114 * c.blue + 0.587 * c.green,
-                alpha = c.alpha
-            })
+            if c.alpha > 0 then
+                c = Color {
+                    gray = 0.299 * c.red + 0.114 * c.blue + 0.587 * c.green,
+                    alpha = c.alpha
+                }
+
+                if parameters.indexedMode then
+                    c = sprite.palettes[1]:getColor(c.index)
+                end
+
+                cel.image:drawPixel(x, y, c)
+            end
         end
 
         sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, cel.image,
@@ -682,21 +707,27 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
             y = pixel.y - cel.position.y
             c = Color(cel.image:getPixel(x, y))
 
-            if mode == Modes.ShiftHsvHue then
-                c.hsvHue = (c.hsvHue + shift * 360) % 360
-            elseif mode == Modes.ShiftHsvSaturation then
-                c.hsvSaturation = c.hsvSaturation + shift
-            elseif mode == Modes.ShiftHsvValue then
-                c.hsvValue = c.hsvValue + shift
-            elseif mode == Modes.ShiftHslHue then
-                c.hslHue = (c.hslHue + shift * 360) % 360
-            elseif mode == Modes.ShiftHslSaturation then
-                c.hslSaturation = c.hslSaturation + shift
-            elseif mode == Modes.ShiftHslLightness then
-                c.hslLightness = c.hslLightness + shift
-            end
+            if c.alpha > 0 then
+                if mode == Modes.ShiftHsvHue then
+                    c.hsvHue = (c.hsvHue + shift * 360) % 360
+                elseif mode == Modes.ShiftHsvSaturation then
+                    c.hsvSaturation = c.hsvSaturation + shift
+                elseif mode == Modes.ShiftHsvValue then
+                    c.hsvValue = c.hsvValue + shift
+                elseif mode == Modes.ShiftHslHue then
+                    c.hslHue = (c.hslHue + shift * 360) % 360
+                elseif mode == Modes.ShiftHslSaturation then
+                    c.hslSaturation = c.hslSaturation + shift
+                elseif mode == Modes.ShiftHslLightness then
+                    c.hslLightness = c.hslLightness + shift
+                end
 
-            cel.image:drawPixel(x, y, c)
+                if parameters.indexedMode then
+                    c = sprite.palettes[1]:getColor(c.index)
+                end
+
+                cel.image:drawPixel(x, y, c)
+            end
         end
 
         sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, cel.image,
