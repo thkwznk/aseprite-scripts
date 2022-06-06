@@ -303,29 +303,12 @@ function MagicPencil:Execute()
     local selectedMode = Modes.Regular
     local sprite = app.activeSprite
 
-    local lastKnownNumberOfCels = #sprite.cels
-    local lastActiveCel = app.activeCel
-    local lastActiveLayer = app.activeLayer
-    local lastActiveFrameNumber = app.activeFrame.frameNumber
+    local lastKnownNumberOfCels, lastActiveCel, lastCel
 
-    local lastCel = {
-        image = lastActiveCel.image:clone(),
-        position = lastActiveCel.position,
-        bounds = lastActiveCel.bounds
-    }
-
-    local updateLast = function(sameSprite)
+    local updateLast = function()
         if sprite then lastKnownNumberOfCels = #sprite.cels end
 
-        -- If from site change, same sprite, same layer, same frame but cel changed
-        if sameSprite and lastActiveCel == nil and app.activeCel and --
-            lastActiveLayer == app.activeLayer and --
-        lastActiveFrameNumber == app.activeFrame.frameNumber and --
-        lastActiveCel ~= app.activeCel then return end
-
         lastActiveCel = app.activeCel
-        lastActiveLayer = app.activeLayer
-        lastActiveFrameNumber = app.activeFrame and app.activeFrame.frameNumber
         lastCel = nil
 
         -- When creating a new layer or cel this can be triggered
@@ -337,6 +320,8 @@ function MagicPencil:Execute()
             }
         end
     end
+
+    updateLast()
 
     local onSpriteChange = function()
         -- If there is no active cel, do nothing
@@ -380,7 +365,7 @@ function MagicPencil:Execute()
     local onSiteChange = app.events:on('sitechange', function()
         -- If sprite stayed the same then do nothing
         if app.activeSprite == sprite then
-            updateLast(true)
+            updateLast()
             return
         end
 
