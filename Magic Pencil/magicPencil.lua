@@ -237,6 +237,9 @@ function CalculateChange(previous, next, canExtend)
             for y = 0, previous.image.height - 1 do
                 prevPixelValue = previous.image:getPixel(x, y)
 
+                -- Next image in some rare cases can be smaller
+                if RectangleContains(next.bounds, Point(x + previous.position.x,
+                                                        y + previous.position.y)) then
                 if prevPixelValue ~=
                     next.image:getPixel(x + shift.x, y + shift.y) then
                     -- Save X and Y as canvas global
@@ -248,6 +251,7 @@ function CalculateChange(previous, next, canExtend)
                 end
             end
         end
+    end
     end
 
     local bounds = GetBoundsForPixels(pixels)
