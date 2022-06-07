@@ -24,10 +24,12 @@ Please note that most options use magic colors, selected colors will be restored
 
 **Hue/Saturation/Value/Lightness [Shift]** - changes the colors based on the selected property, left-click to add, right-click to subtract. You can change how much of a shift will be applied by changing the percentage slider under these options.
 
+**Indexed Mode** - when enabled, prevents new colors from being introduced, and any option that modifies colors will use colors from the palette.
+
 ## Known issues
 
 Using any option from the Magic Pencil on a completely empty cel will result in the first stroke being treated as a regular pencil
-Selecting colors from the palette when using any option from the Magic Pencil other than Outline or Colorize (which actually use the selected color) will interfere with its working and result in odd behavior
+Selecting colors from the palette when using any option from the Magic Pencil other than Outline or Colorize (which actually use the selected color) will interfere with its working and result in odd behaviour
 
 ## Previews
 
