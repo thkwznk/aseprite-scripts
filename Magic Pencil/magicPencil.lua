@@ -18,13 +18,18 @@ local Modes<const> = {
     ShiftHsvValue = "shift-hsv-value",
     ShiftHslHue = "shift-hsl-hue",
     ShiftHslSaturation = "shift-hsl-saturation",
-    ShiftHslLightness = "shift-hsl-lightness"
+    ShiftHslLightness = "shift-hsl-lightness",
+    ShiftRgbRed = "shift-rgb-red",
+    ShiftRgbGreen = "shift-rgb-green",
+    ShiftRgbBlue = "shift-rgb-blue"
 }
 
 local SpecialCursorModes<const> = {
-    Modes.Cut, Modes.Mix, Modes.MixProportional, Modes.Desaturate,
-    Modes.ShiftHsvHue, Modes.ShiftHsvSaturation, Modes.ShiftHsvValue,
-    Modes.ShiftHslHue, Modes.ShiftHslSaturation, Modes.ShiftHslLightness
+    Modes.Cut, Modes.Mix, Modes.MixProportional,
+    Modes.Desaturate, Modes.ShiftHsvHue, Modes.ShiftHsvSaturation,
+    Modes.ShiftHsvValue, Modes.ShiftHslHue, Modes.ShiftHslSaturation,
+    Modes.ShiftHslLightness, Modes.ShiftRgbRed, Modes.ShiftRgbGreen,
+    Modes.ShiftRgbBlue
 }
 
 local CanExtendModes<const> = {Modes.Mix, Modes.MixProportional}
@@ -37,18 +42,40 @@ local ShiftHslModes<const> = {
     Modes.ShiftHslHue, Modes.ShiftHslSaturation, Modes.ShiftHslLightness
 }
 
-local ColorModels<const> = {HSV = "HSV", HSL = "HSL"}
+local ShiftRgbModes<const> = {
+    Modes.ShiftRgbRed, Modes.ShiftRgbGreen, Modes.ShiftRgbBlue
+}
+
+local ColorModels<const> = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
 
 local ToHsvMap<const> = {
     [Modes.ShiftHslHue] = Modes.ShiftHsvHue,
     [Modes.ShiftHslSaturation] = Modes.ShiftHsvSaturation,
-    [Modes.ShiftHslLightness] = Modes.ShiftHsvValue
+    [Modes.ShiftHslLightness] = Modes.ShiftHsvValue,
+
+    [Modes.ShiftRgbRed] = Modes.ShiftHsvHue,
+    [Modes.ShiftRgbGreen] = Modes.ShiftHsvSaturation,
+    [Modes.ShiftRgbBlue] = Modes.ShiftHsvValue
 }
 
 local ToHslMap<const> = {
     [Modes.ShiftHsvHue] = Modes.ShiftHslHue,
     [Modes.ShiftHsvSaturation] = Modes.ShiftHslSaturation,
-    [Modes.ShiftHsvValue] = Modes.ShiftHslLightness
+    [Modes.ShiftHsvValue] = Modes.ShiftHslLightness,
+
+    [Modes.ShiftRgbRed] = Modes.ShiftHslHue,
+    [Modes.ShiftRgbGreen] = Modes.ShiftHslSaturation,
+    [Modes.ShiftRgbBlue] = Modes.ShiftHslLightness
+}
+
+local ToRgbMap<const> = {
+    [Modes.ShiftHsvHue] = Modes.ShiftRgbRed,
+    [Modes.ShiftHsvSaturation] = Modes.ShiftRgbGreen,
+    [Modes.ShiftHsvValue] = Modes.ShiftRgbBlue,
+
+    [Modes.ShiftHslHue] = Modes.ShiftRgbRed,
+    [Modes.ShiftHslSaturation] = Modes.ShiftRgbGreen,
+    [Modes.ShiftHslLightness] = Modes.ShiftRgbBlue
 }
 
 function If(condition, trueValue, falseValue)
@@ -481,6 +508,8 @@ function MagicPencil:Execute()
                 selectedMode = ToHsvMap[selectedMode]
             elseif self.colorModel == ColorModels.HSL then
                 selectedMode = ToHslMap[selectedMode]
+            elseif self.colorModel == ColorModels.RGB then
+                selectedMode = ToRgbMap[selectedMode]
             end
 
             for _, hsvMode in ipairs(ShiftHsvModes) do
@@ -498,6 +527,14 @@ function MagicPencil:Execute()
                     selected = selectedMode == hslMode
                 }
             end
+
+            for _, rgbMode in ipairs(ShiftRgbModes) do
+                self.dialog:modify{
+                    id = rgbMode,
+                    visible = self.colorModel == ColorModels.RGB,
+                    selected = selectedMode == rgbMode
+                }
+            end
         end
     } --
 
@@ -510,6 +547,11 @@ function MagicPencil:Execute()
     Mode(Modes.ShiftHslHue, "Hue", isHsl)
     Mode(Modes.ShiftHslSaturation, "Saturation", isHsl)
     Mode(Modes.ShiftHslLightness, "Lightness", isHsl)
+
+    local isRgb = self.colorModel == ColorModels.RGB
+    Mode(Modes.ShiftRgbRed, "Red", isRgb)
+    Mode(Modes.ShiftRgbGreen, "Green", isRgb)
+    Mode(Modes.ShiftRgbBlue, "Blue", isRgb)
 
     self.dialog --
     :slider{id = "shiftPercentage", min = 1, max = 100, value = 5} --
@@ -707,7 +749,8 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
 
         sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, cel.image,
                       cel.position)
-    elseif Contains(ShiftHsvModes, mode) or Contains(ShiftHslModes, mode) then
+    elseif Contains(ShiftHsvModes, mode) or Contains(ShiftHslModes, mode) or
+        Contains(ShiftRgbModes, mode) then
         local shift = parameters.shiftPercentage / 100 *
                           If(change.leftPressed, 1, -1)
         local x, y, c
@@ -730,6 +773,12 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
                     c.hslSaturation = c.hslSaturation + shift
                 elseif mode == Modes.ShiftHslLightness then
                     c.hslLightness = c.hslLightness + shift
+                elseif mode == Modes.ShiftRgbRed then
+                    c.red = math.min(math.max(c.red + shift * 255, 0), 255)
+                elseif mode == Modes.ShiftRgbGreen then
+                    c.green = math.min(math.max(c.green + shift * 255, 0), 255)
+                elseif mode == Modes.ShiftRgbBlue then
+                    c.blue = math.min(math.max(c.blue + shift * 255, 0), 255)
                 end
 
                 if parameters.indexedMode then
