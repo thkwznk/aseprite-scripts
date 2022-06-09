@@ -584,7 +584,17 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
         sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, cel.image,
                       cel.position)
 
+        local activeLayerIndex = app.activeLayer.stackIndex
+        local activeLayerParent = app.activeLayer.parent
+
         local newLayer = sprite:newLayer()
+        newLayer.parent = activeLayerParent
+        if change.leftPressed then
+            newLayer.stackIndex = activeLayerIndex + 1
+        else
+            newLayer.stackIndex = activeLayerIndex
+        end
+
         newLayer.name = "Lifted Content"
 
         sprite:newCel(newLayer, app.activeFrame.frameNumber, image,
