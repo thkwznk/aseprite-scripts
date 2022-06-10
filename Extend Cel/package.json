@@ -1,0 +1,25 @@
+{
+    "name": "extend-cel",
+    "displayName": "Extend Cel",
+    "description": "Provides an option to extend a cel by linking proceeding empty cels to it.",
+    "version": "1.0.0",
+    "author": {
+      "name": "Kacper Woźniak",
+      "email": "kac.wozniak@gmail.com",
+      "url": "https://thkaspar.itch.io/"
+    },
+    "contributors": [],
+    "publisher": "myname",
+    "license": "CC-BY-4.0",
+    "categories": [
+      "Scripts"
+    ],
+    "contributes": {
+      "scripts": [
+        {
+          "path": "./extension.lua"
+        }
+      ]
+    }
+  }
+  
