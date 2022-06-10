@@ -50,6 +50,14 @@ Known issues:
 
 An extension that creates a live preview with a breakdown of a sprite, allowing you to track values, silhouette, outline, and blocked shapes of the sprites.
 
+## Magic Pencil
+
+An extension for [Aseprite](https://www.aseprite.org/) that provides additional options for the pencil tool.
+
+## Extend Cel
+
+A micro extension for [Aseprite](https://www.aseprite.org/) that provides an option to quickly link a cel with all proceeding empty cels.
+
 ## AsepriteOS
 
 An experimental project trying to implements basic applications as [Aseprite](https://www.aseprite.org/) scripts/extensions.
