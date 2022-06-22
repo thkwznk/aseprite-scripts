@@ -54,6 +54,10 @@ An extension that creates a live preview with a breakdown of a sprite, allowing 
 
 An extension for [Aseprite](https://www.aseprite.org/) that provides additional options for the pencil tool.
 
+## FX
+
+A collection of effects for [Aseprite](https://www.aseprite.org/) packed into an extension.
+
 ## Extend Cel
 
 A micro extension for [Aseprite](https://www.aseprite.org/) that provides an option to quickly link a cel with all proceeding empty cels.
