@@ -1,11 +1,11 @@
 if not app.isUIAvailable then return end
 
-local ScreenWidth<const> = 1920
-local ScreenHeight<const> = 1080
-local UIScale<const> = 2
+local ScreenWidth = 1920
+local ScreenHeight = 1080
+local UIScale = 2
 
-local WorkspaceWidth<const> = ScreenWidth / UIScale
-local WorkspaceHeight<const> = ScreenHeight / UIScale
+local WorkspaceWidth = ScreenWidth / UIScale
+local WorkspaceHeight = ScreenHeight / UIScale
 
 local parentDialog = nil
 local childDialog = nil

@@ -2,7 +2,7 @@ PreviewDirection = dofile("./PreviewDirection.lua")
 PaletteExtractionDialog = dofile("./PaletteExtractionDialog.lua")
 PaletteExtractor = dofile("./PaletteExtractor.lua")
 
-local PageSize<const> = 8
+local PageSize = 8
 
 function GetTransparentColor() return Color {gray = 0, alpha = 0} end
 function GetEmptyShades() return {GetTransparentColor()} end

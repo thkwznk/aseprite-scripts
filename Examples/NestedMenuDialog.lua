@@ -6,8 +6,8 @@ local MenuEntryType = {
     Submenu = "Submenu"
 }
 
-local ButtonHeight<const> = 21
-local SeparatorHeight<const> = 8
+local ButtonHeight = 21
+local SeparatorHeight = 8
 
 local function NestedMenuDialog(title, data, onclose)
     local dialog = Dialog {title = title, onclose = onclose}

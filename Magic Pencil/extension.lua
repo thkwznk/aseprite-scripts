@@ -1,4 +1,4 @@
-local MagicPencil<const> = dofile("./magicPencil.lua")
+local MagicPencil = dofile("./magicPencil.lua")
 
 function init(plugin)
     plugin:newCommand{

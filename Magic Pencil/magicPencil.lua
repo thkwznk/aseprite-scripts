@@ -1,10 +1,10 @@
 -- Colors
-local Transparent<const> = Color {gray = 0, alpha = 0}
-local MagicPink<const> = Color {red = 255, green = 0, blue = 255, alpha = 128}
-local MagicTeal<const> = Color {red = 0, green = 128, blue = 128, alpha = 128}
+local Transparent = Color {gray = 0, alpha = 0}
+local MagicPink = Color {red = 255, green = 0, blue = 255, alpha = 128}
+local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 
 -- Modes
-local Modes<const> = {
+local Modes = {
     Regular = "regular",
     Outline = "outline",
     Cut = "cut",
@@ -24,31 +24,30 @@ local Modes<const> = {
     ShiftRgbBlue = "shift-rgb-blue"
 }
 
-local SpecialCursorModes<const> = {
-    Modes.Cut, Modes.Mix, Modes.MixProportional,
-    Modes.Desaturate, Modes.ShiftHsvHue, Modes.ShiftHsvSaturation,
-    Modes.ShiftHsvValue, Modes.ShiftHslHue, Modes.ShiftHslSaturation,
-    Modes.ShiftHslLightness, Modes.ShiftRgbRed, Modes.ShiftRgbGreen,
-    Modes.ShiftRgbBlue
-}
-
-local CanExtendModes<const> = {Modes.Mix, Modes.MixProportional}
-
-local ShiftHsvModes<const> = {
-    Modes.ShiftHsvHue, Modes.ShiftHsvSaturation, Modes.ShiftHsvValue
-}
-
-local ShiftHslModes<const> = {
-    Modes.ShiftHslHue, Modes.ShiftHslSaturation, Modes.ShiftHslLightness
-}
-
-local ShiftRgbModes<const> = {
+local SpecialCursorModes = {
+    Modes.Cut, Modes.Mix, Modes.MixProportional, Modes.Desaturate,
+    Modes.ShiftHsvHue, Modes.ShiftHsvSaturation, Modes.ShiftHsvValue,
+    Modes.ShiftHslHue, Modes.ShiftHslSaturation, Modes.ShiftHslLightness,
     Modes.ShiftRgbRed, Modes.ShiftRgbGreen, Modes.ShiftRgbBlue
 }
 
-local ColorModels<const> = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
+local CanExtendModes = {Modes.Mix, Modes.MixProportional}
 
-local ToHsvMap<const> = {
+local ShiftHsvModes = {
+    Modes.ShiftHsvHue, Modes.ShiftHsvSaturation, Modes.ShiftHsvValue
+}
+
+local ShiftHslModes = {
+    Modes.ShiftHslHue, Modes.ShiftHslSaturation, Modes.ShiftHslLightness
+}
+
+local ShiftRgbModes = {
+    Modes.ShiftRgbRed, Modes.ShiftRgbGreen, Modes.ShiftRgbBlue
+}
+
+local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
+
+local ToHsvMap = {
     [Modes.ShiftHslHue] = Modes.ShiftHsvHue,
     [Modes.ShiftHslSaturation] = Modes.ShiftHsvSaturation,
     [Modes.ShiftHslLightness] = Modes.ShiftHsvValue,
@@ -58,7 +57,7 @@ local ToHsvMap<const> = {
     [Modes.ShiftRgbBlue] = Modes.ShiftHsvValue
 }
 
-local ToHslMap<const> = {
+local ToHslMap = {
     [Modes.ShiftHsvHue] = Modes.ShiftHslHue,
     [Modes.ShiftHsvSaturation] = Modes.ShiftHslSaturation,
     [Modes.ShiftHsvValue] = Modes.ShiftHslLightness,
@@ -68,7 +67,7 @@ local ToHslMap<const> = {
     [Modes.ShiftRgbBlue] = Modes.ShiftHslLightness
 }
 
-local ToRgbMap<const> = {
+local ToRgbMap = {
     [Modes.ShiftHsvHue] = Modes.ShiftRgbRed,
     [Modes.ShiftHsvSaturation] = Modes.ShiftRgbGreen,
     [Modes.ShiftHsvValue] = Modes.ShiftRgbBlue,
@@ -650,7 +649,7 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
 
         sprite:newCel(app.activeLayer, startFrame, cel.image, cel.position)
 
-        local MaxFrames<const> = 50
+        local MaxFrames = 50
 
         for frame = startFrame + 1, startFrame + MaxFrames do
             if x < 0 or x > sprite.width or y > sprite.height then

@@ -1,8 +1,8 @@
 ColorList = dofile("./ColorList.lua")
 SortOptions = dofile("./SortOptions.lua")
 
-local PageSize<const> = 16
-local MinDialogWidth<const> = 250
+local PageSize = 16
+local MinDialogWidth = 250
 
 local ColorAnalyzerDialog = {}
 

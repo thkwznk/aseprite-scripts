@@ -1,4 +1,4 @@
-local PageSize<const> = 8
+local PageSize = 8
 
 local PaletteExtractionDialog = {
     paletteExtractor = nil,

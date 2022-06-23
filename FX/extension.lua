@@ -3,8 +3,8 @@ local LCDScreen = dofile("./fx/LCDScreen.lua")
 local Neon = dofile("./fx/Neon.lua")
 local ImageProcessor = dofile("./ImageProcessor.lua")
 
-local InitialXOffset<const> = 2
-local InitialYOffset<const> = 2
+local InitialXOffset = 2
+local InitialYOffset = 2
 
 function init(plugin)
     plugin:newCommand{
