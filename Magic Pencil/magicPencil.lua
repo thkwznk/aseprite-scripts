@@ -8,6 +8,7 @@ local Modes = {
     Regular = "regular",
     Outline = "outline",
     Cut = "cut",
+    Selection = "selection",
     Yeet = "yeet",
     Mix = "mix",
     MixProportional = "mix-proportional",
@@ -25,13 +26,14 @@ local Modes = {
 }
 
 local SpecialCursorModes = {
-    Modes.Cut, Modes.Mix, Modes.MixProportional, Modes.Desaturate,
-    Modes.ShiftHsvHue, Modes.ShiftHsvSaturation, Modes.ShiftHsvValue,
-    Modes.ShiftHslHue, Modes.ShiftHslSaturation, Modes.ShiftHslLightness,
-    Modes.ShiftRgbRed, Modes.ShiftRgbGreen, Modes.ShiftRgbBlue
+    Modes.Cut, Modes.Selection, Modes.Mix, Modes.MixProportional,
+    Modes.Desaturate, Modes.ShiftHsvHue, Modes.ShiftHsvSaturation,
+    Modes.ShiftHsvValue, Modes.ShiftHslHue, Modes.ShiftHslSaturation,
+    Modes.ShiftHslLightness, Modes.ShiftRgbRed, Modes.ShiftRgbGreen,
+    Modes.ShiftRgbBlue
 }
 
-local CanExtendModes = {Modes.Mix, Modes.MixProportional}
+local CanExtendModes = {Modes.Selection, Modes.Mix, Modes.MixProportional}
 
 local ShiftHsvModes = {
     Modes.ShiftHsvHue, Modes.ShiftHsvSaturation, Modes.ShiftHsvValue
@@ -151,17 +153,25 @@ function GetButtonsPressed(pixels, previous, next)
 
     local leftPressed, rightPressed = false, false
     local old, new = nil, nil
+    local pixel = pixels[1]
 
-    for _, pixel in ipairs(pixels) do
-        if RectangleContains(previous.bounds, pixel) and
-            RectangleContains(next.bounds, pixel) then
-            old = Color(previous.image:getPixel(pixel.x - previous.position.x,
-                                                pixel.y - previous.position.y))
-            new = Color(next.image:getPixel(pixel.x - next.position.x,
-                                            pixel.y - next.position.y))
-            break
+    if not RectangleContains(previous.bounds, pixel) then
+        local newPixelValue = next.image:getPixel(pixel.x - next.position.x,
+                                                  pixel.y - next.position.y)
+
+        if app.fgColor.rgbaPixel == newPixelValue then
+            leftPressed = true
+        elseif app.bgColor.rgbaPixel == newPixelValue then
+            rightPressed = true
         end
+
+        return leftPressed, rightPressed
     end
+
+    old = Color(previous.image:getPixel(pixel.x - previous.position.x,
+                                        pixel.y - previous.position.y))
+    new = Color(next.image:getPixel(pixel.x - next.position.x,
+                                    pixel.y - next.position.y))
 
     if old == nil or new == nil then return leftPressed, rightPressed end
 
@@ -485,6 +495,9 @@ function MagicPencil:Execute()
     self.dialog:separator{text = "Transform"} --
     Mode(Modes.Outline, "Outline")
     Mode(Modes.Cut, "Lift")
+    Mode(Modes.Selection, "Selection")
+
+    -- self.dialog:separator{text = "Forbidden"} --
     Mode(Modes.Yeet, "Yeet", false)
 
     self.dialog:separator{text = "Mix"}
@@ -640,6 +653,27 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
 
         sprite:newCel(newLayer, app.activeFrame.frameNumber, image,
                       Point(intersection.x, intersection.y))
+    elseif mode == Modes.Selection then
+        -- FIX: If the whole selection is out of the original cel's bounds it will not be processed
+
+        local newSelection = Selection()
+
+        for _, pixel in ipairs(change.pixels) do
+            newSelection:add(Rectangle(pixel.x, pixel.y, 1, 1))
+        end
+
+        if change.leftPressed then
+            if sprite.selection.isEmpty then
+                sprite.selection:add(newSelection)
+            else
+                sprite.selection:intersect(newSelection)
+            end
+        else
+            sprite.selection:subtract(newSelection)
+        end
+
+        sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, cel.image,
+                      cel.position)
     elseif mode == Modes.Yeet then
         local startFrame = app.activeFrame.frameNumber
 
