@@ -612,11 +612,11 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
                                    outlineColor)
             end
 
-            sprite:newCel(app.activeLayer, app.activeFrame.frameNumber,
-                          newImage, Point(newImageBounds.x, newImageBounds.y))
+            app.activeCel.image = newImage
+            app.activeCel.position = Point(newImageBounds.x, newImageBounds.y)
         else
-            sprite:newCel(app.activeLayer, app.activeFrame.frameNumber,
-                          cel.image, cel.position)
+            app.activeCel.image = cel.image
+            app.activeCel.position = cel.position
         end
     elseif mode == Modes.Cut then
         local intersection = Rectangle(cel.bounds):intersect(change.bounds)
@@ -651,8 +651,8 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
 
         newLayer.name = "Lifted Content"
 
-        sprite:newCel(newLayer, app.activeFrame.frameNumber, image,
-                      Point(intersection.x, intersection.y))
+        app.activeCel.image = image
+        app.activeCel.position = Point(intersection.x, intersection.y)
     elseif mode == Modes.Selection then
         -- FIX: If the whole selection is out of the original cel's bounds it will not be processed
 
@@ -672,8 +672,8 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
             sprite.selection:subtract(newSelection)
         end
 
-        sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, cel.image,
-                      cel.position)
+        app.activeCel.image = cel.image
+        app.activeCel.position = cel.position
     elseif mode == Modes.Yeet then
         local startFrame = app.activeFrame.frameNumber
 
@@ -731,8 +731,8 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
                                averageColor)
         end
 
-        sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, newImage,
-                      Point(newBounds.x, newBounds.y))
+        app.activeCel.image = newImage
+        app.activeCel.position = Point(newBounds.x, newBounds.y)
     elseif mode == Modes.Colorize then
         local x, y, c
         local hue = If(change.leftPressed, app.fgColor.hsvHue,
@@ -756,8 +756,8 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
             end
         end
 
-        sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, cel.image,
-                      cel.position)
+        app.activeCel.image = cel.image
+        app.activeCel.position = cel.position
     elseif mode == Modes.Desaturate then
         local x, y, c
 
@@ -780,8 +780,8 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
             end
         end
 
-        sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, cel.image,
-                      cel.position)
+        app.activeCel.image = cel.image
+        app.activeCel.position = cel.position
     elseif Contains(ShiftHsvModes, mode) or Contains(ShiftHslModes, mode) or
         Contains(ShiftRgbModes, mode) then
         local shift = parameters.shiftPercentage / 100 *
@@ -822,8 +822,8 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
             end
         end
 
-        sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, cel.image,
-                      cel.position)
+        app.activeCel.image = cel.image
+        app.activeCel.position = cel.position
     end
 end
 
