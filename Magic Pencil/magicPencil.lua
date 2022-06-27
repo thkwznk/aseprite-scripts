@@ -298,7 +298,9 @@ function CalculateChange(previous, next, canExtend)
         bounds = bounds,
         center = RectangleCenter(bounds),
         leftPressed = leftPressed,
-        rightPressed = rightPressed
+        rightPressed = rightPressed,
+        sizeChanged = previous.bounds.width ~= next.bounds.width or
+            previous.bounds.height ~= next.bounds.height
     }
 end
 
@@ -377,14 +379,19 @@ function MagicPencil:Execute()
             return
         end
 
-        local change = CalculateChange(lastCel, app.activeCel,
-                                       Contains(CanExtendModes, selectedMode))
+        local modeCanExtend = Contains(CanExtendModes, selectedMode)
+        local change = CalculateChange(lastCel, app.activeCel, modeCanExtend)
 
-        -- If no pixel was changed then revert to original
+        -- If no pixel was changed, but the size changed then revert to original
         if #change.pixels == 0 then
-            -- If instead I just replace image and positon in the active cel, Aseprite will crash if I undo when hovering mouse over dialog
-            sprite:newCel(app.activeLayer, app.activeFrame.frameNumber,
-                          lastCel.image, lastCel.position)
+            if change.sizeChanged and modeCanExtend and lastCel then
+                -- If instead I just replace image and positon in the active cel, Aseprite will crash if I undo when hovering mouse over dialog
+                -- sprite:newCel(app.activeLayer, app.activeFrame.frameNumber,
+                --               lastCel.image, lastCel.position)
+                app.activeCel.image = lastCel.image
+                app.activeCel.position = lastCel.position
+            end
+            -- Otherwise, do nothing
         elseif not change.leftPressed and not change.rightPressed then
             -- Not a user change - most probably an undo action, do nothing
         else
