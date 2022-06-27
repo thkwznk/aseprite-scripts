@@ -635,8 +635,8 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
             end
         end
 
-        sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, cel.image,
-                      cel.position)
+        app.activeCel.image = cel.image
+        app.activeCel.position = cel.position
 
         local activeLayerIndex = app.activeLayer.stackIndex
         local activeLayerParent = app.activeLayer.parent
@@ -651,8 +651,8 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
 
         newLayer.name = "Lifted Content"
 
-        app.activeCel.image = image
-        app.activeCel.position = Point(intersection.x, intersection.y)
+        sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, image,
+                      Point(intersection.x, intersection.y))
     elseif mode == Modes.Selection then
         -- FIX: If the whole selection is out of the original cel's bounds it will not be processed
 
