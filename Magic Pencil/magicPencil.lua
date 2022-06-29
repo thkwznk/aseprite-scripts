@@ -7,6 +7,7 @@ local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 local Modes = {
     Regular = "regular",
     Outline = "outline",
+    OutlineLive = "outline-live",
     Cut = "cut",
     Selection = "selection",
     Yeet = "yeet",
@@ -33,7 +34,9 @@ local SpecialCursorModes = {
     Modes.ShiftRgbBlue
 }
 
-local CanExtendModes = {Modes.Selection, Modes.Mix, Modes.MixProportional}
+local CanExtendModes = {
+    Modes.OutlineLive, Modes.Selection, Modes.Mix, Modes.MixProportional
+}
 
 local ShiftHsvModes = {
     Modes.ShiftHsvHue, Modes.ShiftHsvSaturation, Modes.ShiftHsvValue
@@ -493,14 +496,27 @@ function MagicPencil:Execute()
                 local isSpecial = Contains(SpecialCursorModes, selectedMode)
                 app.fgColor = If(isSpecial, MagicPink, lastFgColor)
                 app.bgColor = If(isSpecial, MagicTeal, lastBgColor)
+
+                self.dialog:modify{
+                    id = "outlineColor",
+                    visible = selectedMode == Modes.OutlineLive
+                }
             end
         }:newrow() --
     end
 
     Mode(Modes.Regular, "Regular", true, true)
 
+    self.dialog:separator{text = "Outline"} --
+    Mode(Modes.Outline, "Tool")
+    Mode(Modes.OutlineLive, "Brush")
+    self.dialog:color{
+        id = "outlineColor",
+        visible = false,
+        color = Color {gray = 0, alpha = 255}
+    }
+
     self.dialog:separator{text = "Transform"} --
-    Mode(Modes.Outline, "Outline")
     Mode(Modes.Cut, "Lift")
     Mode(Modes.Selection, "Selection")
 
@@ -625,6 +641,78 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
             app.activeCel.image = cel.image
             app.activeCel.position = cel.position
         end
+    elseif mode == Modes.OutlineLive then
+        local color = parameters.outlineColor.rgbaPixel
+
+        local selection = sprite.selection
+        local extend = {}
+
+        for _, pixel in ipairs(change.pixels) do
+            local ix = pixel.x - app.activeCel.bounds.x
+            local iy = pixel.y - app.activeCel.bounds.y
+
+            if ix == 0 then extend.left = true end
+            if ix == app.activeCel.image.width - 1 then
+                extend.right = true
+            end
+            if iy == 0 then extend.up = true end
+            if iy == app.activeCel.image.height - 1 then
+                extend.down = true
+            end
+        end
+
+        local width = app.activeCel.image.width
+        local height = app.activeCel.image.height
+
+        if extend.left then width = width + 1 end
+        if extend.right then width = width + 1 end
+        if extend.up then height = height + 1 end
+        if extend.down then height = height + 1 end
+
+        local newImage = Image(width, height)
+
+        local dpx = If(extend.left, 1, 0)
+        local dpy = If(extend.up, 1, 0)
+
+        newImage:drawImage(app.activeCel.image, Point(dpx, dpy))
+
+        local CanOutline = function(x, y)
+            return selection.isEmpty or
+                       (not selection.isEmpty and selection:contains(x, y))
+        end
+
+        for _, pixel in ipairs(change.pixels) do
+            local ix = pixel.x - app.activeCel.bounds.x + dpx
+            local iy = pixel.y - app.activeCel.bounds.y + dpy
+
+            if CanOutline(pixel.x - 1, pixel.y) then
+                if newImage:getPixel(ix - 1, iy) == 0 then
+                    newImage:drawPixel(ix - 1, iy, color)
+                end
+            end
+
+            if CanOutline(pixel.x + 1, pixel.y) then
+                if newImage:getPixel(ix + 1, iy) == 0 then
+                    newImage:drawPixel(ix + 1, iy, color)
+                end
+            end
+
+            if CanOutline(pixel.x, pixel.y - 1) then
+                if newImage:getPixel(ix, iy - 1) == 0 then
+                    newImage:drawPixel(ix, iy - 1, color)
+                end
+            end
+
+            if CanOutline(pixel.x, pixel.y + 1) then
+                if newImage:getPixel(ix, iy + 1) == 0 then
+                    newImage:drawPixel(ix, iy + 1, color)
+                end
+            end
+        end
+
+        app.activeCel.image = newImage
+        app.activeCel.position = Point(app.activeCel.position.x - dpx,
+                                       app.activeCel.position.y - dpy)
     elseif mode == Modes.Cut then
         local intersection = Rectangle(cel.bounds):intersect(change.bounds)
         local image = Image(intersection.width, intersection.height)
