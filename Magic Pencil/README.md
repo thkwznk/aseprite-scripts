@@ -10,7 +10,9 @@ Please note that most options use magic colors, selected colors will be restored
 
 ## Options
 
-**Outline** - adds an outline around a closed shape that you click on, works with foreground (left-click) and background (right-click) colors.
+**Tool [Outline]** - adds an outline around a closed shape that you click on, works with foreground (left-click) and background (right-click) colors.
+
+**Brush [Outline]** - adds an outline around the brush as you draw. After selecting this option, the outline's color can be changed under this option in the dialog window.
 
 **Lift** - moves a part of the image into its own layer.
 
@@ -32,6 +34,10 @@ Using any option from the Magic Pencil on a completely empty cel will result in 
 Selecting colors from the palette when using any option from the Magic Pencil other than Outline or Colorize (which actually use the selected color) will interfere with its working and result in odd behaviour
 
 ## Previews
+
+![Outline Brush](/Magic%20Pencil/readme-images/outline-brush.gif "OutlineBrush")
+
+![Selection and RGB Shift](/Magic%20Pencil/readme-images/selection-rgb-shift.gif "Selection and RGB Shift")
 
 ![Colorize, Desaturate, Shift](/Magic%20Pencil/readme-images/colorize-desaturate-shift.gif "Colorize, Desaturate, Shift")
 

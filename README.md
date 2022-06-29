@@ -50,7 +50,7 @@ Known issues:
 
 An extension that creates a live preview with a breakdown of a sprite, allowing you to track values, silhouette, outline, and blocked shapes of the sprites.
 
-## Magic Pencil
+## [Magic Pencil](/Magic%20Pencil/README.md)
 
 An extension for [Aseprite](https://www.aseprite.org/) that provides additional options for the pencil tool.
 
