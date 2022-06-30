@@ -7,6 +7,8 @@
         "Point",
         "ColorMode",
         "Sprite",
-        "ColorSpace"
+        "ColorSpace",
+        "Rectangle",
+        "Selection"
     ]
 }
