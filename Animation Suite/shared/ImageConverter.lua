@@ -7,8 +7,7 @@ function ImageConverter:Flip(sourceImage, flipHorizontal, flipVertical)
         local pixelValue = pixel()
         local x = flipHorizontal and (sourceImage.width - 1 - pixel.x) or
                       pixel.x
-        local y = flipVertical and (sourceImage.height - 1 - pixel.y) or
-                      pixel.y
+        local y = flipVertical and (sourceImage.height - 1 - pixel.y) or pixel.y
 
         flippedImage:drawPixel(x, y, pixelValue)
     end
@@ -134,6 +133,7 @@ function ImageConverter:ConvertGrayToIndexed(sourceImage, targetPalette)
     return convertedImage
 end
 
+-- Color.index doesn't work here, most probably due to the image being from another sprite
 function ImageConverter:_GetClosestColorFromPalette(r, g, b, a, palette)
     local resultIndex = 1
     local closestValue = math.maxinteger
