@@ -11,8 +11,14 @@
   "contributors": [],
   "publisher": "",
   "license": "CC-BY-4.0",
-  "categories": ["Scripts"],
+  "categories": [
+    "Scripts"
+  ],
   "contributes": {
-    "scripts": [{ "path": "./OnScreenControls.lua" }]
+    "scripts": [
+      {
+        "path": "./OnScreenControls.lua"
+      }
+    ]
   }
 }

@@ -1,5 +1,4 @@
-dofile("../extensions/String.lua");
-dofile("../extensions/Table.lua");
+function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
 
 local Commands = {};
 
@@ -62,7 +61,7 @@ function Commands:Search(searchText)
 
         local command = value:lower();
 
-        if command:startsWith(searchText:lower()) then
+        if StartsWith(command, searchText:lower()) then
             searchResult.weight = 1;
         elseif command:match(pattern) then
             searchResult.weight = searchText:len() / command:len()
@@ -75,7 +74,10 @@ function Commands:Search(searchText)
 
     table.sort(results, function(a, b) return a.weight > b.weight end)
 
-    return table.map(results, function(result) return result.text end)
+    local textResult = {};
+    for _, result in ipairs(results) do table.insert(textResult, result.text) end
+
+    return textResult
 end
 
 return Commands;

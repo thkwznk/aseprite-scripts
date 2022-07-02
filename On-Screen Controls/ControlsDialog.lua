@@ -87,7 +87,10 @@ end
 function ControlsDialog:AddSection(section, widgets)
     local sectionId = section .. "Section";
 
-    local widgetCommands = table.map(widgets, function(w) return w.command end);
+    local widgetCommands = {};
+    for _, widget in ipairs(widgets) do
+        table.insert(widgetCommands, widget.command)
+    end
 
     self.dialog:check{
         id = sectionId,

@@ -35,7 +35,7 @@ function KeyboardDialog:Create()
     self.dialog:button{
         text = "<",
         onclick = function()
-            self:UpdateSearchText(self.searchText:removeLast());
+            self:UpdateSearchText(self.searchText:sub(1, -2));
         end
     }
     self.dialog:newrow()

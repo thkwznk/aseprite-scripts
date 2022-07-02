@@ -1,4 +1,4 @@
-ControlsDialog = dofile("./src/ControlsDialog.lua");
+ControlsDialog = dofile("./ControlsDialog.lua");
 
 function init(plugin)
     plugin:newCommand{
