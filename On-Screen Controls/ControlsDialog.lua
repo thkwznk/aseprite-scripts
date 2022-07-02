@@ -1,4 +1,6 @@
-KeyboardDialog = dofile("./KeyboardDialog.lua");
+KeyboardDialog = dofile("./KeyboardDialog.lua")
+MenuEntryType = dofile("./NestedMenuEntryType.lua")
+NestedMenuDialog = dofile("./NestedMenuDialog.lua")
 
 local ControlsDialog = {dialog = nil, preferences = nil};
 
@@ -14,121 +16,154 @@ end
 function ControlsDialog:Create(dialogTitle, preferences, savePreferences)
     self.preferences = preferences;
 
-    self.dialog = Dialog {
-        title = dialogTitle,
-        onclose = function()
-            KeyboardDialog:Close();
-
-            self.preferences.x = self.dialog.bounds.x;
-            self.preferences.y = self.dialog.bounds.y;
-            savePreferences(self.preferences);
-        end
-    };
-
-    self:AddCommandButton("Undo");
-    self:AddCommandButton("Redo");
-    self.dialog:newrow()
-    self:AddCommandButton("Copy");
-    self:AddCommandButton("Paste");
-    self.dialog:newrow()
-    self:AddCommandButton("Cut");
-    self:AddCommandButton("Clear");
-    self.dialog:newrow()
-    self.dialog:button{
-        text = "Cancel",
-        selected = false,
-        focus = false,
-        onclick = function() app.command.Cancel {type = "all"}; end
-    };
-    self.dialog:separator()
-
-    self.dialog:button{
-        text = "Select All",
-        selected = false,
-        focus = false,
-        onclick = function()
-            app.activeSprite.selection:selectAll()
-            app.refresh()
-        end
-    };
-    self.dialog:separator();
-
-    -- Grid Controls
-    self:AddSection("Grid", {
-        {text = "Toggle", command = "ShowGrid"},
-        {text = "Snap to", command = "SnapToGrid", newRow = true},
-        {text = "Settings", command = "GridSettings"}
-    });
-
-    -- Frame Controls
-    self:AddSection("Frame", {
-        {text = "|<", command = "GotoFirstFrame"},
-        {text = "<", command = "GotoPreviousFrame"},
-        {text = ">", command = "GoToNextFrame"},
-        {text = ">|", command = "GoToLastFrame", newRow = true},
-        {text = "+", command = "NewFrame"},
-        {text = "-", command = "RemoveFrame"}
-    });
-
-    -- Layer Controls
-    self:AddSection("Layer", {{text = "New Layer", command = "NewLayer"}});
-
-    self:AddCommandButton("Save", "SaveFile");
-    self.dialog:separator()
-    self.dialog:button{
-        text = "Command",
-        onclick = function()
-            KeyboardDialog:Create(commandPrefix)
-            KeyboardDialog:Show()
-        end
-    };
-end
-
-function ControlsDialog:AddSection(section, widgets)
-    local sectionId = section .. "Section";
-
-    local widgetCommands = {};
-    for _, widget in ipairs(widgets) do
-        table.insert(widgetCommands, widget.command)
-    end
-
-    self.dialog:check{
-        id = sectionId,
-        text = section,
-        selected = self.preferences[sectionId],
-        onclick = function()
-            self:ToggleWidgets(sectionId, widgetCommands);
-        end
+    local data = {
+        {
+            text = "Undo",
+            type = MenuEntryType.Action,
+            onclick = function() app.command.Undo() end
+        }, {
+            text = "Redo",
+            type = MenuEntryType.Action,
+            onclick = function() app.command.Redo() end
+        }, {type = MenuEntryType.NewRow}, {
+            text = "Copy",
+            type = MenuEntryType.Action,
+            onclick = function() app.command.Copy() end
+        }, {
+            text = "Paste",
+            type = MenuEntryType.Action,
+            onclick = function() app.command.Paste() end
+        }, {type = MenuEntryType.NewRow}, {
+            text = "Cut",
+            type = MenuEntryType.Action,
+            onclick = function() app.command.Cut() end
+        }, {
+            text = "Clear",
+            type = MenuEntryType.Action,
+            onclick = function() app.command.Clear() end
+        }, {type = MenuEntryType.NewRow}, {
+            text = "Cancel",
+            type = MenuEntryType.Action,
+            onclick = function() app.command.Cancel {type = "all"} end
+        }, {type = MenuEntryType.Separator}, {
+            text = "Select All",
+            type = MenuEntryType.Action,
+            onclick = function()
+                app.activeSprite.selection:selectAll()
+                app.refresh()
+            end
+        }, {type = MenuEntryType.Separator}, {
+            text = "Grid",
+            type = MenuEntryType.Submenu,
+            data = {
+                {
+                    text = "Toggle",
+                    type = MenuEntryType.Action,
+                    onclick = function()
+                        app.command.ShowGrid()
+                    end
+                }, {
+                    text = "Snap To",
+                    type = MenuEntryType.Action,
+                    onclick = function()
+                        app.command.SnapToGrid()
+                    end
+                }, {type = MenuEntryType.NewRow}, {
+                    text = "Settings",
+                    type = MenuEntryType.Action,
+                    onclick = function()
+                        app.command.GridSettings()
+                    end
+                }
+            }
+        }, {type = MenuEntryType.Separator}, {
+            text = "Frame",
+            type = MenuEntryType.Submenu,
+            data = {
+                {
+                    text = "|<",
+                    type = MenuEntryType.Action,
+                    onclick = function()
+                        app.command.GotoFirstFrame()
+                    end
+                }, {
+                    text = "<",
+                    type = MenuEntryType.Action,
+                    onclick = function()
+                        app.command.GotoPreviousFrame()
+                    end
+                }, {
+                    text = ">",
+                    type = MenuEntryType.Action,
+                    onclick = function()
+                        app.command.GoToNextFrame()
+                    end
+                }, {
+                    text = ">|",
+                    type = MenuEntryType.Action,
+                    onclick = function()
+                        app.command.GoToLastFrame()
+                    end
+                }, {type = MenuEntryType.NewRow}, {
+                    text = "+",
+                    type = MenuEntryType.Action,
+                    onclick = function()
+                        app.command.NewFrame()
+                    end
+                }, {
+                    text = "-",
+                    type = MenuEntryType.Action,
+                    onclick = function()
+                        app.command.RemoveFrame()
+                    end
+                }
+            }
+        }, {type = MenuEntryType.Separator}, {
+            text = "Layer",
+            type = MenuEntryType.Submenu,
+            data = {
+                {
+                    text = "New",
+                    type = MenuEntryType.Action,
+                    onclick = function()
+                        app.command.NewLayer()
+                    end
+                }
+            }
+        }, {type = MenuEntryType.Separator}, {
+            text = "Save",
+            type = MenuEntryType.Action,
+            onclick = function() app.command.SaveFile() end
+        }, {type = MenuEntryType.Separator}, {
+            text = "Command",
+            type = MenuEntryType.Action,
+            onclick = function()
+                KeyboardDialog:Create()
+                KeyboardDialog:Show()
+            end
+        }
     }
 
-    for _, widget in ipairs(widgets) do
-        self:AddCommandButton(widget.text, widget.command);
+    local onclose = function()
+        KeyboardDialog:Close();
 
-        if widget.newRow then self.dialog:newrow(); end
+        self.preferences.x = self.dialog.bounds.x;
+        self.preferences.y = self.dialog.bounds.y;
+        savePreferences(self.preferences);
     end
 
-    self:ToggleWidgets(sectionId, widgetCommands);
-
-    self.dialog:separator();
-end
-
-function ControlsDialog:AddCommandButton(text, command)
-    self.dialog:button{
-        id = command,
-        text = text,
-        onclick = function() app.command[command or text]() end
-    };
+    self.dialog = NestedMenuDialog(dialogTitle, data, onclose)
 end
 
 function ControlsDialog:Show()
-    self.dialog:show{wait = false};
+    self.dialog:show{wait = false}
 
     if self.preferences.x and self.preferences.y then
-        local bounds = self.dialog.bounds;
-        bounds.x = self.preferences.x;
-        bounds.y = self.preferences.y;
-        self.dialog.bounds = bounds;
+        local bounds = self.dialog.bounds
+        bounds.x = self.preferences.x
+        bounds.y = self.preferences.y
+        self.dialog.bounds = bounds
     end
 end
 
-return ControlsDialog;
+return ControlsDialog

@@ -1,4 +1,4 @@
-Compress-Archive -Path ".\package.json", ".\OnScreenControls.lua", ".\Commands.lua", ".\ControlsDialog.lua", ".\KeyboardDialog.lua" -DestinationPath ".\result.zip" -Update
+Compress-Archive -Path ".\package.json", ".\OnScreenControls.lua", ".\Commands.lua", ".\ControlsDialog.lua", ".\KeyboardDialog.lua", ".\NestedMenuDialog.lua" , ".\NestedMenuEntryType.lua" -DestinationPath ".\result.zip" -Update
 
 if (Test-Path -Path ".\result.aseprite-extension") {
     Remove-Item -Path ".\result.aseprite-extension"
