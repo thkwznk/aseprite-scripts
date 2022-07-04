@@ -62,6 +62,7 @@ A collection of effects for [Aseprite](https://www.aseprite.org/) packed into an
 
 - **Extend Cel** - provides an option to quickly link a cel with all proceeding empty cels.
 - **Select Content** - provides an option to precisely select cel's content.
+- **Go To** - provides an option to search and go to a layer, tag, or frame.
 
 ## AsepriteOS
 
