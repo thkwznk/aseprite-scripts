@@ -58,9 +58,10 @@ An extension for [Aseprite](https://www.aseprite.org/) that provides additional 
 
 A collection of effects for [Aseprite](https://www.aseprite.org/) packed into an extension.
 
-## Extend Cel
+## Micro Extensions
 
-A micro extension for [Aseprite](https://www.aseprite.org/) that provides an option to quickly link a cel with all proceeding empty cels.
+- **Extend Cel** - provides an option to quickly link a cel with all proceeding empty cels.
+- **Select Content** - provides an option to precisely select cel's content.
 
 ## AsepriteOS
 
