@@ -1,0 +1,41 @@
+{
+  "name": "theme-preferences",
+  "displayName": "Theme Preferences",
+  "description": "Customize the Aseprite theme in the editor.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kacper Woźniak",
+    "email": "kac.wozniak@gmail.com",
+    "url": "http://thkaspar.itch.io/"
+  },
+  "contributors": [
+    {
+      "name": "David Capello",
+      "email": "davidcapello@gmail.com",
+      "url": "http://davidcapello.com/"
+    },
+    {
+      "name": "Ilija Melentijevic",
+      "url": "http://ilkke.blogspot.com/"
+    }
+  ],
+  "publisher": "Kacper Woźniak",
+  "license": "CC-BY-4.0",
+  "categories": [
+    "Themes",
+    "Scripts"
+  ],
+  "contributes": {
+    "themes": [
+      {
+        "id": "custom",
+        "path": "."
+      }
+    ],
+    "scripts": [
+      {
+        "path": "./extension.lua"
+      }
+    ]
+  }
+}
