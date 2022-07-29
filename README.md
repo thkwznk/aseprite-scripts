@@ -58,6 +58,10 @@ An extension for [Aseprite](https://www.aseprite.org/) that provides additional 
 
 A collection of effects for [Aseprite](https://www.aseprite.org/) packed into an extension.
 
+## [Theme Preferences](/Theme%20Preferences/README.md)
+
+An extension for [Aseprite](https://www.aseprite.org/) that allows for customizing the theme inside the editor.
+
 ## Micro Extensions
 
 - **Extend Cel** - provides an option to quickly link a cel with all proceeding empty cels.
