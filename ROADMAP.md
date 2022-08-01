@@ -1,0 +1,45 @@
+# Roadmap
+
+## Theme Preferences
+
+Unreleased:
+
+- ...
+
+Update v1.0.1
+
+- [Refactor] Add a Default model next to Template - Template is a template, default is default
+- [Improvement] Add pagination for the Load window
+- [Improvement] Prompt user if they want to load theme on import
+- [Bug] Fix tab frames, it mixes button highlights with tab colors (either use all button colors or maybe use the tab colors? tab corner highlight?)
+
+## Magic Pencil
+
+Unreleased:
+
+- ...
+
+Update v1.0.4:
+
+- [Bug] Block opening multiple instances
+- [Feature] Move graffiti simulation to Magic Pencil from Substance Sim
+- [Feature] Two Tone
+- [Improvement] Rework the dialog UI to accommodate the number of options
+- [Improvement] Allow for shifting multiple components at the same time (also, possibly, with different values?)
+- [Fix] Edge case where drawing on an empty cel results in not processing the image correctly - just check if the whole image is only magic color
+
+Future:
+
+- Unlock as much as possible for all color modes - this is more difficult than I thought, I can't use magic colors on an indexed image (maybe I could use white/black there?)
+
+## Sprite Analyzer
+
+Unreleased:
+
+- ...
+
+Update v1.0.1:
+
+- [Fix] Calculations in the initial version were using incorrect values
+- [Refactor] Use app.alert for the confirmation dialog
+- [Improvement] Try using linear RGB for distance calculations
