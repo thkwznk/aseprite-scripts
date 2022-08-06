@@ -4,12 +4,11 @@
 
 Unreleased:
 
-- ...
+- [Improvement] Add pagination for the Load window
 
 Update v1.0.1
 
 - [Refactor] Add a Default model next to Template - Template is a template, default is default
-- [Improvement] Add pagination for the Load window
 - [Improvement] Prompt user if they want to load theme on import
 - [Bug] Fix tab frames, it mixes button highlights with tab colors (either use all button colors or maybe use the tab colors? tab corner highlight?)
 

@@ -113,23 +113,108 @@ function ThemeManager:Save(theme, onsave)
     end
 end
 
+function ThemeManager:ShowExportDialog(name, code, onclose)
+    local isFirstOpen = true
+
+    local exportDialog = Dialog {
+        title = "Export " .. name,
+        onclose = function() if not isFirstOpen then onclose() end end
+    }
+
+    exportDialog --
+    :entry{label = "Code", text = code} --
+    :separator() --
+    :button{text = "Close"} --
+
+    -- Open and close to initialize bounds
+    exportDialog:show{wait = false}
+    exportDialog:close()
+
+    isFirstOpen = false
+
+    local bounds = exportDialog.bounds
+    bounds.x = bounds.x - (EXPORT_DIALOG_WIDTH - bounds.width) / 2
+    bounds.width = EXPORT_DIALOG_WIDTH
+    exportDialog.bounds = bounds
+
+    exportDialog:show()
+end
+
+local ConfigurationsPerPage = 10
+local LoadButtonIdPrefix = "saved-theme-load-"
+local ExportButtonIdPrefix = "saved-theme-export-"
+local DeleteButtonIdPrefix = "saved-theme-delete-"
+
 function ThemeManager:Load(onload, onreset)
+    local currentPage = 1
+    local pages = math.ceil(#self.storage.savedThemes / ConfigurationsPerPage)
+    local skip = (currentPage - 1) * ConfigurationsPerPage
+
     local browseDialog = Dialog("Load")
 
-    for index, savedthemeCode in ipairs(self.storage.savedThemes) do
-        local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
-        local loadButtonId = "saved-theme-load-" .. tostring(index)
-        local exportButtonId = "saved-theme-export-" .. tostring(index)
-        local deleteButtonId = "saved-theme-delete-" .. tostring(index)
+    local updateBrowseDialog = function()
+        browseDialog --
+        :modify{id = "button-previous", enabled = currentPage > 1} --
+        :modify{id = "button-next", enabled = currentPage < pages}
 
+        skip = (currentPage - 1) * ConfigurationsPerPage
+
+        for index = 1, ConfigurationsPerPage do
+            local savedthemeCode = self.storage.savedThemes[skip + index]
+            local loadButtonId = LoadButtonIdPrefix .. tostring(index)
+            local exportButtonId = ExportButtonIdPrefix .. tostring(index)
+            local deleteButtonId = DeleteButtonIdPrefix .. tostring(index)
+
+            if savedthemeCode then
+                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
+
+                browseDialog --
+                :modify{id = loadButtonId, visible = true, label = theme.name} --
+                :modify{id = exportButtonId, visible = true} --
+                :modify{id = deleteButtonId, visible = true}
+            else
+                browseDialog --
+                :modify{id = loadButtonId, visible = false} --
+                :modify{id = exportButtonId, visible = false} --
+                :modify{id = deleteButtonId, visible = false}
+            end
+        end
+    end
+
+    browseDialog --
+    :button{
+        id = "button-previous",
+        text = "Previous",
+        enabled = false,
+        onclick = function()
+            currentPage = currentPage - 1
+            updateBrowseDialog()
+        end
+    } --
+    :button{text = "", enabled = false} --
+    :button{
+        id = "button-next",
+        text = "Next",
+        enabled = pages > 1,
+        onclick = function()
+            currentPage = currentPage + 1
+            updateBrowseDialog()
+        end
+    } --
+    :separator()
+
+    for index = 1, ConfigurationsPerPage do
         browseDialog --
         :button{
-            id = loadButtonId,
-            label = theme.name,
+            id = LoadButtonIdPrefix .. tostring(index),
+            label = "", -- Set empty label, without it it's impossible to update it later
             text = "Load",
             onclick = function()
+                local savedthemeCode = self.storage.savedThemes[skip + index]
+                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
+
                 local confirmation = app.alert {
-                    title = "Loading theme",
+                    title = "Loading theme " .. theme.name,
                     text = "Unsaved changes will be lost, do you want to continue?",
                     buttons = {"Yes", "No"}
                 }
@@ -141,43 +226,28 @@ function ThemeManager:Load(onload, onreset)
             end
         } --
         :button{
-            id = exportButtonId,
+            id = ExportButtonIdPrefix .. tostring(index),
             text = "Export",
             onclick = function()
+                local savedthemeCode = self.storage.savedThemes[skip + index]
+                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
+
                 browseDialog:close()
-                local isFirstOpen = true
+                local onExportDialogClose = function()
+                    browseDialog:show()
+                end
 
-                local exportDialog = Dialog {
-                    title = "Export " .. theme.name,
-                    onclose = function()
-                        if not isFirstOpen then
-                            browseDialog:show()
-                        end
-                    end
-                }
-                exportDialog --
-                :entry{label = "Code", text = savedthemeCode} --
-                :separator() --
-                :button{text = "Close"} --
-
-                -- Open and close to initialize bounds
-                exportDialog:show{wait = false}
-                exportDialog:close()
-
-                isFirstOpen = false
-
-                local bounds = exportDialog.bounds
-                bounds.x = bounds.x - (EXPORT_DIALOG_WIDTH - bounds.width) / 2
-                bounds.width = EXPORT_DIALOG_WIDTH
-                exportDialog.bounds = bounds
-
-                exportDialog:show()
+                self:ShowExportDialog(theme.name, savedthemeCode,
+                                      onExportDialogClose)
             end
         } --
         :button{
-            id = deleteButtonId,
+            id = DeleteButtonIdPrefix .. tostring(index),
             text = "Delete",
             onclick = function()
+                local savedthemeCode = self.storage.savedThemes[skip + index]
+                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
+
                 local confirmation = app.alert {
                     title = "Delete " .. theme.name,
                     text = "Are you sure?",
@@ -197,6 +267,9 @@ function ThemeManager:Load(onload, onreset)
     if #self.storage.savedThemes > 0 then
         browseDialog:separator{id = "separator"}
     end
+
+    -- Initialize
+    updateBrowseDialog()
 
     browseDialog --
     :button{
