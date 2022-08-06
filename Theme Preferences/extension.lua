@@ -559,13 +559,3 @@ end
 function exit(plugin)
     -- You don't really need to do anything specific here
 end
-
--- FUTURE: Support customising fonts
-
--- FUTURE: Test a Super Simple Mode where you can only edit the Tab color
-
--- FUTURE: Separate "field_background" when Aseprite fixes the menu shadow
--- FUTURE: Report "background" being used for menu item disabled text as a bug
--- FUTURE: Add Dark theme template
--- FUTURE: Export to Aseprite extension/theme
--- FUTURE: (Currently it doesn't work due to a bug) Add separate color for Tooltip Text (Tooltip Section?)

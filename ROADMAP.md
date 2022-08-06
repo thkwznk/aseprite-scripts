@@ -13,6 +13,16 @@ Update v1.0.1
 - [Improvement] Prompt user if they want to load theme on import
 - [Bug] Fix tab frames, it mixes button highlights with tab colors (either use all button colors or maybe use the tab colors? tab corner highlight?)
 
+Future:
+
+- [Feature] Support customising fonts
+- [Feature] Test a Super Simple Mode where you can only edit the Tab color
+- [Feature] Separate "field_background" when Aseprite fixes the menu shadow
+- [Feature] Add a Dark theme template
+- [Feature] Export to Aseprite theme (extension)
+- [Feature] Add separate color for Tooltip Text (Tooltip Section?) - currently it doesn't work due to a bug
+- [Feature] Generating a theme from the current color palette
+
 ## Magic Pencil
 
 Unreleased:
