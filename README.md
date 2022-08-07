@@ -68,6 +68,7 @@ An extension for [Aseprite](https://www.aseprite.org/) that allows for customizi
 - **Select Content** - provides an option to precisely select cel's content.
 - **Go To** - provides an option to search and go to a layer, tag, or frame.
 - **Center Image** - provides an option to move image content precisely to the center of a sprite or selection.
+- **Brush Transformations** - provides options to transform a custom brush on the fly.
 
 ## AsepriteOS
 
