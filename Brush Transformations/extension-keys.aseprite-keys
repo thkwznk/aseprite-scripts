@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<keyboard version="1">
+    <commands>
+        <key command="BrushRotateCW" shortcut="Alt+Shift+W" />
+        <key command="BrushRotateCCW" shortcut="Alt+Shift+Q" />
+        <key command="BrushFlipHorizontal" shortcut="Alt+Shift+H" />
+        <key command="BrushFlipVertical" shortcut="Alt+Shift+V" />
+    </commands>
+</keyboard>

@@ -1,0 +1,31 @@
+{
+  "name": "brush-transformations",
+  "displayName": "Brush Transformations",
+  "description": "Provides options to transform a custom brush on the fly.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kacper Woźniak",
+    "email": "kac.wozniak@gmail.com",
+    "url": "https://thkaspar.itch.io/"
+  },
+  "contributors": [],
+  "publisher": "Kacper Woźniak",
+  "license": "CC-BY-4.0",
+  "categories": [
+    "Scripts",
+    "Keys"
+  ],
+  "contributes": {
+    "scripts": [
+      {
+        "path": "./extension.lua"
+      }
+    ],
+    "keys": [
+      {
+        "id": "swap-colors-keys",
+        "path": "./extension-keys.aseprite-keys"
+      }
+    ]
+  }
+}
