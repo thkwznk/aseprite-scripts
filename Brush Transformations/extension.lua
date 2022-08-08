@@ -22,25 +22,25 @@ local function TransformBrush(options)
         transformedImage = Image(height, width, image.colorMode)
 
         for pixel in image:pixels() do
-            transformedImage:drawPixel(height - pixel.y, pixel.x, pixel())
+            transformedImage:drawPixel(height - 1 - pixel.y, pixel.x, pixel())
         end
     elseif options.rotateCcw then
         transformedImage = Image(height, width, image.colorMode)
 
         for pixel in image:pixels() do
-            transformedImage:drawPixel(pixel.y, width - pixel.x, pixel())
+            transformedImage:drawPixel(pixel.y, width - 1 - pixel.x, pixel())
         end
     elseif options.flipHorizontal then
         transformedImage = Image(width, height, image.colorMode)
 
         for pixel in image:pixels() do
-            transformedImage:drawPixel(width - pixel.x, pixel.y, pixel())
+            transformedImage:drawPixel(width - 1 - pixel.x, pixel.y, pixel())
         end
     elseif options.flipVertical then
         transformedImage = Image(width, height, image.colorMode)
 
         for pixel in image:pixels() do
-            transformedImage:drawPixel(pixel.x, height - pixel.y, pixel())
+            transformedImage:drawPixel(pixel.x, height - 1 - pixel.y, pixel())
         end
     end
 

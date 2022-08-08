@@ -9,6 +9,7 @@
         "Sprite",
         "ColorSpace",
         "Rectangle",
-        "Selection"
+        "Selection",
+        "Brush"
     ]
 }
