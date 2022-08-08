@@ -255,7 +255,7 @@ function ThemeManager:Load(onload, onreset)
                 }
 
                 if confirmation == 1 then
-                    table.remove(self.storage.savedThemes, index)
+                    table.remove(self.storage.savedThemes, skip + index)
 
                     browseDialog:close()
                     self:Load(onload, onreset)
