@@ -9,7 +9,7 @@ Unreleased:
 Update v1.0.1
 
 - [Refactor] Add a Default model next to Template - Template is a template, default is default
-- [Improvement] Prompt user if they want to load theme on import
+- [Improvement] Improve Import - add a dialog window allowing the user to change the name of the imported config and additional button for saving and loading the config
 - [Bug] Fix tab frames, it mixes button highlights with tab colors (either use all button colors or maybe use the tab colors? tab corner highlight?)
 
 Future:
