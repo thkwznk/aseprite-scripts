@@ -6,9 +6,7 @@ Unreleased:
 
 - [Improvement] Add pagination for the Load window
 - [Improvement] Improve Import - add a dialog window allowing the user to change the name of the imported config and additional button for saving and loading the config
-Update v1.0.1
-
-- [Bug] Fix tab frames, it mixes button highlights with tab colors (either use all button colors or maybe use the tab colors? tab corner highlight?)
+- [Bug] Fix tab frames, it mixes button highlights with tab colors
 
 Future:
 
