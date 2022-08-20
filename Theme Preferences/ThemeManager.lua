@@ -25,38 +25,50 @@ function ThemeManager:Find(name)
     end
 end
 
-function ThemeManager:Import(code, onimport, onerror)
-    local theme = ThemeEncoder:DecodeSigned(code)
+function ThemeManager:Save(theme, onsave, isImport)
+    local title = "Save Configuration"
+    local okButtonText = "OK"
 
-    if not theme then
-        onerror()
-        return
+    if isImport then
+        title = "Import Configuration"
+        okButtonText = "Save"
     end
 
-    local isNameUsed = self:Find(theme.name)
+    local saveDialog = Dialog(title)
 
-    if isNameUsed then
-        local overwriteConfirmation = app.alert {
-            title = "Configuration overwrite",
-            text = "Configuration with a name " .. theme.name ..
-                " already exists, do you want to overwrite it?",
-            buttons = {"Yes", "No"}
-        }
+    local save = function(options)
+        local applyImmediately = options and options.apply
+        local isNameUsed = self:Find(saveDialog.data.name)
 
-        if overwriteConfirmation == 1 then
-            self.storage.savedThemes[isNameUsed] = code
-            onimport()
+        if isNameUsed then
+            local overwriteConfirmation = app.alert {
+                title = "Configuration overwrite",
+                text = "Configuration with a name " .. saveDialog.data.name ..
+                    " already exists, do you want to overwrite it?",
+                buttons = {"Yes", "No"}
+            }
+
+            if overwriteConfirmation ~= 1 then return end
         end
-    else
-        table.insert(self.storage.savedThemes, code)
-        onimport()
+
+        theme.name = saveDialog.data.name
+
+        if not isImport or (isImport and applyImmediately) then
+            onsave(theme)
+        end
+
+        local code = ThemeEncoder:EncodeSigned(theme.name, theme.parameters,
+                                               theme.colors)
+
+        if isNameUsed then
+            self.storage.savedThemes[isNameUsed] = code
+        else
+            table.insert(self.storage.savedThemes, code)
+        end
+
+        saveDialog:close()
     end
-end
 
-function ThemeManager:Save(theme, onsave)
-    local confirmation = false
-
-    local saveDialog = Dialog("Save")
     saveDialog --
     :entry{
         id = "name",
@@ -69,48 +81,23 @@ function ThemeManager:Save(theme, onsave)
     :separator() --
     :button{
         id = "ok",
-        text = "OK",
+        text = okButtonText,
         enabled = #theme.name > 0,
-        onclick = function()
-            local isNameUsed = self:Find(saveDialog.data.name)
-
-            if not isNameUsed then
-                confirmation = true
-                saveDialog:close()
-                return
-            end
-
-            local overwriteConfirmation = app.alert {
-                title = "Configuration overwrite",
-                text = "Configuration with a name " .. saveDialog.data.name ..
-                    " already exists, do you want to overwrite it?",
-                buttons = {"Yes", "No"}
-            }
-
-            if overwriteConfirmation == 1 then
-                confirmation = true
-                saveDialog:close()
-            end
-        end
+        onclick = function() save() end
     } --
+
+    if isImport then
+        saveDialog:button{
+            text = "Save & Apply",
+            enabled = #theme.name > 0,
+            onclick = function() save {apply = true} end
+        }
+    end
+
+    saveDialog --
     :button{text = "Cancel"} --
     :show()
 
-    if confirmation then
-        theme.name = saveDialog.data.name
-        onsave()
-
-        local code = ThemeEncoder:EncodeSigned(theme.name, theme.parameters,
-                                               theme.colors)
-
-        local nameUsed = ThemeManager:Find(theme.name)
-
-        if nameUsed then
-            self.storage.savedThemes[nameUsed] = code
-        else
-            table.insert(self.storage.savedThemes, code)
-        end
-    end
 end
 
 function ThemeManager:ShowExportDialog(name, code, onclose)
@@ -150,7 +137,7 @@ function ThemeManager:Load(onload, onreset)
     local pages = math.ceil(#self.storage.savedThemes / ConfigurationsPerPage)
     local skip = (currentPage - 1) * ConfigurationsPerPage
 
-    local browseDialog = Dialog("Load")
+    local browseDialog = Dialog("Load Configuration")
 
     local updateBrowseDialog = function()
         browseDialog --
@@ -276,32 +263,28 @@ function ThemeManager:Load(onload, onreset)
         text = "Import",
         onclick = function()
             browseDialog:close()
-            local isFirstOpen = true
+            local importDialog = Dialog("Import")
 
-            local importDialog = Dialog {
-                title = "Import",
-                onclose = function()
-                    if not isFirstOpen then
-                        self:Load(onload, onreset)
-                    end
-                end
-            }
             importDialog --
             :entry{id = "code", label = "Code"} --
             :separator{id = "separator"} --
             :button{
                 text = "Import",
                 onclick = function()
-                    local onimport = function()
-                        importDialog:close()
-                    end
-                    local onerror = function()
+                    local code = importDialog.data.code
+                    local theme = ThemeEncoder:DecodeSigned(code)
+
+                    if not theme then
                         importDialog:modify{
                             id = "separator",
                             text = "Incorrect code"
                         }
+                        return
                     end
-                    self:Import(importDialog.data.code, onimport, onerror)
+
+                    importDialog:close()
+
+                    self:Save(theme, onload, true)
                 end
             } --
             :button{text = "Cancel"} --
@@ -309,8 +292,6 @@ function ThemeManager:Load(onload, onreset)
             -- Open and close to initialize bounds
             importDialog:show{wait = false}
             importDialog:close()
-
-            isFirstOpen = false
 
             local bounds = importDialog.bounds
             bounds.x = bounds.x - (EXPORT_DIALOG_WIDTH - bounds.width) / 2

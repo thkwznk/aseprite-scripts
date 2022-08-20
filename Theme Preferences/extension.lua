@@ -463,8 +463,8 @@ dialog --
     text = "Save",
     onclick = function()
         Theme.parameters = {isAdvanced = dialog.data["mode-advanced"]}
-        local onsave = function()
-            dialog:modify{title = DIALOG_TITLE .. ": " .. Theme.name}
+        local onsave = function(theme)
+            dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name}
         end
         ThemeManager:Save(Theme, onsave)
     end
