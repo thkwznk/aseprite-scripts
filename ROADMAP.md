@@ -2,12 +2,6 @@
 
 ## Theme Preferences
 
-Unreleased:
-
-- [Improvement] Add pagination for the Load window
-- [Improvement] Improve Import - add a dialog window allowing the user to change the name of the imported config and additional button for saving and loading the config
-- [Bug] Fix tab frames, it mixes button highlights with tab colors
-
 Future:
 
 - [Refactor] Add a Default model next to Template - Template is a template, default is default

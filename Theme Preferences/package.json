@@ -2,7 +2,7 @@
   "name": "theme-preferences",
   "displayName": "Theme Preferences",
   "description": "Customize the Aseprite theme in the editor.",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": {
     "name": "Kacper Woźniak",
     "email": "kac.wozniak@gmail.com",
