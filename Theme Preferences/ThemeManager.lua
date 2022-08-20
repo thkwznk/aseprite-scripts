@@ -127,24 +127,27 @@ function ThemeManager:ShowExportDialog(name, code, onclose)
     exportDialog:show()
 end
 
+local CurrentPage = 1
 local ConfigurationsPerPage = 10
 local LoadButtonIdPrefix = "saved-theme-load-"
 local ExportButtonIdPrefix = "saved-theme-export-"
 local DeleteButtonIdPrefix = "saved-theme-delete-"
 
 function ThemeManager:Load(onload, onreset)
-    local currentPage = 1
     local pages = math.ceil(#self.storage.savedThemes / ConfigurationsPerPage)
-    local skip = (currentPage - 1) * ConfigurationsPerPage
+
+    CurrentPage = math.min(CurrentPage, pages)
+
+    local skip = (CurrentPage - 1) * ConfigurationsPerPage
 
     local browseDialog = Dialog("Load Configuration")
 
     local updateBrowseDialog = function()
         browseDialog --
-        :modify{id = "button-previous", enabled = currentPage > 1} --
-        :modify{id = "button-next", enabled = currentPage < pages}
+        :modify{id = "button-previous", enabled = CurrentPage > 1} --
+        :modify{id = "button-next", enabled = CurrentPage < pages}
 
-        skip = (currentPage - 1) * ConfigurationsPerPage
+        skip = (CurrentPage - 1) * ConfigurationsPerPage
 
         for index = 1, ConfigurationsPerPage do
             local savedthemeCode = self.storage.savedThemes[skip + index]
@@ -174,7 +177,7 @@ function ThemeManager:Load(onload, onreset)
         text = "Previous",
         enabled = false,
         onclick = function()
-            currentPage = currentPage - 1
+            CurrentPage = CurrentPage - 1
             updateBrowseDialog()
         end
     } --
@@ -184,7 +187,7 @@ function ThemeManager:Load(onload, onreset)
         text = "Next",
         enabled = pages > 1,
         onclick = function()
-            currentPage = currentPage + 1
+            CurrentPage = CurrentPage + 1
             updateBrowseDialog()
         end
     } --
