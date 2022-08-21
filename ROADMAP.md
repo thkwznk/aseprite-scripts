@@ -43,3 +43,9 @@ Update v1.0.1:
 - [Fix] Calculations in the initial version were using incorrect values
 - [Refactor] Use app.alert for the confirmation dialog
 - [Improvement] Try using linear RGB for distance calculations
+
+## On-Screen Controls
+
+Unreleased:
+
+- [Improvement] Rework dialog to use nested menus
