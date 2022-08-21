@@ -2,16 +2,23 @@
 
 ## Theme Preferences
 
+Unreleased:
+
+- ...
+
+Update v1.0.2:
+
+- [Feature] Support customising fonts
+- [Test-Feature] Super Simple Mode where you can only edit the Tab color
+- [Test-Feature] Export to Aseprite theme (extension)
+
 Future:
 
-- [Refactor] Add a Default model next to Template - Template is a template, default is default
-- [Feature] Support customising fonts
-- [Feature] Test a Super Simple Mode where you can only edit the Tab color
-- [Feature] Separate "field_background" when Aseprite fixes the menu shadow
+- [Feature] [Blocked] Separate "field_background" when Aseprite fixes the menu shadow
 - [Feature] Add a Dark theme template
-- [Feature] Export to Aseprite theme (extension)
-- [Feature] Add separate color for Tooltip Text (Tooltip Section?) - currently it doesn't work due to a bug
+- [Feature] [Blocked] Add separate color for Tooltip Text (Tooltip Section?) - currently it doesn't work due to a bug
 - [Feature] Generating a theme from the current color palette
+- [Refactor] Add a Default model next to Template - Template is a template, default is default
 
 ## Magic Pencil
 
@@ -21,15 +28,15 @@ Unreleased:
 
 Update v1.0.4:
 
-- [Bug] Block opening multiple instances
+- [Fix] Block opening multiple instances
 - [Feature] Move graffiti simulation to Magic Pencil from Substance Sim
-- [Feature] Two Tone
 - [Improvement] Rework the dialog UI to accommodate the number of options
-- [Improvement] Allow for shifting multiple components at the same time (also, possibly, with different values?)
-- [Fix] Edge case where drawing on an empty cel results in not processing the image correctly - just check if the whole image is only magic color
 
 Future:
 
+- [Feature] Two Tone
+- [Improvement] Allow for shifting multiple components at the same time (also, possibly, with different values?)
+- [Fix] Edge case where drawing on an empty cel results in not processing the image correctly - just check if the whole image is only magic color
 - Unlock as much as possible for all color modes - this is more difficult than I thought, I can't use magic colors on an indexed image (maybe I could use white/black there?)
 
 ## Sprite Analyzer
