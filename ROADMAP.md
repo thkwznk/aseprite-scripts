@@ -24,11 +24,10 @@ Future:
 
 Unreleased:
 
-- ...
+- [Fix] Block opening multiple instances
 
 Update v1.0.4:
 
-- [Fix] Block opening multiple instances
 - [Feature] Move graffiti simulation to Magic Pencil from Substance Sim
 - [Improvement] Rework the dialog UI to accommodate the number of options
 

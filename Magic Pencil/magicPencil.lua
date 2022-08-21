@@ -344,7 +344,7 @@ end
 
 local MagicPencil = {dialog = nil, colorModel = ColorModels.HSV}
 
-function MagicPencil:Execute()
+function MagicPencil:Execute(options)
     local selectedMode = Modes.Regular
     local sprite = app.activeSprite
 
@@ -480,6 +480,8 @@ function MagicPencil:Execute()
 
             app.fgColor = lastFgColor
             app.bgColor = lastBgColor
+
+            options.onclose()
         end
     }
 
