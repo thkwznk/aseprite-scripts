@@ -62,13 +62,9 @@ A collection of effects for [Aseprite](https://www.aseprite.org/) packed into an
 
 An extension for [Aseprite](https://www.aseprite.org/) that allows for customizing the theme inside the editor.
 
-## Micro Extensions
+## [Micro Extensions](/Micro%20Extensions/README.md)
 
-- **Extend Cel** - provides an option to quickly link a cel with all proceeding empty cels.
-- **Select Content** - provides an option to precisely select cel's content.
-- **Go To** - provides an option to search and go to a layer, tag, or frame.
-- **Center Image** - provides an option to move image content precisely to the center of a sprite or selection.
-- **Brush Transformations** - provides options to transform a custom brush on the fly.
+A collection of separate, single-function, productivity-focused extensions.
 
 ## AsepriteOS
 
