@@ -12,10 +12,14 @@ Update v1.0.2:
 - [Test-Feature] Super Simple Mode where you can only edit the Tab color
 - [Test-Feature] Export to Aseprite theme (extension)
 
+Update v2.0.0:
+
+- [Improvement] A new color (set) - Window Title Bar
+
 Future:
 
-- [Feature] [Blocked] Separate "field_background" when Aseprite fixes the menu shadow
 - [Feature] Add a Dark theme template
+- [Feature] [Blocked] Separate "field_background" when Aseprite fixes the menu shadow
 - [Feature] [Blocked] Add separate color for Tooltip Text (Tooltip Section?) - currently it doesn't work due to a bug
 - [Feature] Generating a theme from the current color palette
 - [Refactor] Add a Default model next to Template - Template is a template, default is default
@@ -49,6 +53,7 @@ Update v1.0.1:
 - [Fix] Calculations in the initial version were using incorrect values
 - [Refactor] Use app.alert for the confirmation dialog
 - [Improvement] Try using linear RGB for distance calculations
+- [Improvement] Optimise how part of the image is taken from the source
 
 ## On-Screen Controls
 
