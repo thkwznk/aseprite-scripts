@@ -9,7 +9,10 @@ Unreleased:
 Update v1.0.2:
 
 - [Feature] Support customising fonts
+- [Improvement] Improve how the icons are coloured
 - [Test-Feature] Super Simple Mode where you can only edit the Tab color
+
+Update v1.0.3:
 - [Test-Feature] Export to Aseprite theme (extension)
 
 Update v2.0.0:
