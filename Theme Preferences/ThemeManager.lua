@@ -88,7 +88,7 @@ function ThemeManager:Save(theme, onsave, isImport)
 
     if isImport then
         saveDialog:button{
-            text = "Save & Apply",
+            text = "Save and Apply",
             enabled = #theme.name > 0,
             onclick = function() save {apply = true} end
         }

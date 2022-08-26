@@ -4,7 +4,7 @@
 
 Unreleased:
 
-- ...
+- [Fix] Fix button text in the Import Configuration dialog
 
 Update v1.0.2:
 
