@@ -1,0 +1,24 @@
+{
+  "name": "modify-frame-rate",
+  "displayName": "Modify Frame Rate",
+  "description": "Provides an option to speed up or slow down multiple frames at the same time to a percentage of their current frame rate.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kacper Woźniak",
+    "email": "kac.wozniak@gmail.com",
+    "url": "https://thkaspar.itch.io/"
+  },
+  "contributors": [],
+  "publisher": "myname",
+  "license": "CC-BY-4.0",
+  "categories": [
+    "Scripts"
+  ],
+  "contributes": {
+    "scripts": [
+      {
+        "path": "./extension.lua"
+      }
+    ]
+  }
+}

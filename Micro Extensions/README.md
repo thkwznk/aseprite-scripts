@@ -19,3 +19,6 @@ Provides an option to move image content precisely to the center of a sprite or 
 ## Brush Transformations
 
 Provides options to transform a custom brush on the fly.
+
+## Modify Frame Rate
+Provides an option to speed up or slow down multiple frames at the same time to a percentage of their current frame rate.
