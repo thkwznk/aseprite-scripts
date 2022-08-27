@@ -43,6 +43,9 @@ function init(plugin)
 
                         for _, frame in ipairs(frames) do
                             frame.duration = frame.duration * modifier
+
+                            -- Fix for the open issue #1504
+                            frame.duration = math.max(frame.duration, 0.02)
                         end
                     end)
 
