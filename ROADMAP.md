@@ -63,3 +63,11 @@ Update v1.0.1:
 Unreleased:
 
 - [Improvement] Rework dialog to use nested menus
+
+Update v?.?.?:
+
+- [Improvement] Add sliders to resize color in the palette and thumbnails on the timeline
+- [Improvement] Add a button to make a new brush from selection
+- [Improvement] Add buttons for switching layers up/down, changing their visibility, locking them, and selecting layer content
+- [Improvement] Deselect? Invert selection?
+- [Fix] Clear can delete a layer, it shouldn't
