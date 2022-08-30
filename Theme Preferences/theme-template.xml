@@ -35,7 +35,7 @@
         <color id="text" value="<text_regular>" />
         <color id="disabled" value="<window_shadow>" />
         <color id="face" value="<window_background>" />
-        <color id="hot_face" value="#faf0e6" />
+        <color id="hot_face" value="<window_hover>" />
         <color id="selected" value="<field_highlight>" />
         <color id="selected_text" value="<text_active>" />
         <color id="separator_label" value="<text_separator>" />

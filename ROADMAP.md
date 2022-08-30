@@ -5,6 +5,7 @@
 Unreleased:
 
 - [Fix] Fix button text in the Import Configuration dialog
+- [Fix] Colors of the warning icon (when a color from outside the palette is introduced) show correctly
 
 Update v1.0.2:
 
