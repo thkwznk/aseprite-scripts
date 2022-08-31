@@ -9,10 +9,12 @@ Unreleased:
 - [Fix] Selected checkboxes and radio buttons are now now highlighted correctly
 - [Improvement] Icons use the Regular Text color in Simple Mode
 - [Improvement] Place both text colors in one row
+- [Improvement] Add a "(modified)" label when an existing configuration is changed and disable the Save button when configuration is not modified
+- [Fix] Closing the Theme Preferences dialog with the "X" button has consistent behaviour with closing the dialog using the "Cancel" button
 
 Update v1.0.2:
 
-- [Test-Feature] Tint Mode where you can only edit the Tab color + optional underglow
+- ...
 
 Update v1.0.3:
 - [Feature] Support customising fonts
@@ -20,6 +22,7 @@ Update v1.0.3:
 
 Update v2.0.0:
 
+- [Test-Feature] Tint Mode where you can only edit the Tab color + optional underglow
 - [Improvement] A new color (set) - Window Title Bar
 
 Future:

@@ -15,6 +15,21 @@ local ThemeXmlTemplatePath = app.fs.joinPath(ThemePreferencesDirectory,
                                              "theme-template.xml")
 local ThemeXmlPath = app.fs.joinPath(ThemePreferencesDirectory, "theme.xml")
 
+function ReadAll(filePath)
+    local file = assert(io.open(filePath, "rb"))
+    local content = file:read("*all")
+    file:close()
+    return content
+end
+
+function WriteAll(filePath, content)
+    local file = io.open(filePath, "w")
+    if file then
+        file:write(content)
+        file:close()
+    end
+end
+
 function ColorToHex(color)
     return string.format("#%02x%02x%02x", color.red, color.green, color.blue)
 end
@@ -33,29 +48,19 @@ for id, parameter in pairs(Template.parameters) do
     Theme.parameters[id] = parameter
 end
 
---
-local ThemePreferencesDialog = {}
+-- Dialog
 
-local isDialogOpen = false
-local dialog = Dialog {
-    title = DIALOG_TITLE,
-    onclose = function() isDialogOpen = false end
+local ThemePreferencesDialog = {
+    isModified = false,
+    lastRefreshState = false,
+    isDialogOpen = false,
+    onClose = nil
 }
 
-function ReadAll(filePath)
-    local file = assert(io.open(filePath, "rb"))
-    local content = file:read("*all")
-    file:close()
-    return content
-end
-
-function WriteAll(filePath, content)
-    local file = io.open(filePath, "w")
-    if file then
-        file:write(content)
-        file:close()
-    end
-end
+local dialog = Dialog {
+    title = DIALOG_TITLE,
+    onclose = function() ThemePreferencesDialog:onClose() end
+}
 
 function ThemePreferencesDialog:RefreshTheme(template, theme)
     -- Prepare color lookup
@@ -96,9 +101,9 @@ function ThemePreferencesDialog:RefreshTheme(template, theme)
 end
 
 local function Refresh()
-    ThemePreferencesDialog:RefreshTheme(Template, Theme)
+    ThemePreferencesDialog.lastRefreshState = ThemePreferencesDialog.isModified
 
-    Theme.parameters = {isAdvanced = dialog.data["mode-advanced"]}
+    ThemePreferencesDialog:RefreshTheme(Template, Theme)
     ThemeManager:SetCurrentTheme(Theme)
 
     -- Switch Aseprite to the custom theme
@@ -118,6 +123,14 @@ function ShiftColor(color, redModifier, greenModifer, blueModifier)
         blue = ShiftRGB(color.blue, blueModifier),
         alpha = color.alpha
     }
+end
+
+local function MarkThemeAsModified()
+    ThemePreferencesDialog.isModified = true
+
+    dialog --
+    :modify{id = "save-configuration", enabled = true} --
+    :modify{title = DIALOG_TITLE .. ": " .. Theme.name .. " (modified)"}
 end
 
 local function SetThemeColor(id, color)
@@ -172,6 +185,9 @@ local function ChangeMode(options)
     for _, id in ipairs(advancedWidgetIds) do
         dialog:modify{id = id, visible = dialog.data["mode-advanced"]}
     end
+
+    Theme.parameters.isAdvanced = dialog.data["mode-advanced"]
+    MarkThemeAsModified()
 end
 
 local function LoadTheme(theme)
@@ -199,12 +215,31 @@ local function LoadTheme(theme)
 
     ChangeMode {force = true}
 
-    -- Set the name
-    dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name}
+    dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name} --
+    dialog:modify{id = "save-configuration", enabled = false}
+
     Theme.name = theme.name
+    Theme.parameters = theme.parameters
+
+    ThemePreferencesDialog.isModified = false
 end
 
+-- Colors = Tint, Highlight, Tooltip (label as Hover)
+
+-- Link/Separator = Tint Color
+-- Simple Tab Color = 50/50 Tint Color/Window Background Color
+-- Highlight = Highlight
+-- Tooltip = Tooltip
+-- Hover = 50/50 Tooltip/Window Background Color
+
 dialog --
+-- :radio{
+--     id = "mode-tint",
+--     label = "Mode",
+--     text = "Tint",
+--     selected = true,
+--     onclick = ChangeMode
+-- } --
 :radio{
     id = "mode-simple",
     label = "Mode",
@@ -230,6 +265,8 @@ local function ThemeColor(options)
             Theme.colors[options.id] = color
 
             if options.onchange then options.onchange(color) end
+
+            MarkThemeAsModified()
         end
     }
 end
@@ -258,6 +295,8 @@ dialog:color{
 
         SetThemeColor("text_link", color)
         SetThemeColor("text_separator", color)
+
+        MarkThemeAsModified()
     end
 }
 
@@ -332,6 +371,8 @@ local function ChangeCursorColors()
     Theme.colors["editor_cursor"] = color
     Theme.colors["editor_cursor_shadow"] = shadowColor
     Theme.colors["editor_cursor_outline"] = outlinecolor
+
+    MarkThemeAsModified()
 end
 
 dialog --
@@ -364,6 +405,8 @@ dialog:color{
         SetThemeColor("button_highlight", highlightColor)
         SetThemeColor("button_background", color)
         SetThemeColor("button_shadow", shadowColor)
+
+        MarkThemeAsModified()
     end
 }
 
@@ -389,6 +432,8 @@ dialog:color{
         SetThemeColor("tab_highlight", highlightColor)
         SetThemeColor("tab_background", color)
         SetThemeColor("tab_shadow", shadowColor)
+
+        MarkThemeAsModified()
     end
 }
 
@@ -444,6 +489,8 @@ dialog:color{
         Theme.colors["field_background"] = highlightColor
         Theme.colors["field_shadow"] = fieldShadowColor
         Theme.colors["field_corner_shadow"] = filedCornerShadowColor
+
+        MarkThemeAsModified()
     end
 } --
 
@@ -457,10 +504,11 @@ end
 dialog --
 :separator() --
 :button{
+    id = "save-configuration",
     label = "Configuration",
     text = "Save",
+    enabled = false,
     onclick = function()
-        Theme.parameters = {isAdvanced = dialog.data["mode-advanced"]}
         local onsave = function(theme)
             dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name}
         end
@@ -494,13 +542,7 @@ dialog --
     end
 } --
 :button{text = "Apply", onclick = function() Refresh() end} -- 
-:button{
-    text = "Cancel",
-    onclick = function()
-        LoadCurrentTheme()
-        dialog:close()
-    end
-} --
+:button{text = "Cancel", onclick = function() dialog:close() end} --
 
 function init(plugin)
     -- Initialize a table in preferences to persist data
@@ -529,6 +571,23 @@ function init(plugin)
 
     -- Initialize data from plugin preferences
     LoadCurrentTheme()
+    ThemePreferencesDialog.isModified = plugin.preferences.themePreferences
+                                            .isThemeModified
+    if ThemePreferencesDialog.isModified then MarkThemeAsModified() end
+
+    -- Treat the "Modified" state as the last known refresh state 
+    ThemePreferencesDialog.lastRefreshState = ThemePreferencesDialog.isModified
+
+    -- Setup function to be called on close
+    ThemePreferencesDialog.onClose = function()
+        LoadCurrentTheme()
+
+        ThemePreferencesDialog.isModified =
+            ThemePreferencesDialog.lastRefreshState
+        if ThemePreferencesDialog.isModified then MarkThemeAsModified() end
+
+        ThemePreferencesDialog.isDialogOpen = false
+    end
 
     -- Set the initial width of the dialog
     dialog:show{wait = false}
@@ -543,17 +602,31 @@ function init(plugin)
         id = "ThemePreferences",
         title = DIALOG_TITLE .. "...",
         group = "view_screen",
-        onenabled = function() return not isDialogOpen end,
+        onenabled = function()
+            return not ThemePreferencesDialog.isDialogOpen
+        end,
         onclick = function()
             -- Refreshing the UI on open to fix the issue where the dialog would keep parts of the old theme
             app.command.Refresh()
 
+            -- Show Theme Preferences dialog
             dialog:show{wait = false}
-            isDialogOpen = true
+
+            -- Treat the "Modified" state as the last known refresh state 
+            ThemePreferencesDialog.lastRefreshState =
+                ThemePreferencesDialog.isModified
+
+            -- Update the dialog if the theme is modified
+            if ThemePreferencesDialog.isModified then
+                MarkThemeAsModified()
+            end
+
+            ThemePreferencesDialog.isDialogOpen = true
         end
     }
 end
 
 function exit(plugin)
-    -- You don't really need to do anything specific here
+    plugin.preferences.themePreferences.isThemeModified =
+        ThemePreferencesDialog.isModified
 end
