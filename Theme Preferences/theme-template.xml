@@ -54,9 +54,9 @@
         <color id="button_disabled_text" value="<button_highlight>" />
         <color id="button_disabled_shadow" value="<button_shadow>" />
         <color id="check_hot_face" value="<window_hover>" />
-        <color id="check_focus_face" value="#c6c6c6" />
+        <color id="check_focus_face" value="<button_background>" />
         <color id="radio_hot_face" value="<window_hover>" />
-        <color id="radio_focus_face" value="#c6c6c6" />
+        <color id="radio_focus_face" value="<button_background>" />
         <color id="menuitem_normal_text" value="<text_regular>" />
         <color id="menuitem_normal_face" value="<window_background>" />
         <color id="menuitem_hot_text" value="<text_regular>" />
