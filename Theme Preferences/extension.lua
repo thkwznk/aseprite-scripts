@@ -166,7 +166,7 @@ local function ChangeMode(options)
         "button_highlight", "button_background", "button_shadow",
         "tab_corner_highlight", "tab_highlight", "tab_background", "tab_shadow",
         "window_highlight", "window_background", "window_shadow", "text_link",
-        "text_separator"
+        "text_separator", "editor_icons"
     }
 
     for _, id in ipairs(advancedWidgetIds) do
@@ -219,22 +219,37 @@ dialog --
     onclick = ChangeMode
 }
 
-local function ThemeColor(label, id, visible)
+local function ThemeColor(options)
     dialog:color{
-        id = id,
-        label = label,
-        color = Theme.colors[id],
-        visible = visible,
-        onchange = function() Theme.colors[id] = dialog.data[id] end
+        id = options.id,
+        label = options.label,
+        color = Theme.colors[options.id],
+        visible = options.visible,
+        onchange = function()
+            local color = dialog.data[options.id]
+            Theme.colors[options.id] = color
+
+            if options.onchange then options.onchange(color) end
+        end
     }
 end
 
 dialog:separator{text = "Text"}
 
-ThemeColor("Regular", "text_regular", true)
-ThemeColor("Active", "text_active", true)
-ThemeColor("Link/Separator", "text_link", false)
-ThemeColor(nil, "text_separator", false)
+ThemeColor {
+    label = "Regular",
+    id = "text_regular",
+    visible = true,
+    onchange = function(color)
+        if dialog.data["mode-simple"] then
+            SetThemeColor("editor_icons", color)
+        end
+    end
+}
+
+ThemeColor {label = "Active", id = "text_active", visible = true}
+ThemeColor {label = "Link/Separator", id = "text_link", visible = false}
+ThemeColor {id = "text_separator", visible = false}
 
 dialog:color{
     id = "simple-link",
@@ -250,7 +265,7 @@ dialog:color{
 
 dialog:separator{text = "Input Fields"}
 
-ThemeColor("Highlight", "field_highlight", true)
+ThemeColor {label = "Highlight", id = "field_highlight", visible = true}
 
 -- FUTURE: Allow for separate chaning of the "field_background"
 -- dialog:color{
@@ -282,31 +297,24 @@ ThemeColor("Highlight", "field_highlight", true)
 
 dialog:separator{text = "Editor"}
 
-dialog:color{
-    id = "editor_background",
+ThemeColor {
     label = "Background",
-    color = Theme.colors["editor_background"],
-    onchange = function()
-        local color = dialog.data["editor_background"]
+    id = "editor_background",
+    onchange = function(color)
         local shadowColor = ShiftColor(color, -36, -20, -53)
-
-        Theme.colors["editor_background"] = color
         Theme.colors["editor_background_shadow"] = shadowColor
     end
 }
 
-ThemeColor("Icons", "editor_icons", true)
+ThemeColor {label = "Icons", id = "editor_icons", visible = false}
 
-dialog:color{
-    id = "editor_tooltip",
+ThemeColor {
     label = "Tooltip",
-    color = Theme.colors["editor_tooltip"],
-    onchange = function()
-        local color = dialog.data["editor_tooltip"]
+    id = "editor_tooltip",
+    onchange = function(color)
         local shadowColor = ShiftColor(color, -100, -90, -32)
         local cornerShadowColor = ShiftColor(color, -125, -152, -94)
 
-        Theme.colors["editor_tooltip"] = color
         Theme.colors["editor_tooltip_shadow"] = shadowColor
         Theme.colors["editor_tooltip_corner_shadow"] = cornerShadowColor
     end
@@ -343,9 +351,9 @@ dialog --
 
 dialog:separator{text = "Button"}
 
-ThemeColor(nil, "button_highlight", false)
-ThemeColor(nil, "button_background", false)
-ThemeColor(nil, "button_shadow", false)
+ThemeColor {id = "button_highlight", visible = false}
+ThemeColor {id = "button_background", visible = false}
+ThemeColor {id = "button_shadow", visible = false}
 
 dialog:color{
     id = "simple-button",
@@ -361,14 +369,14 @@ dialog:color{
     end
 }
 
-ThemeColor("Selected", "button_selected", true)
+ThemeColor {label = "Selected", id = "button_selected", visible = true}
 
 dialog:separator{text = "Tab"}
 
-ThemeColor(nil, "tab_corner_highlight", false)
-ThemeColor(nil, "tab_highlight", false)
-ThemeColor(nil, "tab_background", false)
-ThemeColor(nil, "tab_shadow", false)
+ThemeColor {id = "tab_corner_highlight", visible = false}
+ThemeColor {id = "tab_highlight", visible = false}
+ThemeColor {id = "tab_background", visible = false}
+ThemeColor {id = "tab_shadow", visible = false}
 
 dialog:color{
     id = "simple-tab",
@@ -388,38 +396,30 @@ dialog:color{
 
 dialog:separator{text = "Window"}
 
--- ThemeColor(nil, "window_highlight", false)
-dialog:color{
+ThemeColor {
     id = "window_highlight",
-    color = Theme.colors["window_highlight"],
     visible = false,
-    onchange = function()
-        local highlightColor = dialog.data["window_highlight"]
-        Theme.colors["window_highlight"] = highlightColor
+    onchange = function(color)
+        Theme.colors["window_highlight"] = color
 
         -- FUTURE: Remove this when setting a separate value for the "field_background" is possible
 
-        local fieldShadowColor = ShiftColor(highlightColor, -57, -57, -57)
-        local filedCornerShadowColor = ShiftColor(highlightColor, -74, -74, -74)
+        local fieldShadowColor = ShiftColor(color, -57, -57, -57)
+        local filedCornerShadowColor = ShiftColor(color, -74, -74, -74)
 
-        Theme.colors["field_background"] = highlightColor
+        Theme.colors["field_background"] = color
         Theme.colors["field_shadow"] = fieldShadowColor
         Theme.colors["field_corner_shadow"] = filedCornerShadowColor
     end
 }
 
-ThemeColor(nil, "window_background", false)
+ThemeColor {id = "window_background", visible = false}
 
-dialog:color{
+ThemeColor {
     id = "window_shadow",
-    color = Theme.colors["window_shadow"],
     visible = false,
-    onchange = function()
-        local shadowColor = dialog.data["window_shadow"]
-        Theme.colors["window_shadow"] = shadowColor
-
-        local cornerShadowColor = ShiftColor(shadowColor, -49, -44, -20)
-
+    onchange = function(color)
+        local cornerShadowColor = ShiftColor(color, -49, -44, -20)
         SetThemeColor("window_corner_shadow", cornerShadowColor)
     end
 }
@@ -449,7 +449,7 @@ dialog:color{
     end
 } --
 
-ThemeColor("Hover", "window_hover", true)
+ThemeColor {label = "Hover", id = "window_hover", visible = true}
 
 local function LoadCurrentTheme()
     local currentTheme = ThemeManager:GetCurrentTheme()

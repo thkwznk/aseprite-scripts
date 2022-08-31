@@ -7,10 +7,10 @@ Unreleased:
 - [Fix] Fix button text in the Import Configuration dialog
 - [Fix] Colors of the warning icon (when a color from outside the palette is introduced) show correctly
 - [Fix] Selected checkboxes and radio buttons are now now highlighted correctly
+- [Improvement] Icons use the Regular Text color in Simple Mode
 
 Update v1.0.2:
 
-- [Improvement] Icons use the Regular Text color in Simple Mode
 - [Test-Feature] Tint Mode where you can only edit the Tab color + optional underglow
 
 Update v1.0.3:
