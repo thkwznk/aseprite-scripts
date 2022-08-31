@@ -528,7 +528,12 @@ function ThemePreferencesDialog:Init()
         onclick = function()
             local onsave = function(theme)
                 self.dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name}
+                self.dialog:modify{id = "save-configuration", enabled = false}
+
+                self.isModified = false
+                self.lastRefreshState = false
             end
+
             ThemeManager:Save(Theme, onsave)
         end
     } --
