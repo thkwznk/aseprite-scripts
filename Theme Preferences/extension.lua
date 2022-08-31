@@ -236,8 +236,8 @@ end
 
 dialog:separator{text = "Text"}
 
+ThemeColor {label = "Active/Regular", id = "text_active", visible = true}
 ThemeColor {
-    label = "Regular",
     id = "text_regular",
     visible = true,
     onchange = function(color)
@@ -246,8 +246,6 @@ ThemeColor {
         end
     end
 }
-
-ThemeColor {label = "Active", id = "text_active", visible = true}
 ThemeColor {label = "Link/Separator", id = "text_link", visible = false}
 ThemeColor {id = "text_separator", visible = false}
 

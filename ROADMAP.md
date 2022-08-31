@@ -8,6 +8,7 @@ Unreleased:
 - [Fix] Colors of the warning icon (when a color from outside the palette is introduced) show correctly
 - [Fix] Selected checkboxes and radio buttons are now now highlighted correctly
 - [Improvement] Icons use the Regular Text color in Simple Mode
+- [Improvement] Place both text colors in one row
 
 Update v1.0.2:
 
