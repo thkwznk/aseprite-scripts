@@ -177,14 +177,14 @@ function ThemePreferencesDialog:ChangeMode(options)
         :modify{id = "simple-button", color = Theme.colors["button_background"]} --
         :modify{id = "simple-tab", color = Theme.colors["tab_background"]} --
         :modify{id = "simple-window", color = Theme.colors["window_background"]} --
+        :modify{id = "editor_icons", color = Theme.colors["text_regular"]}
     end
 
     self.dialog --
     :modify{id = "simple-link", visible = isSimple} --
     :modify{id = "simple-button", visible = isSimple} --
     :modify{id = "simple-tab", visible = isSimple} --
-    :modify{id = "simple-window", visible = isSimple} --
-    -- Don't hide the cursor
+    :modify{id = "simple-window", visible = isSimple}
 
     local advancedWidgetIds = {
         "button_highlight", "button_background", "button_shadow",
@@ -202,6 +202,23 @@ function ThemePreferencesDialog:ChangeMode(options)
 end
 
 function ThemePreferencesDialog:LoadTheme(theme)
+    -- Copy theme to the current theme
+    Theme.name = theme.name
+    Theme.parameters = theme.parameters
+
+    -- Chanage mode
+    self.dialog --
+    :modify{id = "mode-simple", selected = not theme.parameters.isAdvanced} --
+    :modify{id = "mode-advanced", selected = theme.parameters.isAdvanced}
+
+    self:ChangeMode{force = true}
+
+    -- Copy colors
+    for id, color in pairs(theme.colors) do
+        -- Copy color just in case
+        self:SetThemeColor(id, Color(color.rgbaPixel))
+    end
+
     -- Load simple versions first to then overwrite advanced colors
     local simpleButtons = {
         ["simple-link"] = theme.colors["text_link"],
@@ -215,22 +232,8 @@ function ThemePreferencesDialog:LoadTheme(theme)
         self.dialog:modify{id = id, color = color}
     end
 
-    for id, color in pairs(theme.colors) do
-        -- Copy color just in case
-        self:SetThemeColor(id, Color(color.rgbaPixel))
-    end
-
-    self.dialog --
-    :modify{id = "mode-simple", selected = not theme.parameters.isAdvanced} --
-    :modify{id = "mode-advanced", selected = theme.parameters.isAdvanced}
-
-    self:ChangeMode{force = true}
-
     self.dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name} --
     self.dialog:modify{id = "save-configuration", enabled = false}
-
-    Theme.name = theme.name
-    Theme.parameters = theme.parameters
 
     self.isModified = false
 end
