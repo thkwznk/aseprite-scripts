@@ -4,16 +4,6 @@
 
 Unreleased:
 
-- [Fix] Fix button text in the Import Configuration dialog
-- [Fix] Colors of the warning icon (when a color from outside the palette is introduced) show correctly
-- [Fix] Selected checkboxes and radio buttons are now now highlighted correctly
-- [Improvement] Icons use the Regular Text color in Simple Mode
-- [Improvement] Place both text colors in one row
-- [Improvement] Add a "(modified)" label when an existing configuration is changed and disable the Save button when configuration is not modified
-- [Fix] Closing the Theme Preferences dialog with the "X" button has consistent behaviour with closing the dialog using the "Cancel" button
-
-Update v1.0.2:
-
 - ...
 
 Update v1.0.3:
