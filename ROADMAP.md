@@ -6,7 +6,7 @@ Unreleased:
 
 - ...
 
-Update v1.0.3:
+Update v1.0.4:
 - [Feature] Support customising fonts
 - [Test-Feature] Export to Aseprite theme (extension)
 
