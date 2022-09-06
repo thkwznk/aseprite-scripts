@@ -213,12 +213,6 @@ function ThemePreferencesDialog:LoadTheme(theme)
 
     self:ChangeMode{force = true}
 
-    -- Copy colors
-    for id, color in pairs(theme.colors) do
-        -- Copy color just in case
-        self:SetThemeColor(id, Color(color.rgbaPixel))
-    end
-
     -- Load simple versions first to then overwrite advanced colors
     local simpleButtons = {
         ["simple-link"] = theme.colors["text_link"],
@@ -230,6 +224,12 @@ function ThemePreferencesDialog:LoadTheme(theme)
 
     for id, color in pairs(simpleButtons) do
         self.dialog:modify{id = id, color = color}
+    end
+
+    -- Finally, copy colors
+    for id, color in pairs(theme.colors) do
+        -- Copy color just in case
+        self:SetThemeColor(id, Color(color.rgbaPixel))
     end
 
     self.dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name} --
