@@ -10,6 +10,7 @@
         "ColorSpace",
         "Rectangle",
         "Selection",
-        "Brush"
+        "Brush",
+        "BlendMode"
     ]
 }
