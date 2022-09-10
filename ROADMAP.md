@@ -60,10 +60,22 @@ Unreleased:
 
 - [Improvement] Rework dialog to use nested menus
 
-Update v?.?.?:
+Update v2.0.0:
 
 - [Improvement] Add sliders to resize color in the palette and thumbnails on the timeline
 - [Improvement] Add a button to make a new brush from selection
 - [Improvement] Add buttons for switching layers up/down, changing their visibility, locking them, and selecting layer content
 - [Improvement] Deselect? Invert selection?
 - [Fix] Clear can delete a layer, it shouldn't
+- [Change] Remove the Command button
+
+## NxPA Studio
+
+Unreleased:
+
+- ...
+
+Update v?.?.?:
+
+- [Fix] *Add Inbetween Frames* should work with groups, currently it doesn't
+- [Improvement] *Advanced Scaling* lock the UI when dialog is shown for consistency with the rest of Aseprite and show "Processing..." dialog when resizing 
