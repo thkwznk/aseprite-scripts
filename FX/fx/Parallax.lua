@@ -329,6 +329,9 @@ function Parallax:_RebuildCel(sourceFrameNumber, destinationFrameNumbers,
                               shiftX, shiftY, sourceWidth, sourceHeight,
                               destinationSprite, sourceLayer, destinationLayer,
                               celCache, parameters)
+    -- Validate parameters
+    if parameters.speedX == 0 and parameters.speedY == 0 then return end
+
     local image
 
     local sourceCel = sourceLayer:cel(sourceFrameNumber)

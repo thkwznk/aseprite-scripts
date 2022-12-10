@@ -209,9 +209,27 @@ function init(plugin)
             :number{
                 id = "speedX",
                 label = "Speed [X/Y]",
-                text = tostring(defaultSpeed)
+                text = tostring(defaultSpeed),
+                onchange = function()
+                    dialog:modify{
+                        id = "okButton",
+                        enabled = dialog.data.speedX > 0 or dialog.data.speedY >
+                            0
+                    }
+                end
             } --
-            :number{id = "speedY", text = tostring(0)} --
+            :number{
+                id = "speedY",
+                text = tostring(0),
+
+                onchange = function()
+                    dialog:modify{
+                        id = "okButton",
+                        enabled = dialog.data.speedX > 0 or dialog.data.speedY >
+                            0
+                    }
+                end
+            } --
             :separator{text = "Preview"} --
             :slider{
                 id = "shift",
@@ -232,6 +250,7 @@ function init(plugin)
             } --
             :separator() --
             :button{
+                id = "okButton",
                 text = "&OK",
                 onclick = function()
                     Parallax:ClosePreview()
