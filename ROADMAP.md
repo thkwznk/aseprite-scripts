@@ -23,6 +23,22 @@ Future:
 - [Feature] Generating a theme from the current color palette
 - [Refactor] Add a Default model next to Template - Template is a template, default is default
 
+## FX
+
+Unreleased:
+
+- ...
+
+Update v2.0.0:
+
+- [Feature] Add Parallax FX
+
+Future:
+
+- [Feature] Parallax - add an options for delaying layers reappearing
+- [Feature] Parallax - add an option to generate only from the selected frames
+- [Feature] Parallax - add alternative movement functions
+
 ## Magic Pencil
 
 Unreleased:
