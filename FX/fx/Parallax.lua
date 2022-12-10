@@ -285,19 +285,23 @@ function Parallax:_BuildCelsModel(sourceSprite, destinationSprite, factor,
         -- Map to a linked cel
         sourceFrameNumber = linkedSourceCelsMap[sourceFrameNumber]
 
-        if not celsModel[sourceFrameNumber] then
-            celsModel[sourceFrameNumber] = {}
-        end
+        -- For an empty cel `sourceFrameNumber` is nil
+        if sourceFrameNumber then
+            if not celsModel[sourceFrameNumber] then
+                celsModel[sourceFrameNumber] = {}
+            end
 
-        if not celsModel[sourceFrameNumber][shiftX] then
-            celsModel[sourceFrameNumber][shiftX] = {}
-        end
+            if not celsModel[sourceFrameNumber][shiftX] then
+                celsModel[sourceFrameNumber][shiftX] = {}
+            end
 
-        if not celsModel[sourceFrameNumber][shiftX][shiftY] then
-            celsModel[sourceFrameNumber][shiftX][shiftY] = {}
-        end
+            if not celsModel[sourceFrameNumber][shiftX][shiftY] then
+                celsModel[sourceFrameNumber][shiftX][shiftY] = {}
+            end
 
-        table.insert(celsModel[sourceFrameNumber][shiftX][shiftY], frameNumber)
+            table.insert(celsModel[sourceFrameNumber][shiftX][shiftY],
+                         frameNumber)
+        end
     end
 
     return celsModel
@@ -343,8 +347,6 @@ function Parallax:_RebuildCel(sourceFrameNumber, destinationFrameNumbers,
         local resizedCel = destinationLayer:cel(alreadyCopiedCelNumber)
         image = resizedCel.image
     else
-        -- TODO: What if it's empty?
-
         local sourceImage = sourceCel.image
 
         if parameters.speedX ~= 0 and parameters.speedY ~= 0 then
