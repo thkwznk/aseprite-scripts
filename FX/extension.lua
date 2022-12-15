@@ -7,6 +7,8 @@ local ImageProcessor = dofile("./ImageProcessor.lua")
 local InitialXOffset = 2
 local InitialYOffset = 2
 
+local fxSession = {}
+
 function init(plugin)
     plugin:newCommand{
         id = "DropShadowFX",
@@ -143,7 +145,16 @@ function init(plugin)
             local dialog = Dialog {title = "Parallax"}
 
             local defaultSpeed = math.floor(math.sqrt(math.sqrt(sprite.width)))
-            local defaultFrames = sprite.width / math.max((defaultSpeed / 2), 1)
+            local defaultFrames = math.floor(sprite.width /
+                                                 math.max((defaultSpeed / 2), 1))
+
+            local speedX = defaultSpeed
+            local speedY = 0
+
+            if fxSession[sprite.filename] then
+                speedX = fxSession[sprite.filename].speedX
+                speedY = fxSession[sprite.filename].speedY
+            end
 
             function AddLayerWidgets(layersToProcess, groupIndex)
                 for i = #layersToProcess, 1, -1 do
@@ -209,8 +220,13 @@ function init(plugin)
             :number{
                 id = "speedX",
                 label = "Speed [X/Y]",
-                text = tostring(defaultSpeed),
+                text = tostring(speedX),
                 onchange = function()
+                    if not fxSession[sprite.filename] then
+                        fxSession[sprite.filename] = {}
+                    end
+                    fxSession[sprite.filename].speedX = dialog.data.speedX
+
                     dialog:modify{
                         id = "okButton",
                         enabled = dialog.data.speedX > 0 or dialog.data.speedY >
@@ -220,9 +236,13 @@ function init(plugin)
             } --
             :number{
                 id = "speedY",
-                text = tostring(0),
-
+                text = tostring(speedY),
                 onchange = function()
+                    if not fxSession[sprite.filename] then
+                        fxSession[sprite.filename] = {}
+                    end
+                    fxSession[sprite.filename].speedY = dialog.data.speedY
+
                     dialog:modify{
                         id = "okButton",
                         enabled = dialog.data.speedX > 0 or dialog.data.speedY >
@@ -252,6 +272,7 @@ function init(plugin)
             :button{
                 id = "okButton",
                 text = "&OK",
+                enabled = speedX > 0 or speedY > 0,
                 onclick = function()
                     Parallax:ClosePreview()
                     dialog:close()
