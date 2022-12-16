@@ -152,8 +152,8 @@ function init(plugin)
             local speedY = 0
 
             if fxSession[sprite.filename] then
-                speedX = fxSession[sprite.filename].speedX
-                speedY = fxSession[sprite.filename].speedY
+                speedX = tonumber(fxSession[sprite.filename].speedX or defaultSpeed)
+                speedY = tonumber(fxSession[sprite.filename].speedY or 0)
             end
 
             function AddLayerWidgets(layersToProcess, groupIndex)
