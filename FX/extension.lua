@@ -168,19 +168,36 @@ function init(plugin)
             return app.activeSprite ~= nil and #app.range.cels > 0
         end,
         onclick = function()
+            local sprite = app.activeSprite
             local dialog = Dialog("Drop shadow")
             dialog --
             :number{
                 id = "xOffset",
                 label = "X Offset",
-                text = tostring(InitialXOffset)
+                text = tostring(FxSession:Get(sprite, "dropShadowOffsetX") or
+                                    InitialXOffset),
+                onchange = function()
+                    FxSession:Set(sprite, "dropShadowOffsetX",
+                                  dialog.data.xOffset)
+                end
             } --
             :number{
                 id = "yOffset",
                 label = "Y Offset",
-                text = tostring(InitialYOffset)
+                text = tostring(FxSession:Get(sprite, "dropShadowOffsetY") or
+                                    InitialYOffset),
+                onchange = function()
+                    FxSession:Set(sprite, "dropShadowOffsetY",
+                                  dialog.data.yOffset)
+                end
             } --
-            :color{id = "color", color = app.bgColor} --
+            :color{
+                id = "color",
+                color = FxSession:Get(sprite, "dropShadowColor") or app.bgColor,
+                onchange = function()
+                    FxSession:Set(sprite, "dropShadowColor", dialog.data.color)
+                end
+            } --
             :separator() --
             :button{
                 text = "OK",
