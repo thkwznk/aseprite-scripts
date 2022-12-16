@@ -9,6 +9,18 @@ local InitialYOffset = 2
 
 local FxSession = {}
 
+function FxSession:Get(sprite, key)
+    if not self[sprite.filename] then return nil end
+
+    return self[sprite.filename][key]
+end
+
+function FxSession:Set(sprite, key, value)
+    if not self[sprite.filename] then self[sprite.filename] = {} end
+
+    self[sprite.filename][key] = value
+end
+
 function ParallaxOnClick()
     local sprite = app.activeSprite
     local dialog = Dialog {title = "Parallax"}
@@ -17,13 +29,8 @@ function ParallaxOnClick()
     local defaultFrames = math.floor(sprite.width /
                                          math.max((defaultSpeed / 2), 1))
 
-    local speedX = defaultSpeed
-    local speedY = 0
-
-    if FxSession[sprite.filename] then
-        speedX = tonumber(FxSession[sprite.filename].speedX or defaultSpeed)
-        speedY = tonumber(FxSession[sprite.filename].speedY or 0)
-    end
+    local speedX = FxSession:Get(sprite, "speedX") or defaultSpeed
+    local speedY = FxSession:Get(sprite, "speedY") or 0
 
     function AddLayerWidgets(layersToProcess, groupIndex)
         for i = #layersToProcess, 1, -1 do
@@ -86,10 +93,7 @@ function ParallaxOnClick()
         label = "Speed [X/Y]",
         text = tostring(speedX),
         onchange = function()
-            if not FxSession[sprite.filename] then
-                FxSession[sprite.filename] = {}
-            end
-            FxSession[sprite.filename].speedX = dialog.data.speedX
+            FxSession:Set(sprite, "speedX", dialog.data.speedX)
 
             dialog:modify{
                 id = "okButton",
@@ -101,10 +105,7 @@ function ParallaxOnClick()
         id = "speedY",
         text = tostring(speedY),
         onchange = function()
-            if not FxSession[sprite.filename] then
-                FxSession[sprite.filename] = {}
-            end
-            FxSession[sprite.filename].speedY = dialog.data.speedY
+            FxSession:Set(sprite, "speedY", dialog.data.speedY)
 
             dialog:modify{
                 id = "okButton",
@@ -263,26 +264,15 @@ function init(plugin)
         end,
         onclick = function()
             local sprite = app.activeSprite
-            local strength = "3"
-
-            if FxSession[sprite.filename] then
-                strength = FxSession[sprite.filename].neonStrength or strength
-            end
-
             local dialog = Dialog("Neon")
             dialog --
             :combobox{
                 id = "strength",
                 label = "Strength",
-                option = strength,
+                option = FxSession:Get(sprite, "neonStrength") or "3",
                 options = {"1", "2", "3", "4", "5"},
                 onchange = function()
-                    if not FxSession[sprite.filename] then
-                        FxSession[sprite.filename] = {}
-                    end
-
-                    FxSession[sprite.filename].neonStrength = dialog.data
-                                                                  .strength
+                    FxSession:Set(sprite, "neonStrength", dialog.data.strength)
                 end
             }:separator() --
             :button{
