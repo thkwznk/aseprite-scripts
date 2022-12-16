@@ -27,11 +27,12 @@ Future:
 
 Unreleased:
 
-- ...
+- Parallax FX
+- All FX parameters saved per session
 
 Update v2.0.0:
 
-- [Feature] Add Parallax FX
+- ...
 
 Future:
 
