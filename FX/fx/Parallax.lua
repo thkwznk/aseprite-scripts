@@ -183,6 +183,7 @@ function Parallax:ClosePreview() self.previewSprite:close() end
 
 function Parallax:Generate(sourceSprite, parameters)
     local destinationSprite = Sprite(sourceSprite.spec)
+    destinationSprite:setPalette(sourceSprite.palettes[1])
 
     -- Save the reference to the first, default layer to delete it later
     local firstLayer = destinationSprite.layers[1]
