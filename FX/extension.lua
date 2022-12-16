@@ -7,7 +7,156 @@ local ImageProcessor = dofile("./ImageProcessor.lua")
 local InitialXOffset = 2
 local InitialYOffset = 2
 
-local fxSession = {}
+local FxSession = {}
+
+function ParallaxOnClick()
+    local sprite = app.activeSprite
+    local dialog = Dialog {title = "Parallax"}
+
+    local defaultSpeed = math.floor(math.sqrt(math.sqrt(sprite.width)))
+    local defaultFrames = math.floor(sprite.width /
+                                         math.max((defaultSpeed / 2), 1))
+
+    local speedX = defaultSpeed
+    local speedY = 0
+
+    if FxSession[sprite.filename] then
+        speedX = tonumber(FxSession[sprite.filename].speedX or defaultSpeed)
+        speedY = tonumber(FxSession[sprite.filename].speedY or 0)
+    end
+
+    function AddLayerWidgets(layersToProcess, groupIndex)
+        for i = #layersToProcess, 1, -1 do
+            local layer = layersToProcess[i]
+
+            if not layer.isVisible then goto skipLayerWidget end
+
+            if layer.isGroup then
+                AddLayerWidgets(layer.layers, #layersToProcess - i)
+            else
+                local speed = defaultSpeed ^ (#layersToProcess - i)
+                if groupIndex then
+                    speed = defaultSpeed ^ groupIndex
+                end
+
+                if layer.isBackground then speed = 0 end
+
+                -- Save the initial position of the layers
+                local cel = layer.cels[1]
+
+                -- If there's saved speed, use it
+                if layer.data and #layer.data > 0 then
+                    speed = tonumber(layer.data) or speed
+                end
+
+                local id = Parallax:_GetLayerId(layer)
+                local label = Parallax:GetFullLayerName(layer)
+
+                if cel then
+                    dialog --
+                    :number{
+                        id = "distance-" .. id,
+                        label = label,
+                        decimals = 2,
+                        text = tostring(speed),
+                        enabled = not layer.isBackground,
+                        visible = not layer.isBackground
+                    }
+                end
+            end
+
+            ::skipLayerWidget::
+        end
+    end
+
+    AddLayerWidgets(sprite.layers)
+    Parallax:InitPreview(sprite, app.activeFrame.frameNumber, dialog.data)
+
+    dialog --
+    :separator{text = "Movement"} --
+    -- FUTURE: Enable different movement functions
+    -- :combobox{
+    --     id = "movementFunction",
+    --     label = "Type",
+    --     option = Parallax:GetDefaultMovementFunction(),
+    --     options = Parallax:GetMovementFunctions()
+    -- } --
+    :number{
+        id = "speedX",
+        label = "Speed [X/Y]",
+        text = tostring(speedX),
+        onchange = function()
+            if not FxSession[sprite.filename] then
+                FxSession[sprite.filename] = {}
+            end
+            FxSession[sprite.filename].speedX = dialog.data.speedX
+
+            dialog:modify{
+                id = "okButton",
+                enabled = dialog.data.speedX ~= 0 or dialog.data.speedY ~= 0
+            }
+        end
+    } --
+    :number{
+        id = "speedY",
+        text = tostring(speedY),
+        onchange = function()
+            if not FxSession[sprite.filename] then
+                FxSession[sprite.filename] = {}
+            end
+            FxSession[sprite.filename].speedY = dialog.data.speedY
+
+            dialog:modify{
+                id = "okButton",
+                enabled = dialog.data.speedX ~= 0 or dialog.data.speedY ~= 0
+            }
+        end
+    } --
+    :separator{text = "Preview"} --
+    :slider{
+        id = "shift",
+        label = "Shift",
+        min = 0,
+        max = sprite.width,
+        value = 0,
+        onchange = function()
+            Parallax:Preview(dialog.data)
+            app.refresh()
+        end
+    } --
+    :separator{text = "Output"} --
+    :number{id = "frames", label = "Frames", text = tostring(defaultFrames)} --
+    :separator() --
+    :button{
+        id = "okButton",
+        text = "&OK",
+        enabled = speedX ~= 0 or speedY ~= 0,
+        onclick = function()
+            Parallax:ClosePreview()
+            dialog:close()
+
+            -- Save the values in the layer data
+            Parallax:_IterateOverLayers(sprite.layers, function(layer)
+                local id = Parallax:_GetLayerId(layer)
+                layer.data = dialog.data["distance-" .. id] or 0
+            end)
+
+            Parallax:Generate(sprite, dialog.data)
+        end
+    } --
+    :button{
+        text = "&Cancel",
+        onclick = function()
+            Parallax:ClosePreview()
+            dialog:close()
+
+            -- Set active sprite back to the originally open file
+            app.activeSprite = sprite
+        end
+    }
+
+    dialog:show()
+end
 
 function init(plugin)
     plugin:newCommand{
@@ -140,166 +289,7 @@ function init(plugin)
         title = "Parallax",
         group = "edit_fx",
         onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            local sprite = app.activeSprite
-            local dialog = Dialog {title = "Parallax"}
-
-            local defaultSpeed = math.floor(math.sqrt(math.sqrt(sprite.width)))
-            local defaultFrames = math.floor(sprite.width /
-                                                 math.max((defaultSpeed / 2), 1))
-
-            local speedX = defaultSpeed
-            local speedY = 0
-
-            if fxSession[sprite.filename] then
-                speedX = tonumber(fxSession[sprite.filename].speedX or
-                                      defaultSpeed)
-                speedY = tonumber(fxSession[sprite.filename].speedY or 0)
-            end
-
-            function AddLayerWidgets(layersToProcess, groupIndex)
-                for i = #layersToProcess, 1, -1 do
-                    local layer = layersToProcess[i]
-
-                    if not layer.isVisible then
-                        goto skipLayerWidget
-                    end
-
-                    if layer.isGroup then
-                        AddLayerWidgets(layer.layers, #layersToProcess - i)
-                    else
-                        local speed = defaultSpeed ^ (#layersToProcess - i)
-                        if groupIndex then
-                            speed = defaultSpeed ^ groupIndex
-                        end
-
-                        if layer.isBackground then
-                            speed = 0
-                        end
-
-                        -- Save the initial position of the layers
-                        local cel = layer.cels[1]
-
-                        -- If there's saved speed, use it
-                        if layer.data and #layer.data > 0 then
-                            speed = tonumber(layer.data) or speed
-                        end
-
-                        local id = Parallax:_GetLayerId(layer)
-                        local label = Parallax:GetFullLayerName(layer)
-
-                        if cel then
-                            dialog --
-                            :number{
-                                id = "distance-" .. id,
-                                label = label,
-                                decimals = 2,
-                                text = tostring(speed),
-                                enabled = not layer.isBackground,
-                                visible = not layer.isBackground
-                            }
-                        end
-                    end
-
-                    ::skipLayerWidget::
-                end
-            end
-
-            AddLayerWidgets(sprite.layers)
-            Parallax:InitPreview(sprite, app.activeFrame.frameNumber,
-                                 dialog.data)
-
-            dialog --
-            :separator{text = "Movement"} --
-            -- FUTURE: Enable different movement functions
-            -- :combobox{
-            --     id = "movementFunction",
-            --     label = "Type",
-            --     option = Parallax:GetDefaultMovementFunction(),
-            --     options = Parallax:GetMovementFunctions()
-            -- } --
-            :number{
-                id = "speedX",
-                label = "Speed [X/Y]",
-                text = tostring(speedX),
-                onchange = function()
-                    if not fxSession[sprite.filename] then
-                        fxSession[sprite.filename] = {}
-                    end
-                    fxSession[sprite.filename].speedX = dialog.data.speedX
-
-                    dialog:modify{
-                        id = "okButton",
-                        enabled = dialog.data.speedX ~= 0 or dialog.data.speedY ~=
-                            0
-                    }
-                end
-            } --
-            :number{
-                id = "speedY",
-                text = tostring(speedY),
-                onchange = function()
-                    if not fxSession[sprite.filename] then
-                        fxSession[sprite.filename] = {}
-                    end
-                    fxSession[sprite.filename].speedY = dialog.data.speedY
-
-                    dialog:modify{
-                        id = "okButton",
-                        enabled = dialog.data.speedX ~= 0 or dialog.data.speedY ~=
-                            0
-                    }
-                end
-            } --
-            :separator{text = "Preview"} --
-            :slider{
-                id = "shift",
-                label = "Shift",
-                min = 0,
-                max = sprite.width,
-                value = 0,
-                onchange = function()
-                    Parallax:Preview(dialog.data)
-                    app.refresh()
-                end
-            } --
-            :separator{text = "Output"} --
-            :number{
-                id = "frames",
-                label = "Frames",
-                text = tostring(defaultFrames)
-            } --
-            :separator() --
-            :button{
-                id = "okButton",
-                text = "&OK",
-                enabled = speedX ~= 0 or speedY ~= 0,
-                onclick = function()
-                    Parallax:ClosePreview()
-                    dialog:close()
-
-                    -- Save the values in the layer data
-                    Parallax:_IterateOverLayers(sprite.layers, function(layer)
-                        local id = Parallax:_GetLayerId(layer)
-                        layer.data = dialog.data["distance-" .. id] or 0
-                    end)
-
-                    Parallax:Generate(sprite, dialog.data)
-                end
-            } --
-            :button{
-                text = "&Cancel",
-                onclick = function()
-                    Parallax:ClosePreview()
-                    dialog:close()
-
-                    -- Set active sprite back to the originally open file
-                    app.activeSprite = sprite
-                end
-            }
-
-            dialog:show()
-        end
+        onclick = ParallaxOnClick
     }
 end
 
