@@ -262,13 +262,28 @@ function init(plugin)
             return app.activeSprite ~= nil and #app.range.cels == 1
         end,
         onclick = function()
+            local sprite = app.activeSprite
+            local strength = "3"
+
+            if FxSession[sprite.filename] then
+                strength = FxSession[sprite.filename].neonStrength or strength
+            end
+
             local dialog = Dialog("Neon")
             dialog --
             :combobox{
                 id = "strength",
                 label = "Strength",
-                option = "3",
-                options = {"1", "2", "3", "4", "5"}
+                option = strength,
+                options = {"1", "2", "3", "4", "5"},
+                onchange = function()
+                    if not FxSession[sprite.filename] then
+                        FxSession[sprite.filename] = {}
+                    end
+
+                    FxSession[sprite.filename].neonStrength = dialog.data
+                                                                  .strength
+                end
             }:separator() --
             :button{
                 text = "OK",
