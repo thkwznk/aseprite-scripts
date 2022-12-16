@@ -152,7 +152,8 @@ function init(plugin)
             local speedY = 0
 
             if fxSession[sprite.filename] then
-                speedX = tonumber(fxSession[sprite.filename].speedX or defaultSpeed)
+                speedX = tonumber(fxSession[sprite.filename].speedX or
+                                      defaultSpeed)
                 speedY = tonumber(fxSession[sprite.filename].speedY or 0)
             end
 
@@ -291,6 +292,9 @@ function init(plugin)
                 onclick = function()
                     Parallax:ClosePreview()
                     dialog:close()
+
+                    -- Set active sprite back to the originally open file
+                    app.activeSprite = sprite
                 end
             }
 
