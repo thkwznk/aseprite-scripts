@@ -230,7 +230,7 @@ function init(plugin)
 
                     dialog:modify{
                         id = "okButton",
-                        enabled = dialog.data.speedX > 0 or dialog.data.speedY >
+                        enabled = dialog.data.speedX ~= 0 or dialog.data.speedY ~=
                             0
                     }
                 end
@@ -246,7 +246,7 @@ function init(plugin)
 
                     dialog:modify{
                         id = "okButton",
-                        enabled = dialog.data.speedX > 0 or dialog.data.speedY >
+                        enabled = dialog.data.speedX ~= 0 or dialog.data.speedY ~=
                             0
                     }
                 end
@@ -273,7 +273,7 @@ function init(plugin)
             :button{
                 id = "okButton",
                 text = "&OK",
-                enabled = speedX > 0 or speedY > 0,
+                enabled = speedX ~= 0 or speedY ~= 0,
                 onclick = function()
                     Parallax:ClosePreview()
                     dialog:close()
