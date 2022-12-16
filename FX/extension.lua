@@ -204,6 +204,7 @@ function init(plugin)
             return app.activeSprite ~= nil and #app.range.cels > 0
         end,
         onclick = function()
+            local sprite = app.activeSprite
             local cel = app.activeCel
             local image = cel.image
             local selection = app.activeSprite.selection
@@ -218,7 +219,13 @@ function init(plugin)
             end
 
             local autoPixelWidth, autoPixelHeight =
-                ImageProcessor:CalculateScale(image)
+                FxSession:Get(sprite, "lcdPixelWidth"),
+                FxSession:Get(sprite, "lcdPixelHeight")
+
+            if not autoPixelWidth or not autoPixelHeight then
+                autoPixelWidth, autoPixelHeight =
+                    ImageProcessor:CalculateScale(image)
+            end
 
             local dialog = Dialog("LCD Screen")
             dialog --
@@ -226,18 +233,29 @@ function init(plugin)
             :number{
                 id = "pixel-width",
                 label = "Width",
-                text = tostring(autoPixelWidth)
+                text = tostring(autoPixelWidth),
+                onchange = function()
+                    FxSession:Set(sprite, "lcdPixelWidth",
+                                  dialog.data["pixel-width"])
+                    FxSession:Set(sprite, "lcdPixelHeight",
+                                  dialog.data["pixel-height"])
+                end
             } --
             :number{
                 id = "pixel-height",
                 label = "Height",
-                text = tostring(autoPixelHeight)
+                text = tostring(autoPixelHeight),
+                onchange = function()
+                    FxSession:Set(sprite, "lcdPixelWidth",
+                                  dialog.data["pixel-width"])
+                    FxSession:Set(sprite, "lcdPixelHeight",
+                                  dialog.data["pixel-height"])
+                end
             } --
             :separator() --
             :button{
                 text = "OK",
                 onclick = function()
-                    local sprite = app.activeSprite
                     local cels = app.range.cels
                     local pixelWidth = dialog.data["pixel-width"]
                     local pixelHeight = dialog.data["pixel-height"]
