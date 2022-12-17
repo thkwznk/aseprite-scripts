@@ -5,8 +5,11 @@
 - **Drop Shadow**
 - **LCD Screen**
 - **Neon**\*
+- **Parallax**\*\*
 
 \* _This effect works only for a single cel/frame_
+
+\*\* _Please beware that opening multiple long animations in Aseprite can fill up RAM and cause it to crush_
 
 ## Previews
 
@@ -15,3 +18,5 @@
 ![LCD Screen](/FX/readme-images/lcd-screen.gif "LCD Screen")
 
 ![Neon](/FX/readme-images/neon.gif "Neon")
+
+![Parallax](/FX/readme-images/parallax.gif "Parallax")
