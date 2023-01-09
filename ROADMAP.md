@@ -4,11 +4,9 @@
 
 Unreleased:
 
-- [Fix] Don't initialize Theme Preferences when UI is not available to avoid breaking the CLI
-- [Improvement] Improve the speed of updating and saving a theme
-- [Feature] Include Mono and Game Boy Light presets in new installs of Theme Preferences
+- ...
 
-Update v1.0.4:
+Update v1.0.5:
 - [Feature] Support customising fonts
 - [Test-Feature] Export to Aseprite theme (extension)
 
