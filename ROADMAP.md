@@ -5,6 +5,7 @@
 Unreleased:
 
 - [Fix] Don't initialize Theme Preferences when UI is not available to avoid breaking the CLI
+- [Improvement] Improve the speed of updating and saving a theme
 
 Update v1.0.4:
 - [Feature] Support customising fonts

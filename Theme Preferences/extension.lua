@@ -84,16 +84,25 @@ function ThemePreferencesDialog:RefreshTheme(template, theme)
 
     -- Prepare sheet.png
     local image = Image {fromFile = SheetTemplatePath}
-    local newColor, pixelColor, pixelColorId
+    local pixelValue, newColor, pixelColor, pixelColorId
 
-    for pixel in image:pixels() do
-        pixelColor = Color(pixel())
-        pixelColorId = ColorToHex(pixelColor)
+    -- Save references to function to improve performance
+    local getPixel, drawPixel = image.getPixel, image.drawPixel
 
-        if pixelColor.alpha > 0 and Map[pixelColorId] ~= nil then
-            newColor = Color(Map[pixelColorId].rgbaPixel)
-            newColor.alpha = pixelColor.alpha
-            image:drawPixel(pixel.x, pixel.y, newColor)
+    for x = 0, image.width - 1 do
+        for y = 0, image.height - 1 do
+            pixelValue = getPixel(image, x, y)
+
+            if pixelValue > 0 then
+                pixelColor = Color(pixelValue)
+                pixelColorId = ColorToHex(pixelColor)
+
+                if Map[pixelColorId] ~= nil then
+                    newColor = Color(Map[pixelColorId].rgbaPixel)
+                    newColor.alpha = pixelColor.alpha
+                    drawPixel(image, x, y, newColor)
+                end
+            end
         end
     end
 
@@ -574,7 +583,7 @@ function init(plugin)
     -- Do nothing when UI is not available
     if not app.isUIAvailable then return end
 
-ThemePreferencesDialog:Init()
+    ThemePreferencesDialog:Init()
 
     -- Initialize a table in preferences to persist data
     plugin.preferences.themePreferences =
