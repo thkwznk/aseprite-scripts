@@ -570,9 +570,12 @@ function ThemePreferencesDialog:Init()
     :button{text = "Cancel", onclick = function() self.dialog:close() end} --
 end
 
+function init(plugin)
+    -- Do nothing when UI is not available
+    if not app.isUIAvailable then return end
+
 ThemePreferencesDialog:Init()
 
-function init(plugin)
     -- Initialize a table in preferences to persist data
     plugin.preferences.themePreferences =
         plugin.preferences.themePreferences or {
