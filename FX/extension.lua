@@ -32,6 +32,8 @@ function ParallaxOnClick()
     local speedX = FxSession:Get(sprite, "speedX") or defaultSpeed
     local speedY = FxSession:Get(sprite, "speedY") or 0
 
+    dialog:separator{text = "Distance"}
+
     function AddLayerWidgets(layersToProcess, groupIndex)
         for i = #layersToProcess, 1, -1 do
             local layer = layersToProcess[i]
