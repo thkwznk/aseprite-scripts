@@ -27,7 +27,7 @@ Future:
 
 Unreleased:
 
-- ...
+- [Improvement] Improved performance of the LCD Screen FX
 
 Future:
 

@@ -39,6 +39,10 @@ function LCDScreen:_MergeImages(imageA, positionA, imageB, positionB)
 end
 
 function LCDScreen:_DrawImageOver(backgroundImage, image, position)
+    -- Save references to methods for better performance
+    local getPixel = backgroundImage.getPixel
+    local drawPixel = backgroundImage.drawPixel
+
     -- TODO: Could be calculated only for the common part
     for pixel in image:pixels() do
         local pixelValue = pixel()
@@ -47,11 +51,11 @@ function LCDScreen:_DrawImageOver(backgroundImage, image, position)
         local x = position.x + pixel.x
         local y = position.y + pixel.y
 
-        local backgroundPixelValue = backgroundImage:getPixel(x, y)
+        local backgroundPixelValue = getPixel(backgroundImage, x, y)
         local backgroundColor = Color(backgroundPixelValue)
 
         if backgroundColor.alpha == 0 then
-            backgroundImage:drawPixel(x, y, pixelValue)
+            drawPixel(backgroundImage, x, y, pixelValue)
         else
             local backgroundAlpha = (backgroundColor.alpha / 255)
             local pixelAlpha = (pixelColor.alpha / 255)
@@ -73,7 +77,7 @@ function LCDScreen:_DrawImageOver(backgroundImage, image, position)
             local finalGreen = pixelGreen + backgroundGreen * pixelOpaqueness
             local finalBlue = pixelBlue + backgroundBlue * pixelOpaqueness
 
-            backgroundImage:drawPixel(x, y, Color {
+            drawPixel(backgroundImage, x, y, Color {
                 r = finalRed / (finalAlpha / 255),
                 g = finalGreen / (finalAlpha / 255),
                 b = finalBlue / (finalAlpha / 255),
@@ -170,6 +174,9 @@ function LCDScreen:Generate(sprite, cels, pixelWidth, pixelHeight)
 
         local redCel, greenCel, blueCel = {}, {}, {}
 
+        -- Save references to methods for better performance
+        local drawPixel = image.drawPixel
+
         if sprite.selection.isEmpty then
             redCel.image = Image(image.width, image.height)
             greenCel.image = Image(image.width, image.height)
@@ -187,19 +194,19 @@ function LCDScreen:Generate(sprite, cels, pixelWidth, pixelHeight)
                 redColor.green = 0
                 redColor.blue = 0
 
-                redCel.image:drawPixel(pixel.x, pixel.y, redColor)
+                drawPixel(redCel.image, pixel.x, pixel.y, redColor)
 
                 local greenColor = Color(pixel())
                 greenColor.red = 0
                 greenColor.blue = 0
 
-                greenCel.image:drawPixel(pixel.x, pixel.y, greenColor)
+                drawPixel(greenCel.image, pixel.x, pixel.y, greenColor)
 
                 local blueColor = Color(pixel())
                 blueColor.red = 0
                 blueColor.green = 0
 
-                blueCel.image:drawPixel(pixel.x, pixel.y, blueColor)
+                drawPixel(blueCel.image, pixel.x, pixel.y, blueColor)
             end
         elseif bounds:intersects(sprite.selection.bounds) then
             local imagePartBounds = bounds:intersect(sprite.selection.bounds)
@@ -228,22 +235,22 @@ function LCDScreen:Generate(sprite, cels, pixelWidth, pixelHeight)
                 redColor.green = 0
                 redColor.blue = 0
 
-                redCel.image:drawPixel(pixel.x - shiftX, pixel.y - shiftY,
-                                       redColor)
+                drawPixel(redCel.image, pixel.x - shiftX, pixel.y - shiftY,
+                          redColor)
 
                 local greenColor = Color(pixel())
                 greenColor.red = 0
                 greenColor.blue = 0
 
-                greenCel.image:drawPixel(pixel.x - shiftX, pixel.y - shiftY,
-                                         greenColor)
+                drawPixel(greenCel.image, pixel.x - shiftX, pixel.y - shiftY,
+                          greenColor)
 
                 local blueColor = Color(pixel())
                 blueColor.red = 0
                 blueColor.green = 0
 
-                blueCel.image:drawPixel(pixel.x - shiftX, pixel.y - shiftY,
-                                        blueColor)
+                drawPixel(blueCel.image, pixel.x - shiftX, pixel.y - shiftY,
+                          blueColor)
             end
         end
 
@@ -266,15 +273,16 @@ function LCDScreen:_CreateScanlinesLayer(sprite, layer, cels, pixelWidth,
                          sprite.selection.origin
 
     local scanlinesImage = Image(width, height)
+    local drawPixel = scanlinesImage.drawPixel
 
     for y = 0, scanlinesImage.height - 1 do
         for x = 0, scanlinesImage.width - 1 do
             if y % pixelHeight == 0 then
-                scanlinesImage:drawPixel(x, y, Color {gray = 0, alpha = 64})
+                drawPixel(scanlinesImage, x, y, Color {gray = 0, alpha = 64})
             end
 
             if x % pixelWidth == 0 then
-                scanlinesImage:drawPixel(x, y, Color {gray = 0, alpha = 255})
+                drawPixel(scanlinesImage, x, y, Color {gray = 0, alpha = 255})
             end
         end
     end
