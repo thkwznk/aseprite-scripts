@@ -27,8 +27,7 @@ Future:
 
 Unreleased:
 
-- [Improvement] Improved performance of the LCD Screen FX
-- [Fix] Added missing "Distance" label for the Parallax dialog
+- ...
 
 Future:
 
