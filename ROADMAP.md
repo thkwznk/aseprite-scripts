@@ -40,6 +40,7 @@ Future:
 Unreleased:
 
 - [Improvement] Improve performance
+- [Fix] Ignore the selected pencil ink to avoid it causing issues with the Magic Pencil
 
 Update v1.0.4:
 

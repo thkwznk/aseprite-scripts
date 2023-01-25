@@ -447,6 +447,7 @@ function MagicPencil:Execute(options)
 
     local lastFgColor = Color(app.fgColor.rgbaPixel)
     local lastBgColor = Color(app.bgColor.rgbaPixel)
+    local lastInk = app.preferences.tool("pencil").ink
 
     function OnFgColorChange()
         if Contains(SpecialCursorModes, selectedMode) then
@@ -485,6 +486,9 @@ function MagicPencil:Execute(options)
             app.fgColor = lastFgColor
             app.bgColor = lastBgColor
 
+            local pencilPreferences = app.preferences.tool("pencil")
+            pencilPreferences.ink = lastInk
+
             options.onclose()
         end
     }
@@ -502,6 +506,9 @@ function MagicPencil:Execute(options)
                 local isSpecial = Contains(SpecialCursorModes, selectedMode)
                 app.fgColor = If(isSpecial, MagicPink, lastFgColor)
                 app.bgColor = If(isSpecial, MagicTeal, lastBgColor)
+
+                local pencilPreferences = app.preferences.tool("pencil")
+                pencilPreferences.ink = If(isSpecial, "simple", lastInk)
 
                 self.dialog:modify{
                     id = "outlineColor",
