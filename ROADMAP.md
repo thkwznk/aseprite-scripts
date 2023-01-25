@@ -39,7 +39,7 @@ Future:
 
 Unreleased:
 
-- [Fix] Block opening multiple instances
+- [Improvement] Improve performance
 
 Update v1.0.4:
 

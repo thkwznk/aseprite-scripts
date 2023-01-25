@@ -158,9 +158,11 @@ function GetButtonsPressed(pixels, previous, next)
     local old, new = nil, nil
     local pixel = pixels[1]
 
+    local getPixel = next.image.getPixel
+
     if not RectangleContains(previous.bounds, pixel) then
-        local newPixelValue = next.image:getPixel(pixel.x - next.position.x,
-                                                  pixel.y - next.position.y)
+        local newPixelValue = getPixel(next.image, pixel.x - next.position.x,
+                                       pixel.y - next.position.y)
 
         if app.fgColor.rgbaPixel == newPixelValue then
             leftPressed = true
@@ -171,10 +173,10 @@ function GetButtonsPressed(pixels, previous, next)
         return leftPressed, rightPressed
     end
 
-    old = Color(previous.image:getPixel(pixel.x - previous.position.x,
-                                        pixel.y - previous.position.y))
-    new = Color(next.image:getPixel(pixel.x - next.position.x,
-                                    pixel.y - next.position.y))
+    old = Color(getPixel(previous.image, pixel.x - previous.position.x,
+                         pixel.y - previous.position.y))
+    new = Color(getPixel(next.image, pixel.x - next.position.x,
+                         pixel.y - next.position.y))
 
     if old == nil or new == nil then return leftPressed, rightPressed end
 
@@ -229,6 +231,8 @@ function CalculateChange(previous, next, canExtend)
     local pixels = {}
     local prevPixelValue = nil
 
+    local getPixel = previous.image.getPixel
+
     -- It's faster without registering any local variables inside the loops
     if canExtend then -- Can extend, iterate over the new image
         local shift = {
@@ -244,8 +248,8 @@ function CalculateChange(previous, next, canExtend)
                 shiftedX = x + shift.x
                 shiftedY = y + shift.y
 
-                prevPixelValue = previous.image:getPixel(shiftedX, shiftedY)
-                nextPixelValue = next.image:getPixel(x, y)
+                prevPixelValue = getPixel(previous.image, shiftedX, shiftedY)
+                nextPixelValue = getPixel(next.image, x, y)
 
                 -- Out of bounds of the previous image or transparent
                 if (shiftedX < 0 or shiftedX > previous.image.width - 1 or
@@ -274,13 +278,13 @@ function CalculateChange(previous, next, canExtend)
 
         for x = 0, previous.image.width - 1 do
             for y = 0, previous.image.height - 1 do
-                prevPixelValue = previous.image:getPixel(x, y)
+                prevPixelValue = getPixel(previous.image, x, y)
 
                 -- Next image in some rare cases can be smaller
                 if RectangleContains(next.bounds, Point(x + previous.position.x,
                                                         y + previous.position.y)) then
                     if prevPixelValue ~=
-                        next.image:getPixel(x + shift.x, y + shift.y) then
+                        getPixel(next.image, x + shift.x, y + shift.y) then
                         -- Save X and Y as canvas global
                         table.insert(pixels, {
                             x = x + previous.position.x,
@@ -632,9 +636,11 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
             local outlineColor = change.leftPressed and app.fgColor or
                                      app.bgColor
 
+            local drawPixel = newImage.drawPixel
+
             for _, pixel in ipairs(outlinePixels) do
-                newImage:drawPixel(pixel.x + shift.x, pixel.y + shift.y,
-                                   outlineColor)
+                drawPixel(newImage, pixel.x + shift.x, pixel.y + shift.y,
+                          outlineColor)
             end
 
             app.activeCel.image = newImage
@@ -683,31 +689,33 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
                        (not selection.isEmpty and selection:contains(x, y))
         end
 
+        local getPixel, drawPixel = newImage.getPixel, newImage.drawPixel
+
         for _, pixel in ipairs(change.pixels) do
             local ix = pixel.x - app.activeCel.bounds.x + dpx
             local iy = pixel.y - app.activeCel.bounds.y + dpy
 
             if CanOutline(pixel.x - 1, pixel.y) then
-                if newImage:getPixel(ix - 1, iy) == 0 then
-                    newImage:drawPixel(ix - 1, iy, color)
+                if getPixel(newImage, ix - 1, iy) == 0 then
+                    drawPixel(newImage, ix - 1, iy, color)
                 end
             end
 
             if CanOutline(pixel.x + 1, pixel.y) then
-                if newImage:getPixel(ix + 1, iy) == 0 then
-                    newImage:drawPixel(ix + 1, iy, color)
+                if getPixel(newImage, ix + 1, iy) == 0 then
+                    drawPixel(newImage, ix + 1, iy, color)
                 end
             end
 
             if CanOutline(pixel.x, pixel.y - 1) then
-                if newImage:getPixel(ix, iy - 1) == 0 then
-                    newImage:drawPixel(ix, iy - 1, color)
+                if getPixel(newImage, ix, iy - 1) == 0 then
+                    drawPixel(newImage, ix, iy - 1, color)
                 end
             end
 
             if CanOutline(pixel.x, pixel.y + 1) then
-                if newImage:getPixel(ix, iy + 1) == 0 then
-                    newImage:drawPixel(ix, iy + 1, color)
+                if getPixel(newImage, ix, iy + 1) == 0 then
+                    drawPixel(newImage, ix, iy + 1, color)
                 end
             end
         end
@@ -720,15 +728,17 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
         local image = Image(intersection.width, intersection.height)
         local color = nil
 
+        local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
+
         for _, pixel in ipairs(change.pixels) do
             if RectangleContains(intersection, pixel) then
-                color = cel.image:getPixel(pixel.x - cel.position.x,
-                                           pixel.y - cel.position.y)
-                cel.image:drawPixel(pixel.x - cel.position.x,
-                                    pixel.y - cel.position.y, Transparent)
+                color = getPixel(cel.image, pixel.x - cel.position.x,
+                                 pixel.y - cel.position.y)
+                drawPixel(cel.image, pixel.x - cel.position.x,
+                          pixel.y - cel.position.y, Transparent)
 
-                image:drawPixel(pixel.x - intersection.x,
-                                pixel.y - intersection.y, color)
+                drawPixel(image, pixel.x - intersection.x,
+                          pixel.y - intersection.y, color)
             end
         end
 
@@ -823,9 +833,11 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
                                app.activeCel.image.height)
         newImage:drawImage(cel.image, shift.x, shift.y)
 
+        local drawPixel = newImage.drawPixel
+
         for _, pixel in ipairs(change.pixels) do
-            newImage:drawPixel(pixel.x - newBounds.x, pixel.y - newBounds.y,
-                               averageColor)
+            drawPixel(newImage, pixel.x - newBounds.x, pixel.y - newBounds.y,
+                      averageColor)
         end
 
         app.activeCel.image = newImage
@@ -835,10 +847,12 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
         local hue = If(change.leftPressed, app.fgColor.hsvHue,
                        app.bgColor.hsvHue)
 
+        local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
+
         for _, pixel in ipairs(change.pixels) do
             x = pixel.x - cel.position.x
             y = pixel.y - cel.position.y
-            c = Color(cel.image:getPixel(x, y))
+            c = Color(getPixel(cel.image, x, y))
 
             if c.alpha > 0 then
                 c.hsvHue = hue
@@ -849,7 +863,7 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
                     c = sprite.palettes[1]:getColor(c.index)
                 end
 
-                cel.image:drawPixel(x, y, c)
+                drawPixel(cel.image, x, y, c)
             end
         end
 
@@ -858,10 +872,12 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
     elseif mode == Modes.Desaturate then
         local x, y, c
 
+        local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
+
         for _, pixel in ipairs(change.pixels) do
             x = pixel.x - cel.position.x
             y = pixel.y - cel.position.y
-            c = Color(cel.image:getPixel(x, y))
+            c = Color(getPixel(cel.image, x, y))
 
             if c.alpha > 0 then
                 c = Color {
@@ -873,7 +889,7 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
                     c = sprite.palettes[1]:getColor(c.index)
                 end
 
-                cel.image:drawPixel(x, y, c)
+                drawPixel(cel.image, x, y, c)
             end
         end
 
@@ -885,10 +901,12 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
                           If(change.leftPressed, 1, -1)
         local x, y, c
 
+        local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
+
         for _, pixel in ipairs(change.pixels) do
             x = pixel.x - cel.position.x
             y = pixel.y - cel.position.y
-            c = Color(cel.image:getPixel(x, y))
+            c = Color(getPixel(cel.image, x, y))
 
             if c.alpha > 0 then
                 if mode == Modes.ShiftHsvHue then
@@ -915,7 +933,7 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
                     c = sprite.palettes[1]:getColor(c.index)
                 end
 
-                cel.image:drawPixel(x, y, c)
+                drawPixel(cel.image, x, y, c)
             end
         end
 
