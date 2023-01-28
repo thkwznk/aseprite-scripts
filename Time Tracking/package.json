@@ -1,7 +1,7 @@
 {
   "name": "time-tracking",
   "displayName": "Time Tracking",
-  "description": "",
+  "description": "An extension that collects work time data locally.",
   "version": "1.0.0",
   "author": {
     "name": "Kacper Woźniak",

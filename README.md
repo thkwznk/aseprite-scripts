@@ -62,6 +62,10 @@ A collection of effects for [Aseprite](https://www.aseprite.org/) packed into an
 
 An extension for [Aseprite](https://www.aseprite.org/) that allows for customizing the theme inside the editor.
 
+## Time Tracking
+
+An extension for [Aseprite](https://www.aseprite.org/) that collects work time data locally.
+
 ## [Micro Extensions](/Micro%20Extensions/README.md)
 
 A collection of separate, single-function, productivity-focused extensions.
@@ -73,7 +77,3 @@ An experimental project trying to implements basic applications as [Aseprite](ht
 Contains:
 
 - **Note** - a to-do list app inside Aseprite.
-
-# How add Scripts to Aseprite
-
-In order to add LUA scripts open Aseprite and select _File_ > _Scripts_ > _Open Scripts Folder_. Next, copy script files to the opened directory.

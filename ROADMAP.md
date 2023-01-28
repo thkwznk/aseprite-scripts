@@ -1,5 +1,15 @@
 # Roadmap
 
+## Time Tracking
+
+Unreleased:
+
+- ...
+
+Update v1.1.0:
+
+- [Feature] Milestone trackers
+
 ## Theme Preferences
 
 Unreleased:
