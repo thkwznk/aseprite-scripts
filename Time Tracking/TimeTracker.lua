@@ -134,6 +134,7 @@ function TimeTracker:OnSpriteFilenameChange()
         totalTime = lastData.totalTime,
         changeTime = lastData.changeTime,
         changes = lastData.changes,
+        startTime = lastData.startTime,
         lastUpdateTime = lastData.lastUpdateTime,
         details = self:_Deepcopy(lastData.details)
     }
