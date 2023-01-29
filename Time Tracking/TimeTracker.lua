@@ -15,6 +15,10 @@ local GetHash = function(text)
     return hash
 end
 
+local DefaultData = function()
+    return {totalTime = 0, changeTime = 0, changes = 0}
+end
+
 local TimeTracker = {
     GetClock = os.clock,
     GetTime = os.time,
@@ -47,26 +51,15 @@ function TimeTracker:_Deepcopy(orig)
     return copy
 end
 
-function TimeTracker:CreateDetailsForDate(details, date, value)
-    local y, m, d = "_" .. tostring(date.year), "_" .. tostring(date.month),
-                    "_" .. tostring(date.day)
-
-    -- If details for this date already exits, they are simply returned
-
-    if not details[y] then details[y] = {} end
-    if not details[y][m] then details[y][m] = {} end
-    if not details[y][m][d] then details[y][m][d] = value end
-
-    return details[y][m][d]
-end
-
 function TimeTracker:GetDetailsForDate(details, date)
     local y, m, d = "_" .. tostring(date.year), "_" .. tostring(date.month),
                     "_" .. tostring(date.day)
 
-    if details[y] and details[y][m] and details[y][m][d] then
-        return details[y][m][d]
-    end
+    if not details[y] then details[y] = {} end
+    if not details[y][m] then details[y][m] = {} end
+    if not details[y][m][d] then details[y][m][d] = DefaultData() end
+
+    return details[y][m][d]
 end
 
 function TimeTracker:UpdateData(data, time)
@@ -196,17 +189,6 @@ function TimeTracker:OnSiteChange()
         data.startTime = now
         data.lastUpdateTime = nil
 
-        local date = self:GetDate()
-        local todayData = self:GetDetailsForDate(data.details, date)
-
-        if todayData == nil then
-            todayData = self:CreateDetailsForDate(data.details, date, {
-                totalTime = 0,
-                changeTime = 0,
-                changes = 0
-            })
-        end
-
         self.currentSprite.events:on("change",
                                      function() self:OnSpriteChange() end)
         self.currentSprite.events:on("filenamechange", function()
@@ -250,10 +232,6 @@ function TimeTracker:GetDataForSprite(filename, date)
     end
 
     local specificData = self:GetDetailsForDate(completeData.details, date)
-
-    if not specificData then
-        return {totalTime = 0, changeTime = 0, changes = 0}
-    end
 
     return {
         totalTime = specificData.totalTime + unsavedTime,
