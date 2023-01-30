@@ -66,42 +66,29 @@ function TimeTracker:UpdateData(data, time)
     local today = self:GetDate()
     local todayData = self:GetDetailsForDate(data.details, today)
 
+    local timeDiff = time - data.startTime
+
     if data.lastUpdateTime then
-        local timeDiff = time - data.lastUpdateTime
+        timeDiff = time - data.lastUpdateTime
 
-        data.totalTime = data.totalTime + timeDiff
-        todayData.totalTime = todayData.totalTime + timeDiff
-
-        data.changeTime = data.changeTime + timeDiff
         todayData.changeTime = todayData.changeTime + timeDiff
-    else
-        local timeDiff = time - data.startTime
-
-        data.totalTime = data.totalTime + timeDiff
-        todayData.totalTime = todayData.totalTime + timeDiff
     end
 
-    data.lastUpdateTime = time
-
-    data.changes = data.changes + 1
+    todayData.totalTime = todayData.totalTime + timeDiff
     todayData.changes = todayData.changes + 1
+
+    data.lastUpdateTime = time
 end
 
 function TimeTracker:CloseData(data, time)
     local today = self:GetDate()
     local todayData = self:GetDetailsForDate(data.details, today)
 
-    if data.lastUpdateTime then
-        local timeDiff = time - data.lastUpdateTime
+    local timeDiff = time - data.startTime
 
-        data.totalTime = data.totalTime + timeDiff
-        todayData.totalTime = todayData.totalTime + timeDiff
-    else
-        local timeDiff = (time - data.startTime)
+    if data.lastUpdateTime then timeDiff = time - data.lastUpdateTime end
 
-        data.totalTime = data.totalTime + timeDiff
-        todayData.totalTime = todayData.totalTime + timeDiff
-    end
+    todayData.totalTime = todayData.totalTime + timeDiff
 
     data.startTime = nil
     data.lastUpdateTime = nil
@@ -124,9 +111,6 @@ function TimeTracker:OnSpriteFilenameChange()
     -- TODO: What if data for this ID already exists? It shouldn't... but what if?
     self.dataStorage[id] = {
         filename = self.currentSprite.filename,
-        totalTime = lastData.totalTime,
-        changeTime = lastData.changeTime,
-        changes = lastData.changes,
         startTime = lastData.startTime,
         lastUpdateTime = lastData.lastUpdateTime,
         details = self:_Deepcopy(lastData.details)
@@ -178,9 +162,6 @@ function TimeTracker:OnSiteChange()
             self:IsTemporaryFile(self.currentSprite.filename) then
             self.dataStorage[id] = {
                 filename = self.currentSprite.filename,
-                totalTime = 0,
-                changeTime = 0,
-                changes = 0,
                 details = {}
             }
         end
@@ -224,10 +205,22 @@ function TimeTracker:GetDataForSprite(filename, date)
                                 (self.GetClock() - completeData.startTime)) or 0
 
     if not date then
+        local totalTime, changeTime, changes = 0, 0, 0
+
+        for _, yearData in pairs(completeData.details) do
+            for _, monthData in pairs(yearData) do
+                for _, dayData in pairs(monthData) do
+                    totalTime = totalTime + dayData.totalTime
+                    changeTime = changeTime + dayData.changeTime
+                    changes = changes + dayData.changes
+                end
+            end
+        end
+
         return {
-            totalTime = completeData.totalTime + unsavedTime,
-            changeTime = completeData.changeTime,
-            changes = completeData.changes
+            totalTime = totalTime + unsavedTime,
+            changeTime = changeTime,
+            changes = changes
         }
     end
 
