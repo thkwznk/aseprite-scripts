@@ -9,6 +9,7 @@ Unreleased:
 Update v1.1.0:
 
 - [Feature] Milestone trackers
+- [Improvement] Stop tracking when the _Sprite Statistics_ dialog is open
 
 ## Theme Preferences
 
@@ -17,11 +18,11 @@ Unreleased:
 - ...
 
 Update v1.0.5:
-- [Feature] Support customising fonts
-- [Test-Feature] Export to Aseprite theme (extension)
+- [Feature] Support customising fonts - scan all of the extensions, get all of the font names from the fonts.xml file and try to find extra fonts that are hidden in the theme.xml files
 
 Update v2.0.0:
 
+- [Improvement] For Aseprite 1.3, change the theme name to "Custom" - now it appears as "Theme Preferences"
 - [Test-Feature] Tint Mode where you can only edit the Tab color + optional underglow
 - [Improvement] A new color (set) - Window Title Bar
 
@@ -41,6 +42,7 @@ Unreleased:
 
 Future:
 
+- [Fix] Parallax doesn't generate correctly if the timeline is closed/hidden - cels aren't linked 
 - [Feature] Parallax - add an options for delaying layers reappearing
 - [Feature] Parallax - add an option to generate only from the selected frames
 - [Feature] Parallax - add alternative movement functions
@@ -101,4 +103,5 @@ Unreleased:
 Update v?.?.?:
 
 - [Fix] *Add Inbetween Frames* should work with groups, currently it doesn't
-- [Improvement] *Advanced Scaling* lock the UI when dialog is shown for consistency with the rest of Aseprite and show "Processing..." dialog when resizing 
+- [Improvement] *Advanced Scaling* lock the UI when dialog is shown for consistency with the rest of Aseprite and show "Processing..." dialog when resizing
+- [Improvement] *Analyze Colors* reintroduce color replacement and color selection on click
