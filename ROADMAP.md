@@ -4,7 +4,7 @@
 
 Unreleased:
 
-- [Fix] Saving data past midnight no longer results in an error
+- ...
 
 Update v1.1.0:
 
