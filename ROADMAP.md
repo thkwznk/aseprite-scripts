@@ -6,10 +6,13 @@ Unreleased:
 
 - ...
 
-Update v1.1.0:
+Update v1.0.2:
 
-- [Feature] Milestone trackers
 - [Improvement] Stop tracking when the _Sprite Statistics_ dialog is open
+- [Feature] Add tracking work sessions
+
+Update v1.0.3.
+- [Feature] Milestone trackers
 
 ## Theme Preferences
 
