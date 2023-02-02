@@ -109,8 +109,13 @@ function ThemePreferencesDialog:RefreshTheme(template, theme)
 
     image:saveAs(SheetPath)
 
-    -- TODO: Move creating the "theme.xml" file to a separate method
+    -- Update the XML theme file
+    ThemePreferencesDialog:UpdateThemeXml(theme)
 
+    app.command.Refresh()
+end
+
+function ThemePreferencesDialog:UpdateThemeXml(theme)
     -- Prepare theme.xml
     local xmlContent = ReadAll(ThemeXmlTemplatePath)
 
@@ -136,8 +141,6 @@ function ThemePreferencesDialog:RefreshTheme(template, theme)
     -- TODO: If using system fonts - ask user if they want to switch default scaling percentages
 
     WriteAll(ThemeXmlPath, xmlContent)
-
-    app.command.Refresh()
 end
 
 function ThemePreferencesDialog:Refresh()
