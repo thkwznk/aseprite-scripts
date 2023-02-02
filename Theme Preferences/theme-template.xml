@@ -6,8 +6,11 @@
         <author name="Ilija Melentijevic" url="http://ilkke.blogspot.com/" />
     </authors>
     <fonts>
-        <font id="default" font="Aseprite" />
-        <font id="mini" font="Aseprite Mini" />
+        <system_font_default>
+        <system_font_mini>
+        
+        <font id="default" font="<default_font>" size="<default_font_size>"/>
+        <font id="mini" font="<mini_font>" size="<mini_font_size>" />
     </fonts>
     <dimensions>
         <dim id="scrollbar_size" value="12" />

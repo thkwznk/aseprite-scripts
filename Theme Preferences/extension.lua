@@ -1,5 +1,6 @@
 local Template = dofile("./Template.lua")
 local ThemeManager = dofile("./ThemeManager.lua")
+local FontsProvider = dofile("./FontsProvider.lua")
 
 local THEME_ID = "custom"
 local DIALOG_WIDTH = 240
@@ -108,12 +109,31 @@ function ThemePreferencesDialog:RefreshTheme(template, theme)
 
     image:saveAs(SheetPath)
 
+    -- TODO: Move creating the "theme.xml" file to a separate method
+
     -- Prepare theme.xml
     local xmlContent = ReadAll(ThemeXmlTemplatePath)
 
     for id, color in pairs(theme.colors) do
         xmlContent = xmlContent:gsub("<" .. id .. ">", ColorToHex(color))
     end
+
+    local font = FontsProvider:GetCurrentFont()
+
+    -- Setting fonts for these just in case it's a system font
+    xmlContent = xmlContent:gsub("<system_font_default>",
+                                 FontsProvider:GetFontDeclaration(font.default))
+    xmlContent = xmlContent:gsub("<default_font>", font.default.name)
+    xmlContent =
+        xmlContent:gsub("<default_font_size>", font.default.size or "9")
+
+    xmlContent = xmlContent:gsub("<system_font_mini>",
+                                 FontsProvider:GetFontDeclaration(font.mini))
+    xmlContent = xmlContent:gsub("<mini_font>", font.mini.name)
+    xmlContent = xmlContent:gsub("<mini_font_size>", font.mini.size or "7")
+
+    -- TODO: Add font sizes
+    -- TODO: If using system fonts - ask user if they want to switch default scaling percentages
 
     WriteAll(ThemeXmlPath, xmlContent)
 
@@ -530,7 +550,28 @@ function ThemePreferencesDialog:Init()
 
     self:ThemeColor{label = "Hover", id = "window_hover", visible = true}
 
+    local fontNames = FontsProvider:GetAvailableFontNames()
+    local currentFont = FontsProvider:GetCurrentFont()
+
     self.dialog --
+    :separator{text = "Font"} --
+    :combobox{
+        id = "default-font",
+        label = "Regular/Mini",
+        option = currentFont.default.name,
+        options = fontNames,
+        onchange = function()
+            FontsProvider:SetDefaultFont(self.dialog.data["default-font"])
+        end
+    } --
+    :combobox{
+        id = "mini-font",
+        option = currentFont.mini.name,
+        options = fontNames,
+        onchange = function()
+            FontsProvider:SetMiniFont(self.dialog.data["mini-font"])
+        end
+    } --
     :separator() --
     :button{
         id = "save-configuration",
@@ -583,8 +624,7 @@ function init(plugin)
     -- Do nothing when UI is not available
     if not app.isUIAvailable then return end
 
-    ThemePreferencesDialog:Init()
-
+    -- TODO: v Move this to the ThemeManager
     -- Initialize a table in preferences to persist data
     plugin.preferences.themePreferences =
         plugin.preferences.themePreferences or {
@@ -605,12 +645,17 @@ function init(plugin)
             },
             currentTheme = "<Default:1:A:////xsbGfHx8eGBQ////rsvffZKeZVVh/+u2////0sq9lYF0ZFVgAgIC/f39LEyRLEyR/1dX////xsbGtbW1ZVVhQUEs//99m6Vdgmcf/v//e3x8AQAAAQEB>"
         }
+
     local storage = plugin.preferences.themePreferences
 
     -- Initialize a table in prefereces to save themes
     if storage.savedThemes == nil then storage.savedThemes = {} end
 
     ThemeManager:Init{storage = storage}
+    FontsProvider:Init{storage = storage}
+
+    -- Initialize the diaog
+    ThemePreferencesDialog:Init()
 
     -- Initialize data from plugin preferences
     ThemePreferencesDialog:LoadCurrentTheme()
