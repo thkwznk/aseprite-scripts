@@ -585,7 +585,13 @@ function ThemePreferencesDialog:Init()
                 self:Refresh()
             end
 
+            -- Hide the Theme Preferences dialog
+            ThemePreferencesDialog.dialog:close()
+
             ThemeManager:Load(onload, onreset)
+
+            -- Reopen the dialog
+            ThemePreferencesDialog.dialog:show{wait = false}
         end
     } --
     :button{
@@ -593,7 +599,13 @@ function ThemePreferencesDialog:Init()
         onclick = function()
             local onconfirm = function() self:Refresh() end
 
+            -- Hide the Theme Preferences dialog
+            ThemePreferencesDialog.dialog:close()
+
             FontsProvider:OpenDialog(onconfirm)
+
+            -- Reopen the dialog
+            ThemePreferencesDialog.dialog:show{wait = false}
         end
     }
 
