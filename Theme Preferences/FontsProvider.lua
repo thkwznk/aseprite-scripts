@@ -80,7 +80,7 @@ function FontsProvider:_FindAll(content, pattern)
     return results
 end
 
-function FontsProvider:PrintFilesRecursively(path, fonts)
+function FontsProvider:GetFontsFromDirectory(path, fonts)
     local files = app.fs.listFiles(path)
     fonts = fonts or {}
 
@@ -88,7 +88,7 @@ function FontsProvider:PrintFilesRecursively(path, fonts)
         local filePath = app.fs.joinPath(path, file)
 
         if app.fs.isDirectory(filePath) then
-            self:PrintFilesRecursively(filePath, fonts)
+            self:GetFontsFromDirectory(filePath, fonts)
         elseif file == "fonts.xml" then
             local fileContent = ReadAll(filePath)
             local names = self:_FindAll(fileContent, "name=\"")
@@ -140,12 +140,29 @@ function FontsProvider:_GetDeclaredFonts()
     local extensionsDirectory = app.fs.joinPath(app.fs.userConfigPath,
                                                 "extensions")
 
-    return self:PrintFilesRecursively(extensionsDirectory)
+    return self:GetFontsFromDirectory(extensionsDirectory)
 end
 
 function FontsProvider:_GetSystemFonts()
-    -- TODO: Pick directory based on the OS
-    return self:PrintFilesRecursively("C:/Windows/Fonts")
+    local fontsDirectories = {
+        "C:/Windows/Fonts", -- Windows
+        "/Library/Fonts/", -- Mac
+        "~/.fonts", "/usr/local/share/fonts", "/usr/share/fonts" -- Linux
+    }
+
+    local systemFonts = {}
+
+    for _, fontsDirectory in ipairs(fontsDirectories) do
+        if app.fs.isDirectory(fontsDirectory) then
+            local fonts = self:GetFontsFromDirectory(fontsDirectory)
+
+            for fontName, font in pairs(fonts) do
+                systemFonts[fontName] = font
+            end
+        end
+    end
+
+    return systemFonts
 end
 
 function FontsProvider:OpenDialog(onconfirm)
