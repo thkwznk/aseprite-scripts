@@ -129,15 +129,13 @@ function ThemePreferencesDialog:UpdateThemeXml(theme)
     xmlContent = xmlContent:gsub("<system_font_default>",
                                  FontsProvider:GetFontDeclaration(font.default))
     xmlContent = xmlContent:gsub("<default_font>", font.default.name)
-    xmlContent =
-        xmlContent:gsub("<default_font_size>", font.default.size or "9")
+    xmlContent = xmlContent:gsub("<default_font_size>", font.default.size)
 
     xmlContent = xmlContent:gsub("<system_font_mini>",
                                  FontsProvider:GetFontDeclaration(font.mini))
     xmlContent = xmlContent:gsub("<mini_font>", font.mini.name)
-    xmlContent = xmlContent:gsub("<mini_font_size>", font.mini.size or "7")
+    xmlContent = xmlContent:gsub("<mini_font_size>", font.mini.size)
 
-    -- TODO: Add font sizes
     -- TODO: If using system fonts - ask user if they want to switch default scaling percentages
 
     WriteAll(ThemeXmlPath, xmlContent)

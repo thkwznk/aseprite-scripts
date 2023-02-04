@@ -1,7 +1,8 @@
 local DefaultFont = {
-    default = {name = "Aseprite"},
-    mini = {name = "Aseprite Mini"}
+    default = {name = "Aseprite", size = "9"},
+    mini = {name = "Aseprite Mini", size = "7"}
 }
+local FontSizes = {"6", "7", "8", "9", "10", "11", "12"}
 
 local FontsProvider = {storage = nil, availableFonts = {}}
 
@@ -15,11 +16,34 @@ end
 function FontsProvider:GetCurrentFont() return self.storage.font end
 
 function FontsProvider:SetDefaultFont(fontName)
-    self.storage.font.default = self.availableFonts[fontName]
+    if fontName == nil or #fontName == 0 then return end
+
+    local newFont = self.availableFonts[fontName]
+    if newFont == nil then return end
+
+    self.storage.font.default.name = newFont.name
+    self.storage.font.default.type = newFont.type
+    self.storage.font.default.file = newFont.file
 end
 
 function FontsProvider:SetMiniFont(fontName)
-    self.storage.font.mini = self.availableFonts[fontName]
+
+    if fontName == nil or #fontName == 0 then return end
+
+    local newFont = self.availableFonts[fontName]
+    if newFont == nil then return end
+
+    self.storage.font.mini.name = newFont.name
+    self.storage.font.mini.type = newFont.type
+    self.storage.font.mini.file = newFont.file
+end
+
+function FontsProvider:SetDefaultFontSize(fontSize)
+    self.storage.font.default.size = fontSize
+end
+
+function FontsProvider:SetMiniFontSize(fontSize)
+    self.storage.font.mini.size = fontSize
 end
 
 function FontsProvider:GetFontDeclaration(font)
@@ -136,22 +160,58 @@ function FontsProvider:OpenDialog(onconfirm)
         id = "default-font",
         label = "Name",
         option = currentFont.default.name,
-        options = fontNames
+        options = fontNames,
+        onchange = function()
+            local newFont = self.availableFonts[dialog.data["default-font"]]
+
+            dialog:modify{
+                id = "default-font-size",
+                enabled = newFont.file ~= nil
+            }
+        end
+    } --
+    :combobox{
+        id = "default-font-size",
+        options = FontSizes,
+        option = currentFont.default.size or DefaultFont.default.size,
+        enabled = currentFont.default.file ~= nil,
+        onchange = function()
+            self:SetDefaultFontSize(dialog.data["default-font-size"])
+        end
     } --
     :separator{text = "Mini"} --
     :combobox{
         id = "mini-font",
         label = "Name",
         option = currentFont.mini.name,
-        options = fontNames
+        options = fontNames,
+        onchange = function()
+            local newFont = self.availableFonts[dialog.data["mini-font"]]
+
+            dialog:modify{id = "mini-font-size", enabled = newFont.file ~= nil}
+        end
+    } --
+    :combobox{
+        id = "mini-font-size",
+        options = FontSizes,
+        option = currentFont.mini.size or DefaultFont.mini.size,
+        enabled = currentFont.mini.file ~= nil,
+        onchange = function()
+            self:SetMiniFontSize(dialog.data["mini-font-size"])
+        end
     } --
     :separator() --
     :button{
         text = "Reset to Default",
         onclick = function()
             dialog --
+            :modify{id = "default-font-size", option = DefaultFont.default.size} --
+            :modify{id = "mini-font-size", option = DefaultFont.mini.size} --
             :modify{id = "default-font", option = DefaultFont.default.name} --
             :modify{id = "mini-font", option = DefaultFont.mini.name} --
+
+            self:SetDefaultFontSize(dialog.data["default-font-size"])
+            self:SetMiniFontSize(dialog.data["mini-font-size"])
 
             self:SetDefaultFont(dialog.data["default-font"])
             self:SetMiniFont(dialog.data["mini-font"])
@@ -163,6 +223,9 @@ function FontsProvider:OpenDialog(onconfirm)
     :button{
         text = "OK",
         onclick = function()
+            self:SetDefaultFontSize(dialog.data["default-font-size"])
+            self:SetMiniFontSize(dialog.data["mini-font-size"])
+
             self:SetDefaultFont(dialog.data["default-font"])
             self:SetMiniFont(dialog.data["mini-font"])
 
@@ -174,12 +237,16 @@ function FontsProvider:OpenDialog(onconfirm)
     :button{
         text = "Apply",
         onclick = function()
+            self:SetDefaultFontSize(dialog.data["default-font-size"])
+            self:SetMiniFontSize(dialog.data["mini-font-size"])
+
             self:SetDefaultFont(dialog.data["default-font"])
             self:SetMiniFont(dialog.data["mini-font"])
 
             onconfirm()
         end
-    }:button{text = "Cancel"}
+    } --
+    :button{text = "Cancel"}
 
     dialog:show()
 end
