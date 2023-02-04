@@ -53,6 +53,47 @@ function FontsProvider:GetFontDeclaration(font)
                          font.name, font.type, font.file)
 end
 
+-- FUTURE: Revisit this, currently can cause issues and completely break the window layout rendering Aseprite unusable
+function FontsProvider:VerifyScaling()
+    local currentFont = self:GetCurrentFont()
+
+    local isDefaultFontVector = currentFont.default.type == nil or
+                                    currentFont.default.type ~= "spritesheet"
+    local isMiniFontVector = currentFont.mini.type == nil or
+                                 currentFont.mini.type == "spritesheet"
+
+    if not isDefaultFontVector and not isMiniFontVector then return end
+
+    local screenScale = app.preferences.general["screen_scale"]
+    local uiScale = app.preferences.general["ui_scale"]
+
+    if screenScale < uiScale then return end
+
+    local userChoice = app.alert {
+        title = "Warning",
+        text = {
+            "One of the selected fonts may appear blurry, switching UI and Screen Scaling may help.",
+            "",
+            "Current: Screen " .. tostring(screenScale * 100) .. "%, " .. "UI " ..
+                tostring(uiScale * 100) .. "%",
+            "Suggested: Screen " .. tostring(uiScale * 100) .. "%, " .. "UI " ..
+                tostring(screenScale * 100) .. "%", "",
+            "Would you like to switch?"
+        },
+        buttons = {"Yes", "No"}
+    }
+
+    if userChoice == 1 then -- Yes = 1
+        app.preferences.general["screen_scale"] = uiScale
+        app.preferences.general["ui_scale"] = screenScale
+
+        app.alert {
+            title = "Aseprite Restart Necessary",
+            text = "Please restart Aseprite for the changes to be applied."
+        }
+    end
+end
+
 function FontsProvider:_ReadAll(filePath)
     local file = assert(io.open(filePath, "rb"))
     local content = file:read("*all")
@@ -171,6 +212,18 @@ function FontsProvider:OpenDialog(onconfirm)
     local fontNames = self:GetAvailableFontNames()
     local currentFont = self:GetCurrentFont()
 
+    local updateFonts = function()
+        self:SetDefaultFontSize(dialog.data["default-font-size"])
+        self:SetMiniFontSize(dialog.data["mini-font-size"])
+
+        self:SetDefaultFont(dialog.data["default-font"])
+        self:SetMiniFont(dialog.data["mini-font"])
+
+        onconfirm()
+
+        -- self:VerifyScaling()
+    end
+
     dialog --
     :separator{text = "Default"} --
     :combobox{
@@ -180,7 +233,6 @@ function FontsProvider:OpenDialog(onconfirm)
         options = fontNames,
         onchange = function()
             local newFont = self.availableFonts[dialog.data["default-font"]]
-
             dialog:modify{
                 id = "default-font-size",
                 enabled = newFont.file ~= nil
@@ -204,7 +256,6 @@ function FontsProvider:OpenDialog(onconfirm)
         options = fontNames,
         onchange = function()
             local newFont = self.availableFonts[dialog.data["mini-font"]]
-
             dialog:modify{id = "mini-font-size", enabled = newFont.file ~= nil}
         end
     } --
@@ -227,42 +278,18 @@ function FontsProvider:OpenDialog(onconfirm)
             :modify{id = "default-font", option = DefaultFont.default.name} --
             :modify{id = "mini-font", option = DefaultFont.mini.name} --
 
-            self:SetDefaultFontSize(dialog.data["default-font-size"])
-            self:SetMiniFontSize(dialog.data["mini-font-size"])
-
-            self:SetDefaultFont(dialog.data["default-font"])
-            self:SetMiniFont(dialog.data["mini-font"])
-
-            onconfirm()
+            updateFonts()
         end
     } --
     :separator() --
     :button{
         text = "OK",
         onclick = function()
-            self:SetDefaultFontSize(dialog.data["default-font-size"])
-            self:SetMiniFontSize(dialog.data["mini-font-size"])
-
-            self:SetDefaultFont(dialog.data["default-font"])
-            self:SetMiniFont(dialog.data["mini-font"])
-
+            updateFonts()
             dialog:close()
-
-            onconfirm()
         end
     } --
-    :button{
-        text = "Apply",
-        onclick = function()
-            self:SetDefaultFontSize(dialog.data["default-font-size"])
-            self:SetMiniFontSize(dialog.data["mini-font-size"])
-
-            self:SetDefaultFont(dialog.data["default-font"])
-            self:SetMiniFont(dialog.data["mini-font"])
-
-            onconfirm()
-        end
-    } --
+    :button{text = "Apply", onclick = updateFonts} --
     :button{text = "Cancel"}
 
     dialog:show()
