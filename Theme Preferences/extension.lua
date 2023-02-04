@@ -67,9 +67,11 @@ function ThemePreferencesDialog:SetInitialWidth()
     self.dialog:show{wait = false}
     self.dialog:close()
 
+    local uiScale = app.preferences.general["ui_scale"]
+
     local bounds = self.dialog.bounds
     bounds.x = bounds.x - (DIALOG_WIDTH - bounds.width) / 2
-    bounds.width = DIALOG_WIDTH
+    bounds.width = DIALOG_WIDTH * uiScale
 
     self.dialog.bounds = bounds
 end

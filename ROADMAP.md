@@ -18,7 +18,7 @@ Update v1.0.3.
 
 Unreleased:
 
-- ...
+- [Fix] Theme Preferences dialog width scales correctly with UI
 
 Update v1.0.5:
 - [Feature] Support customising fonts - scan all of the extensions, get all of the font names from the fonts.xml file and try to find extra fonts that are hidden in the theme.xml files
