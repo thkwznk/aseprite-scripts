@@ -553,28 +553,7 @@ function ThemePreferencesDialog:Init()
 
     self:ThemeColor{label = "Hover", id = "window_hover", visible = true}
 
-    local fontNames = FontsProvider:GetAvailableFontNames()
-    local currentFont = FontsProvider:GetCurrentFont()
-
     self.dialog --
-    :separator{text = "Font"} --
-    :combobox{
-        id = "default-font",
-        label = "Regular/Mini",
-        option = currentFont.default.name,
-        options = fontNames,
-        onchange = function()
-            FontsProvider:SetDefaultFont(self.dialog.data["default-font"])
-        end
-    } --
-    :combobox{
-        id = "mini-font",
-        option = currentFont.mini.name,
-        options = fontNames,
-        onchange = function()
-            FontsProvider:SetMiniFont(self.dialog.data["mini-font"])
-        end
-    } --
     :separator() --
     :button{
         id = "save-configuration",
@@ -609,6 +588,14 @@ function ThemePreferencesDialog:Init()
             ThemeManager:Load(onload, onreset)
         end
     } --
+    :button{
+        text = "Font",
+        onclick = function()
+            local onconfirm = function() self:Refresh() end
+
+            FontsProvider:OpenDialog(onconfirm)
+        end
+    }
 
     self.dialog --
     :separator() --

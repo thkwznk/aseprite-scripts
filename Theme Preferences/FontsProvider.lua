@@ -124,4 +124,64 @@ function FontsProvider:_GetSystemFonts()
     return self:PrintFilesRecursively("C:/Windows/Fonts")
 end
 
+function FontsProvider:OpenDialog(onconfirm)
+    local dialog = Dialog("Font Configuration")
+
+    local fontNames = self:GetAvailableFontNames()
+    local currentFont = self:GetCurrentFont()
+
+    dialog --
+    :separator{text = "Default"} --
+    :combobox{
+        id = "default-font",
+        label = "Name",
+        option = currentFont.default.name,
+        options = fontNames
+    } --
+    :separator{text = "Mini"} --
+    :combobox{
+        id = "mini-font",
+        label = "Name",
+        option = currentFont.mini.name,
+        options = fontNames
+    } --
+    :separator() --
+    :button{
+        text = "Reset to Default",
+        onclick = function()
+            dialog --
+            :modify{id = "default-font", option = DefaultFont.default.name} --
+            :modify{id = "mini-font", option = DefaultFont.mini.name} --
+
+            self:SetDefaultFont(dialog.data["default-font"])
+            self:SetMiniFont(dialog.data["mini-font"])
+
+            onconfirm()
+        end
+    } --
+    :separator() --
+    :button{
+        text = "OK",
+        onclick = function()
+            self:SetDefaultFont(dialog.data["default-font"])
+            self:SetMiniFont(dialog.data["mini-font"])
+
+            dialog:close()
+
+            onconfirm()
+        end
+    } --
+    :button{
+        text = "Apply",
+        onclick = function()
+            self:SetDefaultFont(dialog.data["default-font"])
+            self:SetMiniFont(dialog.data["mini-font"])
+
+            onconfirm()
+        end
+    }:button{text = "Cancel"}
+
+    dialog:show()
+end
+
 return FontsProvider
