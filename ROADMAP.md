@@ -18,17 +18,13 @@ Update v1.0.3.
 
 Unreleased:
 
-- [Fix] Theme Preferences dialog width scales correctly with UI
-- [Improvement] Hide the Theme Preferences dialog when subdialogs are open
-
-Update v1.0.5:
-- [Feature] Support customising fonts - scan all of the extensions, get all of the font names from the fonts.xml file and try to find extra fonts that are hidden in the theme.xml files
+- ...
 
 Update v2.0.0:
 
-- [Improvement] For Aseprite 1.3, change the theme name to "Custom" - now it appears as "Theme Preferences"
 - [Test-Feature] Tint Mode where you can only edit the Tab color + optional underglow
 - [Improvement] A new color (set) - Window Title Bar
+- [Improvement] Read font names from TTF files
 
 Future:
 
