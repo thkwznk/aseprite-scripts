@@ -101,27 +101,89 @@ function FontsProvider:_ReadAll(filePath)
     return content
 end
 
-function FontsProvider:_FindAll(content, pattern)
+function FontsProvider:_FindAll(content, patternStart, patternEnd)
     local results = {}
     local start = 0
+
     while start ~= -1 do
-        local matchStart = string.find(content, pattern, start)
+        local matchStart = string.find(content, patternStart, start)
 
         if not matchStart then break end
-        matchStart = matchStart + #pattern
+        local matchEnd = string.find(content, patternEnd,
+                                     matchStart + #patternStart)
 
-        local matchEnd = string.find(content, "\"", matchStart) - 1
+        local name = string.sub(content, matchStart + #patternStart,
+                                matchEnd - #patternEnd)
 
-        local name = string.sub(content, matchStart, matchEnd)
         table.insert(results, name)
 
-        start = matchEnd
+        start = matchEnd + #patternEnd
     end
 
     return results
 end
 
+function FontsProvider:_ParseFont(fontDescription)
+    local result = {}
+
+    local name = ""
+    local value = ""
+    local hasName = false
+
+    for i = 1, #fontDescription do
+        local char = string.sub(fontDescription, i, i)
+
+        if char == " " and not hasName then
+            -- If name and value are already found, save and reset
+            if #name > 0 and #value > 0 then
+                result[name] = value
+
+                name = ""
+                value = ""
+                hasName = false
+            end
+        elseif char == "=" or char == "/" then
+            -- Ignore
+        elseif char == "\"" then
+            if not hasName then
+                hasName = true
+            else
+                result[name] = value
+
+                name = ""
+                value = ""
+                hasName = false
+            end
+        elseif hasName then
+            value = value .. char
+        else
+            name = name .. char
+        end
+    end
+
+    return result
+end
+
+function FontsProvider:_ExtractFonts(filePath)
+    local fileContent = self:_ReadAll(filePath)
+    fileContent = fileContent:gsub("[\n\r\t]+", " ")
+
+    local fontDeclarations = self:_FindAll(fileContent, "<font ", ">")
+
+    local result = {}
+
+    for _, fontDeclaration in ipairs(fontDeclarations) do
+        local font = self:_ParseFont(fontDeclaration)
+        table.insert(result, font)
+    end
+
+    return result
+end
+
 function FontsProvider:GetFontsFromDirectory(path, fonts)
+    -- Validate the path
+    if not app.fs.isDirectory(path) then return end
+
     local files = app.fs.listFiles(path)
     fonts = fonts or {}
 
@@ -130,12 +192,12 @@ function FontsProvider:GetFontsFromDirectory(path, fonts)
 
         if app.fs.isDirectory(filePath) then
             self:GetFontsFromDirectory(filePath, fonts)
-        elseif file == "fonts.xml" then
-            local fileContent = ReadAll(filePath)
-            local names = self:_FindAll(fileContent, "name=\"")
+        elseif file == "fonts.xml" or file == "theme.xml" then
+            local extractedFonts = self:_ExtractFonts(filePath)
 
-            for _, name in ipairs(names) do
-                fonts[name] = {name = name}
+            for _, font in ipairs(extractedFonts) do
+                -- If the font has an ID it's a reference, not a declaration
+                if not font.id then fonts[font.name] = font end
             end
         elseif app.fs.fileExtension(filePath) == "ttf" then
             local name = app.fs.fileTitle(filePath)
@@ -171,17 +233,20 @@ function FontsProvider:_RefreshAvailableFonts()
     local systemFonts = self:_GetSystemFonts()
     for name, font in pairs(systemFonts) do self.availableFonts[name] = font end
 
-    local declaredFonts = self:_GetDeclaredFonts()
+    -- Aseprite Fonts
+    local asepriteDataDirectory = app.fs.filePath(app.fs.appPath)
+    local asepriteFonts = self:GetFontsFromDirectory(asepriteDataDirectory)
+    for name, font in pairs(asepriteFonts) do
+        self.availableFonts[name] = font
+    end
+
+    -- Declared Fonts
+    local extensionsDirectory = app.fs.joinPath(app.fs.userConfigPath,
+                                                "extensions")
+    local declaredFonts = self:GetFontsFromDirectory(extensionsDirectory)
     for name, font in pairs(declaredFonts) do
         self.availableFonts[name] = font
     end
-end
-
-function FontsProvider:_GetDeclaredFonts()
-    local extensionsDirectory = app.fs.joinPath(app.fs.userConfigPath,
-                                                "extensions")
-
-    return self:GetFontsFromDirectory(extensionsDirectory)
 end
 
 function FontsProvider:_GetSystemFonts()
@@ -205,6 +270,8 @@ function FontsProvider:_GetSystemFonts()
 
     return systemFonts
 end
+
+function FontsProvider:_HasSize(font) return font.type ~= "spritesheet" end
 
 function FontsProvider:OpenDialog(onconfirm)
     local dialog = Dialog("Font Configuration")
@@ -235,7 +302,7 @@ function FontsProvider:OpenDialog(onconfirm)
             local newFont = self.availableFonts[dialog.data["default-font"]]
             dialog:modify{
                 id = "default-font-size",
-                enabled = newFont.file ~= nil
+                enabled = self:_HasSize(newFont)
             }
         end
     } --
@@ -243,7 +310,7 @@ function FontsProvider:OpenDialog(onconfirm)
         id = "default-font-size",
         options = FontSizes,
         option = currentFont.default.size or DefaultFont.default.size,
-        enabled = currentFont.default.file ~= nil,
+        enabled = self:_HasSize(currentFont.default),
         onchange = function()
             self:SetDefaultFontSize(dialog.data["default-font-size"])
         end
@@ -256,14 +323,17 @@ function FontsProvider:OpenDialog(onconfirm)
         options = fontNames,
         onchange = function()
             local newFont = self.availableFonts[dialog.data["mini-font"]]
-            dialog:modify{id = "mini-font-size", enabled = newFont.file ~= nil}
+            dialog:modify{
+                id = "mini-font-size",
+                enabled = self:_HasSize(newFont)
+            }
         end
     } --
     :combobox{
         id = "mini-font-size",
         options = FontSizes,
         option = currentFont.mini.size or DefaultFont.mini.size,
-        enabled = currentFont.mini.file ~= nil,
+        enabled = self:_HasSize(currentFont.mini),
         onchange = function()
             self:SetMiniFontSize(dialog.data["mini-font-size"])
         end
