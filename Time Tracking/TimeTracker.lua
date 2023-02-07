@@ -36,9 +36,8 @@ function TimeTracker:GetDate()
     return os.date("*t", time)
 end
 
-function TimeTracker:IsTemporaryFile(filename)
-    return string.sub(filename, 0, 6) == "Sprite"
-end
+function TimeTracker:IsTemporaryFile(filename) return
+    not app.fs.isFile(filename) end
 
 function TimeTracker:_Deepcopy(orig)
     local orig_type = type(orig)
