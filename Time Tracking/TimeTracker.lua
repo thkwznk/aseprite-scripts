@@ -121,6 +121,11 @@ end
 
 function TimeTracker:OnSpriteFilenameChange()
     local id = GetHash(self.currentSprite.filename)
+    local data = self.dataStorage[id]
+    local today = self:GetDate()
+    local todayData = self:GetDetailsForDate(data.details, today)
+
+    todayData.saves = (todayData.saves or 0) + 1
 
     -- If the current and last IDs are the same it's a regular file save
     if id == self.lastSpriteId then return end
@@ -217,7 +222,7 @@ function TimeTracker:GetDataForSprite(filename, date)
                                 (self.GetClock() - completeData.startTime)) or 0
 
     if not date then
-        local totalTime, changeTime, changes = 0, 0, 0
+        local totalTime, changeTime, changes, saves = 0, 0, 0, 0
 
         for _, yearData in pairs(completeData.details) do
             for _, monthData in pairs(yearData) do
@@ -225,6 +230,7 @@ function TimeTracker:GetDataForSprite(filename, date)
                     totalTime = totalTime + dayData.totalTime
                     changeTime = changeTime + dayData.changeTime
                     changes = changes + dayData.changes
+                    saves = saves + (dayData.saves or 0) -- Added in version 1.0.2, can be `nil` for entries from older versions
                 end
             end
         end
@@ -232,7 +238,8 @@ function TimeTracker:GetDataForSprite(filename, date)
         return {
             totalTime = totalTime + unsavedTime,
             changeTime = changeTime,
-            changes = changes
+            changes = changes,
+            saves = saves
         }
     end
 
@@ -241,7 +248,8 @@ function TimeTracker:GetDataForSprite(filename, date)
     return {
         totalTime = specificData.totalTime + unsavedTime,
         changeTime = specificData.changeTime,
-        changes = specificData.changes
+        changes = specificData.changes,
+        saves = specificData.saves or 0 -- Added in version 1.0.2, can be `nil` for entries from older versions
     }
 end
 

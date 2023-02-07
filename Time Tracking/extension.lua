@@ -40,6 +40,7 @@ function init(plugin)
                     text = ParseTime(spriteData.changeTime)
                 } --
                 :modify{id = "changes", text = tostring(spriteData.changes)} --
+                :modify{id = "saves", text = tostring(spriteData.saves)} --
                 :modify{
                     id = "todayTime",
                     text = ParseTime(spriteTodayData.totalTime)
@@ -51,6 +52,10 @@ function init(plugin)
                 :modify{
                     id = "todayChanges",
                     text = tostring(spriteTodayData.changes)
+                } --
+                :modify{
+                    id = "todaySaves",
+                    text = tostring(spriteTodayData.saves)
                 } --
                 :modify{
                     id = "refreshButton",
@@ -75,6 +80,7 @@ function init(plugin)
             :label{id = "time", label = "Time:"} --
             :label{id = "changeTime", label = "Change Time:", visible = isDebug} --
             :label{id = "changes", label = "Changes:"} --
+            :label{id = "saves", label = "Saves:"} --
             :separator{text = "Today:"} --
             :label{id = "todayTime", label = "Time:"} --
             :label{
@@ -83,6 +89,7 @@ function init(plugin)
                 visible = isDebug
             } --
             :label{id = "todayChanges", label = "Changes:"} --
+            :label{id = "todaySaves", label = "Saves:"} --
             :separator() --
             :button{
                 id = "refreshButton",
