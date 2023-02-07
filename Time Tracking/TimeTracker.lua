@@ -124,9 +124,9 @@ end
 
 function TimeTracker:OnSpriteFilenameChange()
     local id = GetHash(self.currentSprite.filename)
-    local data = self.dataStorage[id]
+    local lastData = self.dataStorage[self.lastSpriteId]
     local today = self:GetDate()
-    local todayData = self:GetDetailsForDate(data.details, today)
+    local todayData = self:GetDetailsForDate(lastData.details, today)
 
     todayData.saves = (todayData.saves or 0) + 1
 
@@ -134,8 +134,6 @@ function TimeTracker:OnSpriteFilenameChange()
     if id == self.lastSpriteId then return end
 
     local now = self.GetClock()
-
-    local lastData = self.dataStorage[self.lastSpriteId]
 
     -- TODO: What if data for this ID already exists? It shouldn't... but what if?
     self.dataStorage[id] = {
