@@ -39,8 +39,16 @@ function init(plugin)
                                                                      TimeTracker:GetDate())
 
                 dialog --
-                :modify{id = "name", text = app.fs.fileName(filename)} --
-                :modify{id = "directory", text = app.fs.filePath(filename)} --
+                :modify{
+                    id = "name",
+                    text = app.fs.fileName(filename),
+                    enabled = false
+                } --
+                :modify{
+                    id = "directory",
+                    text = app.fs.filePath(filename),
+                    enabled = false
+                } --
                 :modify{id = "time", text = ParseTime(spriteData.totalTime)} --
                 :modify{
                     id = "changeTime",
@@ -83,20 +91,17 @@ function init(plugin)
             :separator{text = "File:"} --
             :label{id = "name", label = "Name:"} --
             :label{id = "directory", label = "Directory:"} --
-            :separator{text = "Total:"} --
+            :separator{text = "Statistics:"} --
+            :label{text = "Total", enabled = false} --
+            :label{text = "Today", enabled = false} --
             :label{id = "time", label = "Time:"} --
+            :label{id = "todayTime"} --
             :label{id = "changeTime", label = "Change Time:", visible = isDebug} --
+            :label{id = "todayChangeTime", visible = isDebug} --
             :label{id = "changes", label = "Changes:"} --
+            :label{id = "todayChanges"} --
             :label{id = "saves", label = "Saves:"} --
-            :separator{text = "Today:"} --
-            :label{id = "todayTime", label = "Time:"} --
-            :label{
-                id = "todayChangeTime",
-                label = "Change Time:",
-                visible = isDebug
-            } --
-            :label{id = "todayChanges", label = "Changes:"} --
-            :label{id = "todaySaves", label = "Saves:"} --
+            :label{id = "todaySaves"} --
             :separator() --
             :button{
                 id = "refreshButton",
