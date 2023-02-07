@@ -194,6 +194,21 @@ function TimeTracker:OnSiteChange()
     end
 end
 
+function TimeTracker:Pause()
+    local id = GetHash(self.currentSprite.filename)
+    local now = self.GetClock()
+
+    self:CloseSpriteData(id, now)
+
+    -- Clear the current sprite to make it pick up it again on the unpause
+    self.currentSprite = nil
+end
+
+function TimeTracker:Unpause()
+    -- Simulate a site change
+    self:OnSiteChange()
+end
+
 function TimeTracker:Start(dataStorage)
     self.dataStorage = dataStorage
     self.currentSprite = app.activeSprite

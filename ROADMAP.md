@@ -5,10 +5,10 @@
 Unreleased:
 
 - [Feature] Add tracking file saves
+- [Improvement] Stop tracking when the _Sprite Statistics_ dialog is open
 
 Update v1.0.2:
 
-- [Improvement] Stop tracking when the _Sprite Statistics_ dialog is open
 - [Feature] Add tracking work sessions
 
 Update v1.0.3.

@@ -19,12 +19,17 @@ function init(plugin)
         group = "sprite_color",
         onenabled = function() return app.activeSprite or isDebug end,
         onclick = function()
+            TimeTracker:Pause()
+
             local sprite = app.activeSprite
 
             local currentFilename = sprite and sprite.filename or ""
             local filenames = TimeTracker:GetFilenames()
 
-            local dialog = Dialog("Sprite Statistics")
+            local dialog = Dialog {
+                title = "Sprite Statistics",
+                onclose = function() TimeTracker:Unpause() end
+            }
 
             local updateDialog = function(filename)
                 local spriteData = TimeTracker:GetDataForSprite(filename)
