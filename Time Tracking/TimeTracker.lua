@@ -62,7 +62,8 @@ function TimeTracker:GetDetailsForDate(details, date)
     return details[y][m][d]
 end
 
-function TimeTracker:UpdateData(data, time)
+function TimeTracker:UpdateSpriteData(id, time)
+    local data = self.dataStorage[id]
     local today = self:GetDate()
     local todayData = self:GetDetailsForDate(data.details, today)
 
@@ -80,7 +81,16 @@ function TimeTracker:UpdateData(data, time)
     data.lastUpdateTime = time
 end
 
-function TimeTracker:CloseData(data, time)
+function TimeTracker:CloseSpriteData(id, time)
+    local data = self.dataStorage[id]
+
+    -- Data for temporary files isn't saved
+    if self:IsTemporaryFile(data.filename) and
+        not self:IsSpriteOpen(data.filename) then
+        self.dataStorage[id] = nil
+        return
+    end
+
     local today = self:GetDate()
     local todayData = self:GetDetailsForDate(data.details, today)
 
@@ -94,16 +104,27 @@ function TimeTracker:CloseData(data, time)
     data.lastUpdateTime = nil
 end
 
+function TimeTracker:IsSpriteOpen(filename)
+    for _, sprite in ipairs(app.sprites) do
+        if sprite.filename == filename then return true end
+    end
+
+    return false
+end
+
 function TimeTracker:OnSpriteChange()
     local id = GetHash(self.currentSprite.filename)
     local now = self.GetClock()
-    local data = self.dataStorage[id]
 
-    self:UpdateData(data, now)
+    self:UpdateSpriteData(id, now)
 end
 
 function TimeTracker:OnSpriteFilenameChange()
     local id = GetHash(self.currentSprite.filename)
+
+    -- If the current and last IDs are the same it's a regular file save
+    if id == self.lastSpriteId then return end
+
     local now = self.GetClock()
 
     local lastData = self.dataStorage[self.lastSpriteId]
@@ -116,11 +137,8 @@ function TimeTracker:OnSpriteFilenameChange()
         details = self:_Deepcopy(lastData.details)
     }
 
-    if self:IsTemporaryFile(lastData.filename) then
-        self.dataStorage[self.lastSpriteId] = nil
-    else
-        self:CloseData(lastData, now)
-    end
+    -- Close sprite data after copying
+    self:CloseSpriteData(self.lastSpriteId, now)
 
     self.lastSpriteId = id
     self.currentSprite = app.activeSprite
@@ -134,19 +152,11 @@ function TimeTracker:OnSiteChange()
 
     local now = self.GetClock()
 
-    -- Save the total time and deregister event listener
-    if self.currentSprite ~= nil and self.currentSprite.filename then
+    -- Save the total time and close the current sprite
+    if self.currentSprite ~= nil then
         local id = GetHash(self.currentSprite.filename)
-        local data = self.dataStorage[id]
 
-        if self:IsTemporaryFile(self.currentSprite.filename) then
-            self.dataStorage[id] = nil
-        else
-            self:CloseData(data, now)
-        end
-
-        self.currentSprite.events:off(self.OnSpriteChange)
-        self.currentSprite.events:off(self.OnSpriteFilenameChange)
+        self:CloseSpriteData(id, now)
     end
 
     -- Update the current sprite
@@ -157,9 +167,10 @@ function TimeTracker:OnSiteChange()
         local id = GetHash(self.currentSprite.filename)
         self.lastSpriteId = id
 
-        -- Create a new entry if there is none OR if the sprite is only a temporary file (e.g. Sprite-001, Sprite-002...)
+        -- Create a new entry if there is none OR if the sprite is only a temporary file that is not already open (e.g. Sprite-001, Sprite-002...)
         if self.dataStorage[id] == nil or
-            self:IsTemporaryFile(self.currentSprite.filename) then
+            (self:IsTemporaryFile(self.currentSprite.filename) and
+                not self:IsSpriteOpen(self.currentSprite.filename)) then
             self.dataStorage[id] = {
                 filename = self.currentSprite.filename,
                 details = {}
@@ -183,12 +194,13 @@ function TimeTracker:Start(dataStorage)
     self.currentSprite = app.activeSprite
 
     -- Start responding to the site change
-    app.events:on("sitechange", function() self:OnSiteChange() end)
+    self.siteChangeCallback = app.events:on("sitechange",
+                                            function() self:OnSiteChange() end)
 end
 
 function TimeTracker:Stop()
     -- Stop responding to the site change
-    app.events:off(self.OnSiteChange)
+    app.events:off(self.siteChangeCallback)
 end
 
 function TimeTracker:GetDataForSprite(filename, date)
