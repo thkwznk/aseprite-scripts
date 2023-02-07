@@ -6,6 +6,7 @@ Unreleased:
 
 - [Feature] Add tracking file saves
 - [Improvement] Stop tracking when the _Sprite Statistics_ dialog is open
+- [Fix] Data is no incorrectly counted after switching tabs
 
 Update v1.0.2:
 

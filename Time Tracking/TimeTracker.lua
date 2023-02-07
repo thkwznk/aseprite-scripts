@@ -24,7 +24,11 @@ local TimeTracker = {
     GetTime = os.time,
     dataStorage = {},
     currentSprite = nil,
-    lastSpriteId = nil
+    lastSpriteId = nil,
+    -- Event Callbacks
+    siteChangeCallback = nil,
+    spriteChangeCallback = nil,
+    filenameChangeCallback = nil
 }
 
 function TimeTracker:GetDate()
@@ -149,6 +153,19 @@ function TimeTracker:OnSpriteFilenameChange()
     self.currentSprite = app.activeSprite
 end
 
+function TimeTracker:CloseCurrentSprite(time)
+    if self.currentSprite == nil then return end
+
+    local id = GetHash(self.currentSprite.filename)
+
+    self:CloseSpriteData(id, time)
+
+    self.currentSprite.events:off(self.spriteChangeCallback)
+    self.currentSprite.events:off(self.filenameChangeCallback)
+
+    self.currentSprite = nil
+end
+
 function TimeTracker:OnSiteChange()
     local sprite = app.activeSprite
 
@@ -158,11 +175,7 @@ function TimeTracker:OnSiteChange()
     local now = self.GetClock()
 
     -- Save the total time and close the current sprite
-    if self.currentSprite ~= nil then
-        local id = GetHash(self.currentSprite.filename)
-
-        self:CloseSpriteData(id, now)
-    end
+    if self.currentSprite ~= nil then self:CloseCurrentSprite(now) end
 
     -- Update the current sprite
     self.currentSprite = sprite
@@ -186,22 +199,22 @@ function TimeTracker:OnSiteChange()
         data.startTime = now
         data.lastUpdateTime = nil
 
-        self.currentSprite.events:on("change",
-                                     function() self:OnSpriteChange() end)
-        self.currentSprite.events:on("filenamechange", function()
-            self:OnSpriteFilenameChange()
+        self.spriteChangeCallback = self.currentSprite.events:on("change",
+                                                                 function()
+            self:OnSpriteChange()
         end)
+
+        self.filenameChangeCallback = self.currentSprite.events:on(
+                                          "filenamechange", function()
+                self:OnSpriteFilenameChange()
+            end)
     end
 end
 
 function TimeTracker:Pause()
-    local id = GetHash(self.currentSprite.filename)
     local now = self.GetClock()
 
-    self:CloseSpriteData(id, now)
-
-    -- Clear the current sprite to make it pick up it again on the unpause
-    self.currentSprite = nil
+    self:CloseCurrentSprite(now)
 end
 
 function TimeTracker:Unpause()

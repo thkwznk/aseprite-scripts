@@ -19,7 +19,7 @@ function init(plugin)
         group = "sprite_color",
         onenabled = function() return app.activeSprite or isDebug end,
         onclick = function()
-            TimeTracker:Pause()
+            if not isDebug then TimeTracker:Pause() end
 
             local sprite = app.activeSprite
 
@@ -28,7 +28,9 @@ function init(plugin)
 
             local dialog = Dialog {
                 title = "Sprite Statistics",
-                onclose = function() TimeTracker:Unpause() end
+                onclose = function()
+                    if not isDebug then TimeTracker:Unpause() end
+                end
             }
 
             local updateDialog = function(filename)
