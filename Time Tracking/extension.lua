@@ -33,69 +33,47 @@ function init(plugin)
                 end
             }
 
-            local updateDialog = function(filename)
-                local spriteData = TimeTracker:GetDataForSprite(filename)
-                local spriteTodayData = TimeTracker:GetTodayDataForSprite(
-                                            filename, TimeTracker:GetDate())
-                local sessionData = TimeTracker:GetCurrentSessionDataForSprite(
-                                        filename)
+            local updateSection = function(id, data, prefix, suffix)
+                prefix = prefix or ""
+                suffix = suffix or ""
 
                 dialog --
                 :modify{
-                    id = "name",
-                    text = app.fs.fileName(filename),
-                    enabled = false
+                    id = id .. "-time",
+                    text = prefix .. ParseTime(data.totalTime) .. suffix
                 } --
                 :modify{
-                    id = "directory",
-                    text = app.fs.filePath(filename),
-                    enabled = false
-                } --
-                :modify{id = "time", text = ParseTime(spriteData.totalTime)} --
-                :modify{
-                    id = "changeTime",
-                    text = ParseTime(spriteData.changeTime)
-                } --
-                :modify{id = "changes", text = tostring(spriteData.changes)} --
-                :modify{id = "saves", text = tostring(spriteData.saves)} --
-                :modify{id = "sessions", text = tostring(spriteData.sessions)} --
-                :modify{
-                    id = "todayTime",
-                    text = ParseTime(spriteTodayData.totalTime)
+                    id = id .. "-change-time",
+                    text = prefix .. ParseTime(data.changeTime) .. suffix
                 } --
                 :modify{
-                    id = "todayChangeTime",
-                    text = ParseTime(spriteTodayData.changeTime)
+                    id = id .. "-changes",
+                    text = prefix .. tostring(data.changes) .. suffix
                 } --
                 :modify{
-                    id = "todayChanges",
-                    text = tostring(spriteTodayData.changes)
+                    id = id .. "-saves",
+                    text = prefix .. tostring(data.saves) .. suffix
                 } --
                 :modify{
-                    id = "todaySaves",
-                    text = tostring(spriteTodayData.saves)
+                    id = id .. "-sessions",
+                    text = data.sessions and
+                        (prefix .. tostring(data.sessions) .. suffix) or "-"
                 } --
-                :modify{
-                    id = "todaySessions",
-                    text = tostring(spriteTodayData.sessions)
-                } --
-                :modify{
-                    id = "sessionTime",
-                    text = ParseTime(sessionData.totalTime)
-                } --
-                :modify{
-                    id = "sessionChangeTime",
-                    text = ParseTime(sessionData.changeTime)
-                } --
-                :modify{
-                    id = "sessionChanges",
-                    text = tostring(sessionData.changes)
-                } --
-                :modify{id = "sessionSaves", text = tostring(sessionData.saves)} --
+            end
+
+            local updateDialog = function(filename)
+                dialog --
+                :modify{id = "name", text = app.fs.fileName(filename)} --
+                :modify{id = "directory", text = app.fs.filePath(filename)} --
                 :modify{
                     id = "refreshButton",
                     enabled = filename and #filename > 0
                 } --
+
+                updateSection("total", TimeTracker:GetTotalData(filename))
+                updateSection("today", TimeTracker:GetTodayData(filename))
+                updateSection("session", TimeTracker:GetSessionData(filename),
+                              "(", ")")
             end
 
             dialog --
@@ -111,25 +89,43 @@ function init(plugin)
             :separator{text = "File:"} --
             :label{id = "name", label = "Name:"} --
             :label{id = "directory", label = "Directory:"} --
-            :separator{text = "Statistics:"} --
-            :label{text = "Total", enabled = false} --
-            :label{text = "Today", enabled = false} --
-            :label{text = "Session", enabled = false} --
-            :label{id = "time", label = "Time:"} --
-            :label{id = "todayTime"} --
-            :label{id = "sessionTime"} --
-            :label{id = "changeTime", label = "Change Time:", visible = isDebug} --
-            :label{id = "todayChangeTime", visible = isDebug} --
-            :label{id = "sessionChangeTime", visible = isDebug} --
-            :label{id = "changes", label = "Changes:"} --
-            :label{id = "todayChanges"} --
-            :label{id = "sessionChanges"} --
-            :label{id = "saves", label = "Saves:"} --
-            :label{id = "todaySaves"} --
-            :label{id = "sessionSaves"} --
-            :label{id = "sessions", label = "Sessions:"} --
-            :label{id = "todaySessions"} --
-            :label{id = "sessionSessions", text = "-"} --
+            :separator{text = "Total:"} --
+            :label{id = "total-time", label = "Time:"} --
+            :label{
+                id = "total-change-time",
+                label = "Change Time:",
+                visible = isDebug
+            } --
+            :label{id = "total-changes", label = "Changes:"} --
+            :label{id = "total-saves", label = "Saves:"} --
+            :label{
+                id = "total-sessions",
+                label = "Sessions:",
+                visible = isDebug
+            } --
+            :separator{text = "Today (Current Session):"} --
+            :label{id = "today-time", label = "Time:"} --
+            :label{id = "session-time", enabled = false} --
+            :label{
+                id = "today-change-time",
+                label = "Change Time:",
+                visible = isDebug
+            } --
+            :label{
+                id = "session-change-time",
+                enabled = false,
+                visible = isDebug
+            } --
+            :label{id = "today-changes", label = "Changes:"} --
+            :label{id = "session-changes", enabled = false} --
+            :label{id = "today-saves", label = "Saves:"} --
+            :label{id = "session-saves", enabled = false} --
+            :label{
+                id = "today-sessions",
+                label = "Sessions:",
+                visible = isDebug
+            } --
+            :label{id = "session-sessions", enabled = false, visible = isDebug} --
             :separator() --
             :button{
                 id = "refreshButton",

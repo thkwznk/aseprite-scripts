@@ -255,7 +255,7 @@ function TimeTracker:_GetUnsavedTime(spriteData, time)
     return time - spriteData.startTime
 end
 
-function TimeTracker:GetDataForSprite(filename)
+function TimeTracker:GetTotalData(filename)
     if not filename then return DefaultData() end
 
     local spriteId = GetHash(filename)
@@ -291,9 +291,10 @@ function TimeTracker:GetDataForSprite(filename)
     }
 end
 
-function TimeTracker:GetTodayDataForSprite(filename, date)
-    if not filename or not date then return DefaultData() end
+function TimeTracker:GetTodayData(filename)
+    if not filename then return DefaultData() end
 
+    local date = self:GetDate()
     local spriteId = GetHash(filename)
     local data = self.dataStorage[spriteId]
 
@@ -321,7 +322,7 @@ function TimeTracker:GetTodayDataForSprite(filename, date)
     }
 end
 
-function TimeTracker:GetCurrentSessionDataForSprite(filename)
+function TimeTracker:GetSessionData(filename)
     if not filename then return DefaultData() end
 
     local spriteId = GetHash(filename)
