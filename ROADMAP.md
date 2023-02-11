@@ -5,13 +5,14 @@
 Unreleased:
 
 - [Feature] Add tracking file saves
+- [Feature] Add tracking work sessions
 - [Improvement] Stop tracking when the _Sprite Statistics_ dialog is open
 - [Fix] Data is no longer incorrectly counted after switching tabs
 - [Fix] Files named "Sprite-ABCD" no longer break the extension
 
 Update v1.0.2:
 
-- [Feature] Add tracking work sessions
+- ...
 
 Update v1.0.3.
 - [Feature] Milestone trackers
