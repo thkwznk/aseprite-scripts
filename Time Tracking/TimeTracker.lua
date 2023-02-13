@@ -158,8 +158,13 @@ function TimeTracker:CloseCurrentSprite(time)
 
     self:CloseSpriteData(id, time)
 
-    self.currentSprite.events:off(self.spriteChangeCallback)
-    self.currentSprite.events:off(self.filenameChangeCallback)
+    if self.spriteChangeCallback then
+        self.currentSprite.events:off(self.spriteChangeCallback)
+    end
+
+    if self.filenameChangeCallback then
+        self.currentSprite.events:off(self.filenameChangeCallback)
+    end
 
     self.currentSprite = nil
 end
