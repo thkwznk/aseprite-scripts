@@ -1,5 +1,7 @@
 local TimeTracker = dofile("./TimeTracker.lua")
 
+local View = {Basic = "basic", Detailed = "detailed"}
+
 local ParseTime = function(time)
     local seconds = time % 60
     local hours = math.floor(time / 3600)
@@ -12,6 +14,9 @@ function init(plugin)
     TimeTracker:Start(plugin.preferences)
 
     local isDebug = false
+
+    -- Initialize the view
+    plugin.preferences.view = plugin.preferences.view or View.Basic
 
     plugin:newCommand{
         id = "SpriteStatistics",
@@ -76,6 +81,21 @@ function init(plugin)
                               "(", ")")
             end
 
+            local updateView = function(view)
+                plugin.preferences.view = view
+
+                dialog --
+                :modify{id = "total-saves", visible = view == View.Detailed} --
+                :modify{id = "total-sessions", visible = view == View.Detailed} --
+                :modify{id = "today-saves", visible = view == View.Detailed} --
+                :modify{id = "today-sessions", visible = view == View.Detailed} --
+                :modify{id = "session-saves", visible = view == View.Detailed} --
+                :modify{
+                    id = "session-sessions",
+                    visible = view == View.Detailed
+                } --
+            end
+
             dialog --
             :combobox{
                 id = "selectedFilename",
@@ -85,6 +105,19 @@ function init(plugin)
                     updateDialog(dialog.data.selectedFilename)
                 end,
                 visible = isDebug
+            } --
+            :radio{
+                id = "basic-view",
+                label = "View:",
+                text = "Basic",
+                selected = plugin.preferences.view == View.Basic,
+                onclick = function() updateView(View.Basic) end
+            } --
+            :radio{
+                id = "basic-view",
+                text = "Detailed",
+                selected = plugin.preferences.view == View.Detailed,
+                onclick = function() updateView(View.Detailed) end
             } --
             :separator{text = "File:"} --
             :label{id = "name", label = "Name:"} --
@@ -98,11 +131,7 @@ function init(plugin)
             } --
             :label{id = "total-changes", label = "Changes:"} --
             :label{id = "total-saves", label = "Saves:"} --
-            :label{
-                id = "total-sessions",
-                label = "Sessions:",
-                visible = isDebug
-            } --
+            :label{id = "total-sessions", label = "Sessions:"} --
             :separator{text = "Today (Current Session):"} --
             :label{id = "today-time", label = "Time:"} --
             :label{id = "session-time", enabled = false} --
@@ -120,12 +149,8 @@ function init(plugin)
             :label{id = "session-changes", enabled = false} --
             :label{id = "today-saves", label = "Saves:"} --
             :label{id = "session-saves", enabled = false} --
-            :label{
-                id = "today-sessions",
-                label = "Sessions:",
-                visible = isDebug
-            } --
-            :label{id = "session-sessions", enabled = false, visible = isDebug} --
+            :label{id = "today-sessions", label = "Sessions:"} --
+            :label{id = "session-sessions", enabled = false} --
             :separator() --
             :button{
                 id = "refreshButton",
@@ -136,10 +161,11 @@ function init(plugin)
                     updateDialog(dialog.data.selectedFilename)
                 end
             } --
-            :button{text = "Close"}
+            :button{text = "Close", focus = true}
 
             -- Initialize dialog for the current sprite
             updateDialog(currentFilename)
+            updateView(plugin.preferences.view)
 
             dialog:show{wait = not isDebug}
         end
