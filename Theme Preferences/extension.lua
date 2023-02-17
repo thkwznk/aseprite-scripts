@@ -35,15 +35,42 @@ function ColorToHex(color)
     return string.format("#%02x%02x%02x", color.red, color.green, color.blue)
 end
 
+function RgbaPixelToColor(rgbaPixel)
+    local binary = ""
+    local length = 32
+
+    while rgbaPixel ~= 1 and rgbaPixel ~= 0 do
+        binary = tostring(rgbaPixel % 2) .. binary
+        rgbaPixel = math.modf(rgbaPixel / 2)
+    end
+    binary = tostring(rgbaPixel) .. binary
+
+    while length and #binary < length do binary = "0" .. binary end
+
+    return Color {
+        red = tonumber(binary:sub(25, 32), 2),
+        green = tonumber(binary:sub(17, 24), 2),
+        blue = tonumber(binary:sub(9, 16), 2),
+        alpha = tonumber(binary:sub(1, 8), 2)
+    }
+end
+
+function CopyColor(originalColor)
+    return Color {
+        red = originalColor.red,
+        green = originalColor.green,
+        blue = originalColor.blue,
+        alpha = originalColor.alpha
+    }
+end
+
 -- Color Definitions
 local Theme = {name = "", colors = {}, parameters = {}}
 
 -- Copy template to theme
 Theme.name = Template.name
 
-for id, color in pairs(Template.colors) do
-    Theme.colors[id] = Color(color.rgbaPixel)
-end
+for id, color in pairs(Template.colors) do Theme.colors[id] = CopyColor(color) end
 
 for id, parameter in pairs(Template.parameters) do
     Theme.parameters[id] = parameter
@@ -87,22 +114,39 @@ function ThemePreferencesDialog:RefreshTheme(template, theme)
 
     -- Prepare sheet.png
     local image = Image {fromFile = SheetTemplatePath}
-    local pixelValue, newColor, pixelColor, pixelColorId
+    local pixelValue, newColor, pixelData, pixelColor, pixelValueKey,
+          resultColor
 
     -- Save references to function to improve performance
     local getPixel, drawPixel = image.getPixel, image.drawPixel
+
+    local cache = {}
 
     for x = 0, image.width - 1 do
         for y = 0, image.height - 1 do
             pixelValue = getPixel(image, x, y)
 
             if pixelValue > 0 then
-                pixelColor = Color(pixelValue)
-                pixelColorId = ColorToHex(pixelColor)
+                pixelValueKey = tostring(pixelValue)
+                pixelData = cache[pixelValueKey]
 
-                if Map[pixelColorId] ~= nil then
-                    newColor = Color(Map[pixelColorId].rgbaPixel)
-                    newColor.alpha = pixelColor.alpha
+                if not pixelData then
+                    pixelColor = RgbaPixelToColor(pixelValue)
+
+                    cache[pixelValueKey] = {
+                        id = ColorToHex(pixelColor),
+                        color = pixelColor
+                    }
+
+                    pixelData = cache[pixelValueKey]
+                end
+
+                resultColor = Map[pixelData.id]
+
+                if resultColor ~= nil then
+                    newColor = CopyColor(resultColor)
+                    newColor.alpha = pixelData.color.alpha -- Restore the original alpha value
+
                     drawPixel(image, x, y, newColor)
                 end
             end
@@ -261,7 +305,7 @@ function ThemePreferencesDialog:LoadTheme(theme)
     -- Finally, copy colors
     for id, color in pairs(theme.colors) do
         -- Copy color just in case
-        self:SetThemeColor(id, Color(color.rgbaPixel))
+        self:SetThemeColor(id, CopyColor(color))
     end
 
     self.dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name} --
