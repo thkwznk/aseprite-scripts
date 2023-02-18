@@ -36,22 +36,11 @@ function ColorToHex(color)
 end
 
 function RgbaPixelToColor(rgbaPixel)
-    local binary = ""
-    local length = 32
-
-    while rgbaPixel ~= 1 and rgbaPixel ~= 0 do
-        binary = tostring(rgbaPixel % 2) .. binary
-        rgbaPixel = math.modf(rgbaPixel / 2)
-    end
-    binary = tostring(rgbaPixel) .. binary
-
-    while length and #binary < length do binary = "0" .. binary end
-
     return Color {
-        red = tonumber(binary:sub(25, 32), 2),
-        green = tonumber(binary:sub(17, 24), 2),
-        blue = tonumber(binary:sub(9, 16), 2),
-        alpha = tonumber(binary:sub(1, 8), 2)
+        red = app.pixelColor.rgbaR(rgbaPixel),
+        green = app.pixelColor.rgbaG(rgbaPixel),
+        blue = app.pixelColor.rgbaB(rgbaPixel),
+        alpha = app.pixelColor.rgbaA(rgbaPixel)
     }
 end
 
