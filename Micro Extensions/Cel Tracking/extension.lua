@@ -6,71 +6,82 @@ local AllFrames = "All frames"
 local SpecificFrames = "Specific frames"
 local TagFramesPrefix = "Tag: "
 
-local TrackCels = function(sprite, trackedLayer, framesRange)
-    local selectedLayers = app.range.layers
+local ExistingCelOption = {Ignore = "Ignore", Replace = "Replace"}
 
-    for _, layer in ipairs(selectedLayers) do
-        local sourceCels = {}
+local TrackCels =
+    function(sprite, trackedLayer, framesRange, existingCelsOption)
+        local selectedLayers = app.range.layers
 
-        for _, frameNumber in ipairs(app.range.frames) do
-            table.insert(sourceCels, layer:cel(frameNumber) or EmptyCel)
-        end
+        for _, layer in ipairs(selectedLayers) do
+            local sourceCels = {}
 
-        local sourceCel = sourceCels[1]
-
-        -- These need to be saved, the source cels becomes nil
-        local sourceLayer = sourceCel.layer
-        local sourceImages = {}
-
-        for _, cel in ipairs(sourceCels) do
-            if cel == EmptyCel then
-                table.insert(sourceImages, EmptyImage)
-            else
-                table.insert(sourceImages, Image(cel.image))
+            for _, frameNumber in ipairs(app.range.frames) do
+                table.insert(sourceCels, layer:cel(frameNumber) or EmptyCel)
             end
-        end
 
-        local relativePositions = {}
+            local sourceCel = sourceCels[1]
 
-        for _, cel in ipairs(sourceCels) do
-            local placeholderCel = trackedLayer:cel(cel.frameNumber)
+            -- These need to be saved, the source cels becomes nil
+            local sourceLayer = sourceCel.layer
+            local sourceImages = {}
 
-            local position = (cel ~= EmptyCel and placeholderCel) and
-                                 Point(
-                                     cel.position.x - placeholderCel.position.x,
-                                     cel.position.y - placeholderCel.position.y) or
-                                 EmptyPosition
+            for _, cel in ipairs(sourceCels) do
+                if cel == EmptyCel then
+                    table.insert(sourceImages, EmptyImage)
+                else
+                    table.insert(sourceImages, Image(cel.image))
+                end
+            end
 
-            table.insert(relativePositions, position)
-        end
+            local relativePositions = {}
 
-        -- for i, cel in ipairs(trackedLayer.cels) do
+            for _, cel in ipairs(sourceCels) do
+                local placeholderCel = trackedLayer:cel(cel.frameNumber)
 
-        for i = framesRange.fromFrame, framesRange.toFrame do
-            local cel = trackedLayer:cel(i)
+                local position = (cel ~= EmptyCel and placeholderCel) and
+                                     Point(
+                                         cel.position.x -
+                                             placeholderCel.position.x,
+                                         cel.position.y -
+                                             placeholderCel.position.y) or
+                                     EmptyPosition
 
-            if cel then
-                local originalIndex = i % #sourceImages
+                table.insert(relativePositions, position)
+            end
 
-                if originalIndex == 0 then
-                    originalIndex = #sourceImages
+            for i = framesRange.fromFrame, framesRange.toFrame do
+                local hasExistingCel = layer:cel(i) ~= nil
+
+                if hasExistingCel and existingCelsOption ==
+                    ExistingCelOption.Ignore then
+                    goto skip_tracked_cel
                 end
 
-                local relativePosition = relativePositions[originalIndex]
+                local cel = trackedLayer:cel(i)
 
-                if relativePosition ~= EmptyPosition then
-                    local newPosition = Point(cel.position.x +
-                                                  relativePosition.x,
-                                              cel.position.y +
-                                                  relativePosition.y)
+                if cel then
+                    local originalIndex = i % #sourceImages
 
-                    sprite:newCel(sourceLayer, cel.frameNumber,
-                                  sourceImages[originalIndex], newPosition)
+                    if originalIndex == 0 then
+                        originalIndex = #sourceImages
+                    end
+
+                    local relativePosition = relativePositions[originalIndex]
+
+                    if relativePosition ~= EmptyPosition then
+                        local newPosition =
+                            Point(cel.position.x + relativePosition.x,
+                                  cel.position.y + relativePosition.y)
+
+                        sprite:newCel(sourceLayer, cel.frameNumber,
+                                      sourceImages[originalIndex], newPosition)
+                    end
                 end
+
+                ::skip_tracked_cel::
             end
         end
     end
-end
 
 local GetFramesOptions = function(sprite)
     local framesOptions = {AllFrames}
@@ -170,8 +181,12 @@ function init(plugin)
                 :modify{id = "bottom-right-anchor", visible = visible} --
             end
 
+            local existingCelsOptions = {
+                ExistingCelOption.Replace, ExistingCelOption.Ignore
+            }
+
             dialog --
-            :separator{text = "Tracked"} --
+            :separator{text = "Tracked:"} --
             :combobox{
                 id = "trackedLayer",
                 label = "Layer",
@@ -184,7 +199,7 @@ function init(plugin)
                 options = framesOptions,
                 onchange = function() updateAnchors() end
             } --
-            :separator{id = "anchor-separator", text = "Anchor"} --
+            :separator{id = "anchor-separator", text = "Anchor:"} --
             :button{id = "top-left-anchor", text = "X"} --
             :button{id = "top-center-anchor", text = ""} --
             :button{id = "top-right-anchor", text = ""} --
@@ -196,15 +211,24 @@ function init(plugin)
             :button{id = "bottom-left-anchor", text = ""} --
             :button{id = "bottom-center-anchor", text = ""} --
             :button{id = "bottom-right-anchor", text = ""} --
+            :separator{text = "Options"} --
+            :combobox{
+                id = "existing-cels-option",
+                label = "Existing cels:",
+                options = existingCelsOptions
+            } --
             :separator() --
             :button{
                 text = "OK",
                 onclick = function()
                     local trackedLayer = layers[dialog.data.trackedLayer]
                     local framesRange = getSelectedFramesRange()
+                    local existingCelsOption =
+                        dialog.data["existing-cels-option"]
 
                     app.transaction(function()
-                        TrackCels(sprite, trackedLayer, framesRange)
+                        TrackCels(sprite, trackedLayer, framesRange,
+                                  existingCelsOption)
                     end)
 
                     dialog:close()
