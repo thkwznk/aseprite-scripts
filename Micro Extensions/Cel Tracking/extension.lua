@@ -7,6 +7,17 @@ local SpecificFrames = "Specific frames"
 local TagFramesPrefix = "Tag: "
 
 local ExistingCelOption = {Ignore = "Ignore", Replace = "Replace"}
+local SnapPosition = {
+    TopLeft = "top-left-position",
+    TopCenter = "top-center-position",
+    TopRight = "top-right-position",
+    MiddleLeft = "middle-left-position",
+    MiddleCenter = "middle-center-position",
+    MiddleRight = "middle-right-position",
+    BottomLeft = "bottom-left-position",
+    BottomCenter = "bottom-center-position",
+    BottomRight = "bottom-right-position"
+}
 
 local TrackCels =
     function(sprite, trackedLayer, framesRange, existingCelsOption)
@@ -93,6 +104,50 @@ local GetFramesOptions = function(sprite)
     table.insert(framesOptions, SpecificFrames)
 
     return framesOptions
+end
+
+local SnapToCel = function(cel, targetCel, position)
+    local left = targetCel.position.x
+    local right = targetCel.position.x + targetCel.bounds.width -
+                      cel.bounds.width
+
+    local top = targetCel.position.y
+    local bottom = targetCel.position.y + targetCel.bounds.height -
+                       cel.bounds.height
+
+    local center = targetCel.position.x + targetCel.bounds.width / 2 -
+                       cel.bounds.width / 2
+    local middle = targetCel.position.y + targetCel.bounds.height / 2 -
+                       cel.bounds.height / 2
+
+    if position == SnapPosition.TopLeft then
+        cel.position = Point(left, top)
+    elseif position == SnapPosition.TopCenter then
+        cel.position = Point(center, top)
+    elseif position == SnapPosition.TopRight then
+        cel.position = Point(right, top)
+    elseif position == SnapPosition.MiddleLeft then
+        cel.position = Point(left, middle)
+    elseif position == SnapPosition.MiddleCenter then
+        cel.position = Point(center, middle)
+    elseif position == SnapPosition.MiddleRight then
+        cel.position = Point(right, middle)
+    elseif position == SnapPosition.BottomLeft then
+        cel.position = Point(left, bottom)
+    elseif position == SnapPosition.BottomCenter then
+        cel.position = Point(center, bottom)
+    elseif position == SnapPosition.BottomRight then
+        cel.position = Point(right, bottom)
+    end
+end
+
+local SnapToLayer = function(targetLayer, position)
+    local cels = app.range.cels
+
+    for _, cel in ipairs(cels) do
+        local targetCel = targetLayer:cel(cel.frameNumber)
+        if targetCel then SnapToCel(cel, targetCel, position) end
+    end
 end
 
 function init(plugin)
@@ -242,9 +297,132 @@ function init(plugin)
             dialog:show()
         end
     }
+
+    plugin:newCommand{
+        id = "TrackCels",
+        title = "Snap to Layer",
+        group = "cel_popup_new",
+        onenabled = function() return app.activeSprite ~= nil end,
+        onclick = function()
+            local sprite = app.activeSprite
+            local dialog = Dialog("Snap to Layer")
+
+            local layerNames = {}
+            local layers = {}
+
+            for _, layer in ipairs(sprite.layers) do
+                table.insert(layerNames, layer.name)
+                layers[layer.name] = layer
+            end
+
+            local position = SnapPosition.MiddleCenter
+
+            local updatePosition = function(newPosition)
+                position = newPosition
+
+                for _, snapPosition in pairs(SnapPosition) do
+                    dialog:modify{
+                        id = snapPosition,
+                        text = newPosition == snapPosition and "X" or ""
+                    }
+                end
+            end
+
+            dialog --
+            :combobox{
+                id = "target-layer",
+                label = "Layer:",
+                options = layerNames
+            } --
+            :separator{text = "Position:"} --
+            :button{
+                id = "top-left-position",
+                text = "",
+                onclick = function()
+                    updatePosition(SnapPosition.TopLeft)
+                end
+            } --
+            :button{
+                id = "top-center-position",
+                text = "",
+                onclick = function()
+                    updatePosition(SnapPosition.TopCenter)
+                end
+            } --
+            :button{
+                id = "top-right-position",
+                text = "",
+                onclick = function()
+                    updatePosition(SnapPosition.TopRight)
+                end
+            } --
+            :newrow() --
+            :button{
+                id = "middle-left-position",
+                text = "",
+                onclick = function()
+                    updatePosition(SnapPosition.MiddleLeft)
+                end
+            } --
+            :button{
+                id = "middle-center-position",
+                text = "X",
+                onclick = function()
+                    updatePosition(SnapPosition.MiddleCenter)
+                end
+            } --
+            :button{
+                id = "middle-right-position",
+                text = "",
+                onclick = function()
+                    updatePosition(SnapPosition.MiddleRight)
+                end
+            } --
+            :newrow() --
+            :button{
+                id = "bottom-left-position",
+                text = "",
+                onclick = function()
+                    updatePosition(SnapPosition.BottomLeft)
+                end
+            } --
+            :button{
+                id = "bottom-center-position",
+                text = "",
+                onclick = function()
+                    updatePosition(SnapPosition.BottomCenter)
+                end
+            } --
+            :button{
+                id = "bottom-right-position",
+                text = "",
+                onclick = function()
+                    updatePosition(SnapPosition.BottomRight)
+                end
+            } --
+            :separator() --
+            :button{
+                text = "&OK",
+                onclick = function()
+                    local targetLayer = layers[dialog.data["target-layer"]]
+
+                    app.transaction(function()
+                        SnapToLayer(targetLayer, position)
+                    end)
+
+                    dialog:close()
+                    app.refresh()
+                end
+            } --
+            :button{text = "Cancel"}
+
+            dialog:show()
+        end
+    }
 end
 
 function exit(plugin) end
 
 -- TODO: Implement tracking specific frames 
 -- TODO: Test different anchors
+-- TODO: For both commands, filter out the selected layers from target layers
