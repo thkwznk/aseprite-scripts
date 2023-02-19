@@ -150,6 +150,33 @@ local SnapToLayer = function(targetLayer, position)
     end
 end
 
+local GetAvailableLayers = function(sprite)
+    local layerNames = {}
+    local layers = {}
+
+    -- Filter out selected layers
+    local selectedLayers = app.range.layers
+
+    for _, layer in ipairs(sprite.layers) do
+        local isSelected = false
+
+        for _, selectedLayer in ipairs(selectedLayers) do
+            if selectedLayer == layer then
+                isSelected = true
+                break
+            end
+        end
+
+        if not isSelected then
+            table.insert(layerNames, layer.name)
+            layers[layer.name] = layer
+        end
+
+    end
+
+    return layerNames, layers
+end
+
 function init(plugin)
     plugin:newCommand{
         id = "TrackCels",
@@ -160,14 +187,7 @@ function init(plugin)
             local sprite = app.activeSprite
             local dialog = Dialog("Track Cel(s)")
 
-            local layerNames = {}
-            local layers = {}
-
-            for _, layer in ipairs(sprite.layers) do
-                table.insert(layerNames, layer.name)
-                layers[layer.name] = layer
-            end
-
+            local layerNames, layers = GetAvailableLayers(sprite)
             local framesOptions = GetFramesOptions(sprite)
 
             local getSelectedFramesRange = function()
@@ -299,7 +319,7 @@ function init(plugin)
     }
 
     plugin:newCommand{
-        id = "TrackCels",
+        id = "SnapToLayer",
         title = "Snap to Layer",
         group = "cel_popup_new",
         onenabled = function() return app.activeSprite ~= nil end,
@@ -307,14 +327,7 @@ function init(plugin)
             local sprite = app.activeSprite
             local dialog = Dialog("Snap to Layer")
 
-            local layerNames = {}
-            local layers = {}
-
-            for _, layer in ipairs(sprite.layers) do
-                table.insert(layerNames, layer.name)
-                layers[layer.name] = layer
-            end
-
+            local layerNames, layers = GetAvailableLayers(sprite)
             local position = SnapPosition.MiddleCenter
 
             local updatePosition = function(newPosition)
