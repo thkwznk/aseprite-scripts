@@ -84,16 +84,14 @@ local TrackCels = function(sprite, trackedLayer, framesRange, anchorPosition,
     local selectedLayers = app.range.layers
 
     for _, layer in ipairs(selectedLayers) do
+        local firstSourceFrame = app.range.frames[1].frameNumber
+
         local sourceCels = {}
 
-        for _, frameNumber in ipairs(app.range.frames) do
-            table.insert(sourceCels, layer:cel(frameNumber) or Empty)
+        for _, frame in ipairs(app.range.frames) do
+            table.insert(sourceCels, layer:cel(frame) or Empty)
         end
 
-        local sourceCel = sourceCels[1]
-
-        -- These need to be saved, the source cels becomes nil
-        local sourceLayer = sourceCel.layer
         local sourceImages = {}
 
         for _, cel in ipairs(sourceCels) do
@@ -107,6 +105,8 @@ local TrackCels = function(sprite, trackedLayer, framesRange, anchorPosition,
         local relativePositions = GetRelativePositions(sourceCels, trackedLayer,
                                                        anchorPosition)
 
+        local offset = (firstSourceFrame - 1) % #sourceImages
+
         for i = framesRange.fromFrame, framesRange.toFrame do
             local hasExistingCel = layer:cel(i) ~= nil
 
@@ -117,7 +117,7 @@ local TrackCels = function(sprite, trackedLayer, framesRange, anchorPosition,
             local trackedCel = trackedLayer:cel(i)
 
             if trackedCel then
-                local originalIndex = i % #sourceImages
+                local originalIndex = (i - offset) % #sourceImages
 
                 if originalIndex == 0 then
                     originalIndex = #sourceImages
@@ -130,8 +130,11 @@ local TrackCels = function(sprite, trackedLayer, framesRange, anchorPosition,
                                                         relativePosition,
                                                         anchorPosition)
 
-                    sprite:newCel(sourceLayer, trackedCel.frameNumber,
+                    sprite:newCel(layer, trackedCel.frameNumber,
                                   sourceImages[originalIndex], newPosition)
+                elseif existingCelsOption == ExistingCelOption.Replace and
+                    layer:cel(i) then
+                    sprite:deleteCel(layer, i)
                 end
             end
 
