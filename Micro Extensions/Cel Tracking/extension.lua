@@ -7,7 +7,7 @@ local SpecificFrames = "Specific frames"
 local TagFramesPrefix = "Tag: "
 
 local ExistingCelOption = {Ignore = "Ignore", Replace = "Replace"}
-local SnapPosition = {
+local Position = {
     TopLeft = "top-left-position",
     TopCenter = "top-center-position",
     TopRight = "top-right-position",
@@ -120,23 +120,23 @@ local SnapToCel = function(cel, targetCel, position)
     local middle = targetCel.position.y + targetCel.bounds.height / 2 -
                        cel.bounds.height / 2
 
-    if position == SnapPosition.TopLeft then
+    if position == Position.TopLeft then
         cel.position = Point(left, top)
-    elseif position == SnapPosition.TopCenter then
+    elseif position == Position.TopCenter then
         cel.position = Point(center, top)
-    elseif position == SnapPosition.TopRight then
+    elseif position == Position.TopRight then
         cel.position = Point(right, top)
-    elseif position == SnapPosition.MiddleLeft then
+    elseif position == Position.MiddleLeft then
         cel.position = Point(left, middle)
-    elseif position == SnapPosition.MiddleCenter then
+    elseif position == Position.MiddleCenter then
         cel.position = Point(center, middle)
-    elseif position == SnapPosition.MiddleRight then
+    elseif position == Position.MiddleRight then
         cel.position = Point(right, middle)
-    elseif position == SnapPosition.BottomLeft then
+    elseif position == Position.BottomLeft then
         cel.position = Point(left, bottom)
-    elseif position == SnapPosition.BottomCenter then
+    elseif position == Position.BottomCenter then
         cel.position = Point(center, bottom)
-    elseif position == SnapPosition.BottomRight then
+    elseif position == Position.BottomRight then
         cel.position = Point(right, bottom)
     end
 end
@@ -328,17 +328,30 @@ function init(plugin)
             local dialog = Dialog("Snap to Layer")
 
             local layerNames, layers = GetAvailableLayers(sprite)
-            local position = SnapPosition.MiddleCenter
+            local position = Position.MiddleCenter
 
             local updatePosition = function(newPosition)
                 position = newPosition
 
-                for _, snapPosition in pairs(SnapPosition) do
+                for _, positionId in pairs(Position) do
                     dialog:modify{
-                        id = snapPosition,
-                        text = newPosition == snapPosition and "X" or ""
+                        id = positionId,
+                        text = newPosition == positionId and "X" or ""
                     }
                 end
+            end
+
+            local setupPositionRow = function(positionIds)
+                for _, positionId in ipairs(positionIds) do
+                    dialog:button{
+                        id = positionId,
+                        onclick = function()
+                            updatePosition(positionId)
+                        end
+                    }
+                end
+
+                dialog:newrow()
             end
 
             dialog --
@@ -348,72 +361,18 @@ function init(plugin)
                 options = layerNames
             } --
             :separator{text = "Position:"} --
-            :button{
-                id = "top-left-position",
-                text = "",
-                onclick = function()
-                    updatePosition(SnapPosition.TopLeft)
-                end
-            } --
-            :button{
-                id = "top-center-position",
-                text = "",
-                onclick = function()
-                    updatePosition(SnapPosition.TopCenter)
-                end
-            } --
-            :button{
-                id = "top-right-position",
-                text = "",
-                onclick = function()
-                    updatePosition(SnapPosition.TopRight)
-                end
-            } --
-            :newrow() --
-            :button{
-                id = "middle-left-position",
-                text = "",
-                onclick = function()
-                    updatePosition(SnapPosition.MiddleLeft)
-                end
-            } --
-            :button{
-                id = "middle-center-position",
-                text = "X",
-                onclick = function()
-                    updatePosition(SnapPosition.MiddleCenter)
-                end
-            } --
-            :button{
-                id = "middle-right-position",
-                text = "",
-                onclick = function()
-                    updatePosition(SnapPosition.MiddleRight)
-                end
-            } --
-            :newrow() --
-            :button{
-                id = "bottom-left-position",
-                text = "",
-                onclick = function()
-                    updatePosition(SnapPosition.BottomLeft)
-                end
-            } --
-            :button{
-                id = "bottom-center-position",
-                text = "",
-                onclick = function()
-                    updatePosition(SnapPosition.BottomCenter)
-                end
-            } --
-            :button{
-                id = "bottom-right-position",
-                text = "",
-                onclick = function()
-                    updatePosition(SnapPosition.BottomRight)
-                end
-            } --
-            :separator() --
+
+            setupPositionRow({
+                Position.TopLeft, Position.TopCenter, Position.TopRight
+            })
+            setupPositionRow({
+                Position.MiddleLeft, Position.MiddleCenter, Position.MiddleRight
+            })
+            setupPositionRow({
+                Position.BottomLeft, Position.BottomCenter, Position.BottomRight
+            })
+
+            dialog:separator() --
             :button{
                 text = "&OK",
                 onclick = function()
@@ -428,6 +387,9 @@ function init(plugin)
                 end
             } --
             :button{text = "Cancel"}
+
+            -- Initialize the position
+            updatePosition(position)
 
             dialog:show()
         end
