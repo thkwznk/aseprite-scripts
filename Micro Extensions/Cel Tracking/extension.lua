@@ -262,7 +262,10 @@ function init(plugin)
                 if framesOption == FramesOption.All then
                     -- Nothing specific
                 elseif framesOption == FramesOption.Specific then
-                    -- TODO: Implement
+                    framesRange = {
+                        fromFrame = dialog.data["from-specific-frame"],
+                        toFrame = dialog.data["to-specific-frame"]
+                    }
                 else -- Tag
                     local tagName = string.sub(framesOption,
                                                #TagFramesPrefix + 1)
@@ -279,6 +282,26 @@ function init(plugin)
                 end
 
                 return framesRange
+            end
+
+            local updateSpecificFrames = function()
+                local visible = dialog.data["framesOption"] ==
+                                    FramesOption.Specific
+                dialog --
+                :modify{id = "from-specific-frame", visible = visible} --
+                :modify{id = "to-specific-frame", visible = visible}
+
+                local okButtonEnabled = true
+
+                if visible then
+                    local from, to = dialog.data["from-specific-frame"],
+                                     dialog.data["to-specific-frame"]
+
+                    okButtonEnabled = from >= 1 and from <= to and to <=
+                                          #sprite.frames
+                end
+
+                dialog:modify{id = "ok-button", enabled = okButtonEnabled}
             end
 
             local updateAnchorPosition =
@@ -338,8 +361,23 @@ function init(plugin)
                 label = "Frames:",
                 options = framesOptions,
                 onchange = function()
+                    updateSpecificFrames()
                     updateAnchorPosition(anchorPosition)
                 end
+            } --
+            :number{
+                id = "from-specific-frame",
+                visible = false,
+                decimals = 0,
+                text = tostring(1),
+                onchange = updateSpecificFrames
+            } --
+            :number{
+                id = "to-specific-frame",
+                visible = false,
+                decimals = 0,
+                text = tostring(#sprite.frames),
+                onchange = updateSpecificFrames
             } --
             :separator{id = "anchor-separator", text = "Anchor:"} --
 
@@ -353,6 +391,7 @@ function init(plugin)
             } --
             :separator() --
             :button{
+                id = "ok-button",
                 text = "OK",
                 onclick = function()
                     local trackedLayer = layers[dialog.data.trackedLayer]
@@ -436,5 +475,3 @@ function init(plugin)
 end
 
 function exit(plugin) end
-
--- TODO: Implement tracking specific frames 
