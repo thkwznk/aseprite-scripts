@@ -382,13 +382,13 @@ function init(plugin)
     }
 
     plugin:newCommand{
-        id = "SnapToLayer",
-        title = "Snap to Layer",
+        id = "SnapToCels",
+        title = "Snap to Cel(s)",
         group = "cel_popup_new",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             local sprite = app.activeSprite
-            local dialog = Dialog("Snap to Layer")
+            local dialog = Dialog("Snap to Cel(s)")
 
             local layerNames, layers = GetAvailableLayers(sprite)
             local snapPosition = Position.MiddleCenter
@@ -405,6 +405,7 @@ function init(plugin)
             end
 
             dialog --
+            :separator{text = "Target:"} --
             :combobox{
                 id = "target-layer",
                 label = "Layer:",
