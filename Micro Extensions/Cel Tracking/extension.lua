@@ -19,80 +19,130 @@ local Position = {
     BottomRight = "bottom-right-position"
 }
 
-local TrackCels =
-    function(sprite, trackedLayer, framesRange, existingCelsOption)
-        local selectedLayers = app.range.layers
+local CalculateAnchorPosition = function(cel, anchorPosition)
+    local top = cel.position.y
+    local bottom = cel.position.y + cel.bounds.height
 
-        for _, layer in ipairs(selectedLayers) do
-            local sourceCels = {}
+    local left = cel.position.x
+    local right = cel.position.x + cel.bounds.width
 
-            for _, frameNumber in ipairs(app.range.frames) do
-                table.insert(sourceCels, layer:cel(frameNumber) or EmptyCel)
-            end
+    local middle = cel.position.y + cel.bounds.height / 2
+    local center = cel.position.x + cel.bounds.width / 2
 
-            local sourceCel = sourceCels[1]
+    if anchorPosition == Position.TopLeft then
+        return Point(left, top)
+    elseif anchorPosition == Position.TopCenter then
+        return Point(center, top)
+    elseif anchorPosition == Position.TopRight then
+        return Point(right, top)
+    elseif anchorPosition == Position.MiddleLeft then
+        return Point(left, middle)
+    elseif anchorPosition == Position.MiddleCenter then
+        return Point(center, middle)
+    elseif anchorPosition == Position.MiddleRight then
+        return Point(right, middle)
+    elseif anchorPosition == Position.BottomLeft then
+        return Point(left, bottom)
+    elseif anchorPosition == Position.BottomCenter then
+        return Point(center, bottom)
+    elseif anchorPosition == Position.BottomRight then
+        return Point(right, bottom)
+    end
+end
 
-            -- These need to be saved, the source cels becomes nil
-            local sourceLayer = sourceCel.layer
-            local sourceImages = {}
+local CalculateRelativePosition = function(cel, placeholderCel, anchorPosition)
+    local placeholderPosition = CalculateAnchorPosition(placeholderCel,
+                                                        anchorPosition)
 
-            for _, cel in ipairs(sourceCels) do
-                if cel == EmptyCel then
-                    table.insert(sourceImages, EmptyImage)
-                else
-                    table.insert(sourceImages, Image(cel.image))
-                end
-            end
+    return Point(cel.position.x - placeholderPosition.x,
+                 cel.position.y - placeholderPosition.y)
+end
 
-            local relativePositions = {}
+local GetRelativePositions = function(sourceCels, trackedLayer, anchorPosition)
+    local positions = {}
 
-            for _, cel in ipairs(sourceCels) do
-                local placeholderCel = trackedLayer:cel(cel.frameNumber)
+    for _, cel in ipairs(sourceCels) do
+        local placeholderCel = trackedLayer:cel(cel.frameNumber)
 
-                local position = (cel ~= EmptyCel and placeholderCel) and
-                                     Point(
-                                         cel.position.x -
-                                             placeholderCel.position.x,
-                                         cel.position.y -
-                                             placeholderCel.position.y) or
-                                     EmptyPosition
+        local position = EmptyPosition
 
-                table.insert(relativePositions, position)
-            end
+        if cel ~= EmptyCel and placeholderCel then
+            position = CalculateRelativePosition(cel, placeholderCel,
+                                                 anchorPosition)
+        end
 
-            for i = framesRange.fromFrame, framesRange.toFrame do
-                local hasExistingCel = layer:cel(i) ~= nil
+        table.insert(positions, position)
+    end
 
-                if hasExistingCel and existingCelsOption ==
-                    ExistingCelOption.Ignore then
-                    goto skip_tracked_cel
-                end
+    return positions
+end
 
-                local cel = trackedLayer:cel(i)
+local MoveTrackingCel = function(trackedCel, relativePosition, anchorPosition)
+    local anchor = CalculateAnchorPosition(trackedCel, anchorPosition)
 
-                if cel then
-                    local originalIndex = i % #sourceImages
+    return Point(anchor.x + relativePosition.x, anchor.y + relativePosition.y)
+end
 
-                    if originalIndex == 0 then
-                        originalIndex = #sourceImages
-                    end
+local TrackCels = function(sprite, trackedLayer, framesRange, anchorPosition,
+                           existingCelsOption)
+    local selectedLayers = app.range.layers
 
-                    local relativePosition = relativePositions[originalIndex]
+    for _, layer in ipairs(selectedLayers) do
+        local sourceCels = {}
 
-                    if relativePosition ~= EmptyPosition then
-                        local newPosition =
-                            Point(cel.position.x + relativePosition.x,
-                                  cel.position.y + relativePosition.y)
+        for _, frameNumber in ipairs(app.range.frames) do
+            table.insert(sourceCels, layer:cel(frameNumber) or EmptyCel)
+        end
 
-                        sprite:newCel(sourceLayer, cel.frameNumber,
-                                      sourceImages[originalIndex], newPosition)
-                    end
-                end
+        local sourceCel = sourceCels[1]
 
-                ::skip_tracked_cel::
+        -- These need to be saved, the source cels becomes nil
+        local sourceLayer = sourceCel.layer
+        local sourceImages = {}
+
+        for _, cel in ipairs(sourceCels) do
+            if cel == EmptyCel then
+                table.insert(sourceImages, EmptyImage)
+            else
+                table.insert(sourceImages, Image(cel.image))
             end
         end
+
+        local relativePositions = GetRelativePositions(sourceCels, trackedLayer,
+                                                       anchorPosition)
+
+        for i = framesRange.fromFrame, framesRange.toFrame do
+            local hasExistingCel = layer:cel(i) ~= nil
+
+            if hasExistingCel and existingCelsOption == ExistingCelOption.Ignore then
+                goto skip_tracked_cel
+            end
+
+            local trackedCel = trackedLayer:cel(i)
+
+            if trackedCel then
+                local originalIndex = i % #sourceImages
+
+                if originalIndex == 0 then
+                    originalIndex = #sourceImages
+                end
+
+                local relativePosition = relativePositions[originalIndex]
+
+                if relativePosition ~= EmptyPosition then
+                    local newPosition = MoveTrackingCel(trackedCel,
+                                                        relativePosition,
+                                                        anchorPosition)
+
+                    sprite:newCel(sourceLayer, trackedCel.frameNumber,
+                                  sourceImages[originalIndex], newPosition)
+                end
+            end
+
+            ::skip_tracked_cel::
+        end
     end
+end
 
 local GetFramesOptions = function(sprite)
     local framesOptions = {AllFrames}
@@ -171,10 +221,28 @@ local GetAvailableLayers = function(sprite)
             table.insert(layerNames, layer.name)
             layers[layer.name] = layer
         end
-
     end
 
     return layerNames, layers
+end
+
+local SetupPositionRow = function(dialog, onclick, positionIds)
+    for _, id in ipairs(positionIds) do
+        dialog:button{id = id, onclick = function() onclick(id) end}
+    end
+
+    dialog:newrow()
+end
+
+local SetupPositionGrid = function(dialog, onclick)
+    SetupPositionRow(dialog, onclick,
+                     {Position.TopLeft, Position.TopCenter, Position.TopRight})
+    SetupPositionRow(dialog, onclick, {
+        Position.MiddleLeft, Position.MiddleCenter, Position.MiddleRight
+    })
+    SetupPositionRow(dialog, onclick, {
+        Position.BottomLeft, Position.BottomCenter, Position.BottomRight
+    })
 end
 
 function init(plugin)
@@ -188,11 +256,11 @@ function init(plugin)
             local dialog = Dialog("Track Cel(s)")
 
             local layerNames, layers = GetAvailableLayers(sprite)
+            local anchorPosition = Position.TopLeft
             local framesOptions = GetFramesOptions(sprite)
 
             local getSelectedFramesRange = function()
                 local framesOption = dialog.data["framesOption"]
-
                 local framesRange = {fromFrame = 1, toFrame = #sprite.frames}
 
                 if framesOption == AllFrames then
@@ -217,44 +285,43 @@ function init(plugin)
                 return framesRange
             end
 
-            local updateAnchors = function()
-                local trackedLayer = layers[dialog.data.trackedLayer]
-                local framesRange = getSelectedFramesRange()
+            local updateAnchorPosition =
+                function(newPosition)
+                    anchorPosition = newPosition
 
-                local visible = false
-                local startBounds = nil
+                    local trackedLayer = layers[dialog.data.trackedLayer]
+                    local framesRange = getSelectedFramesRange()
 
-                -- If cels change size, show anchor options
-                for frameNumber = framesRange.fromFrame, framesRange.toFrame do
-                    local cel = trackedLayer:cel(frameNumber)
+                    local visible = false
+                    local startBounds = nil
 
-                    if cel then
-                        if startBounds == nil then
-                            startBounds = cel.bounds
-                        end
+                    -- If cels change size, show anchor options
+                    for frameNumber = framesRange.fromFrame, framesRange.toFrame do
+                        local cel = trackedLayer:cel(frameNumber)
 
-                        if startBounds.width ~= cel.bounds.width or
-                            startBounds.height ~= cel.bounds.height then
-                            visible = true
-                            break
+                        if cel then
+                            if startBounds == nil then
+                                startBounds = cel.bounds
+                            end
+
+                            if startBounds.width ~= cel.bounds.width or
+                                startBounds.height ~= cel.bounds.height then
+                                visible = true
+                                break
+                            end
                         end
                     end
-                end
 
-                dialog --
-                :modify{id = "anchor-separator", visible = visible} --
-                :modify{id = "top-left-anchor", visible = visible} --
-                :modify{id = "top-center-anchor", visible = visible} --
-                :modify{id = "top-right-anchor", visible = visible} --
-                -- :newrow() --
-                :modify{id = "middle-left-anchor", visible = visible} --
-                :modify{id = "middle-center-anchor", visible = visible} --
-                :modify{id = "middle-right-anchor", visible = visible} --
-                -- :newrow() --
-                :modify{id = "bottom-left-anchor", visible = visible} --
-                :modify{id = "bottom-center-anchor", visible = visible} --
-                :modify{id = "bottom-right-anchor", visible = visible} --
-            end
+                    dialog:modify{id = "anchor-separator", visible = visible}
+
+                    for _, positionId in pairs(Position) do
+                        dialog:modify{
+                            id = positionId,
+                            visible = visible,
+                            text = newPosition == positionId and "X" or ""
+                        }
+                    end
+                end
 
             local existingCelsOptions = {
                 ExistingCelOption.Replace, ExistingCelOption.Ignore
@@ -266,27 +333,23 @@ function init(plugin)
                 id = "trackedLayer",
                 label = "Layer",
                 options = layerNames,
-                onchange = function() updateAnchors() end
+                onchange = function()
+                    updateAnchorPosition(anchorPosition)
+                end
             } --
             :combobox{
                 id = "framesOption",
                 label = "Frames:",
                 options = framesOptions,
-                onchange = function() updateAnchors() end
+                onchange = function()
+                    updateAnchorPosition(anchorPosition)
+                end
             } --
             :separator{id = "anchor-separator", text = "Anchor:"} --
-            :button{id = "top-left-anchor", text = "X"} --
-            :button{id = "top-center-anchor", text = ""} --
-            :button{id = "top-right-anchor", text = ""} --
-            :newrow() --
-            :button{id = "middle-left-anchor", text = ""} --
-            :button{id = "middle-center-anchor", text = ""} --
-            :button{id = "middle-right-anchor", text = ""} --
-            :newrow() --
-            :button{id = "bottom-left-anchor", text = ""} --
-            :button{id = "bottom-center-anchor", text = ""} --
-            :button{id = "bottom-right-anchor", text = ""} --
-            :separator{text = "Options"} --
+
+            SetupPositionGrid(dialog, updateAnchorPosition)
+
+            dialog:separator{text = "Options"} --
             :combobox{
                 id = "existing-cels-option",
                 label = "Existing cels:",
@@ -303,7 +366,7 @@ function init(plugin)
 
                     app.transaction(function()
                         TrackCels(sprite, trackedLayer, framesRange,
-                                  existingCelsOption)
+                                  anchorPosition, existingCelsOption)
                     end)
 
                     dialog:close()
@@ -312,7 +375,7 @@ function init(plugin)
             :button{text = "Cancel"}
 
             -- Initialize anchors
-            updateAnchors()
+            updateAnchorPosition(anchorPosition)
 
             dialog:show()
         end
@@ -328,10 +391,10 @@ function init(plugin)
             local dialog = Dialog("Snap to Layer")
 
             local layerNames, layers = GetAvailableLayers(sprite)
-            local position = Position.MiddleCenter
+            local snapPosition = Position.MiddleCenter
 
-            local updatePosition = function(newPosition)
-                position = newPosition
+            local updateSnapPosition = function(newPosition)
+                snapPosition = newPosition
 
                 for _, positionId in pairs(Position) do
                     dialog:modify{
@@ -339,19 +402,6 @@ function init(plugin)
                         text = newPosition == positionId and "X" or ""
                     }
                 end
-            end
-
-            local setupPositionRow = function(positionIds)
-                for _, positionId in ipairs(positionIds) do
-                    dialog:button{
-                        id = positionId,
-                        onclick = function()
-                            updatePosition(positionId)
-                        end
-                    }
-                end
-
-                dialog:newrow()
             end
 
             dialog --
@@ -362,15 +412,7 @@ function init(plugin)
             } --
             :separator{text = "Position:"} --
 
-            setupPositionRow({
-                Position.TopLeft, Position.TopCenter, Position.TopRight
-            })
-            setupPositionRow({
-                Position.MiddleLeft, Position.MiddleCenter, Position.MiddleRight
-            })
-            setupPositionRow({
-                Position.BottomLeft, Position.BottomCenter, Position.BottomRight
-            })
+            SetupPositionGrid(dialog, updateSnapPosition)
 
             dialog:separator() --
             :button{
@@ -379,7 +421,7 @@ function init(plugin)
                     local targetLayer = layers[dialog.data["target-layer"]]
 
                     app.transaction(function()
-                        SnapToLayer(targetLayer, position)
+                        SnapToLayer(targetLayer, snapPosition)
                     end)
 
                     dialog:close()
@@ -389,7 +431,7 @@ function init(plugin)
             :button{text = "Cancel"}
 
             -- Initialize the position
-            updatePosition(position)
+            updateSnapPosition(snapPosition)
 
             dialog:show()
         end
@@ -399,5 +441,3 @@ end
 function exit(plugin) end
 
 -- TODO: Implement tracking specific frames 
--- TODO: Test different anchors
--- TODO: For both commands, filter out the selected layers from target layers
