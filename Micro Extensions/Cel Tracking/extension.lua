@@ -1,12 +1,9 @@
-local EmptyCel = "EMPTY_CEL"
-local EmptyImage = "EMPTY_IMAGE"
-local EmptyPosition = "EMPTY_POSITION"
-
-local AllFrames = "All frames"
-local SpecificFrames = "Specific frames"
+local Empty = "EMPTY"
 local TagFramesPrefix = "Tag: "
 
+local FramesOption = {All = "All frames", Specific = "Specific frames"}
 local ExistingCelOption = {Ignore = "Ignore", Replace = "Replace"}
+
 local Position = {
     TopLeft = "top-left-position",
     TopCenter = "top-center-position",
@@ -63,10 +60,9 @@ local GetRelativePositions = function(sourceCels, trackedLayer, anchorPosition)
 
     for _, cel in ipairs(sourceCels) do
         local placeholderCel = trackedLayer:cel(cel.frameNumber)
+        local position = Empty
 
-        local position = EmptyPosition
-
-        if cel ~= EmptyCel and placeholderCel then
+        if cel ~= Empty and placeholderCel then
             position = CalculateRelativePosition(cel, placeholderCel,
                                                  anchorPosition)
         end
@@ -91,7 +87,7 @@ local TrackCels = function(sprite, trackedLayer, framesRange, anchorPosition,
         local sourceCels = {}
 
         for _, frameNumber in ipairs(app.range.frames) do
-            table.insert(sourceCels, layer:cel(frameNumber) or EmptyCel)
+            table.insert(sourceCels, layer:cel(frameNumber) or Empty)
         end
 
         local sourceCel = sourceCels[1]
@@ -101,8 +97,8 @@ local TrackCels = function(sprite, trackedLayer, framesRange, anchorPosition,
         local sourceImages = {}
 
         for _, cel in ipairs(sourceCels) do
-            if cel == EmptyCel then
-                table.insert(sourceImages, EmptyImage)
+            if cel == Empty then
+                table.insert(sourceImages, Empty)
             else
                 table.insert(sourceImages, Image(cel.image))
             end
@@ -129,7 +125,7 @@ local TrackCels = function(sprite, trackedLayer, framesRange, anchorPosition,
 
                 local relativePosition = relativePositions[originalIndex]
 
-                if relativePosition ~= EmptyPosition then
+                if relativePosition ~= Empty then
                     local newPosition = MoveTrackingCel(trackedCel,
                                                         relativePosition,
                                                         anchorPosition)
@@ -145,13 +141,13 @@ local TrackCels = function(sprite, trackedLayer, framesRange, anchorPosition,
 end
 
 local GetFramesOptions = function(sprite)
-    local framesOptions = {AllFrames}
+    local framesOptions = {FramesOption.All}
 
     for _, tag in ipairs(sprite.tags) do
         table.insert(framesOptions, TagFramesPrefix .. tag.name)
     end
 
-    table.insert(framesOptions, SpecificFrames)
+    table.insert(framesOptions, FramesOption.Specific)
 
     return framesOptions
 end
@@ -263,9 +259,9 @@ function init(plugin)
                 local framesOption = dialog.data["framesOption"]
                 local framesRange = {fromFrame = 1, toFrame = #sprite.frames}
 
-                if framesOption == AllFrames then
+                if framesOption == FramesOption.All then
                     -- Nothing specific
-                elseif framesOption == SpecificFrames then
+                elseif framesOption == FramesOption.Specific then
                     -- TODO: Implement
                 else -- Tag
                     local tagName = string.sub(framesOption,
