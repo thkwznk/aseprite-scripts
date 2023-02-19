@@ -199,30 +199,40 @@ local SnapToLayer = function(targetLayer, position)
     end
 end
 
-local GetAvailableLayers = function(sprite)
-    local layerNames = {}
-    local layers = {}
+local GetAvailableLayers
+GetAvailableLayers = function(layers)
+    local resultNames = {}
+    local result = {}
 
     -- Filter out selected layers
     local selectedLayers = app.range.layers
 
-    for _, layer in ipairs(sprite.layers) do
-        local isSelected = false
+    for _, layer in ipairs(layers) do
+        if layer.isGroup then -- Handle groups
+            local sublayerNames, sublayers = GetAvailableLayers(layer.layers)
 
-        for _, selectedLayer in ipairs(selectedLayers) do
-            if selectedLayer == layer then
-                isSelected = true
-                break
+            for _, sublayerName in ipairs(sublayerNames) do
+                table.insert(resultNames, sublayerName)
+                result[sublayerName] = sublayers[sublayerName]
             end
-        end
+        elseif not layer.isBackground then -- Ignore background layers
+            local isSelected = false
 
-        if not isSelected then
-            table.insert(layerNames, layer.name)
-            layers[layer.name] = layer
+            for _, selectedLayer in ipairs(selectedLayers) do
+                if selectedLayer == layer then
+                    isSelected = true
+                    break
+                end
+            end
+
+            if not isSelected then
+                table.insert(resultNames, layer.name)
+                result[layer.name] = layer
+            end
         end
     end
 
-    return layerNames, layers
+    return resultNames, result
 end
 
 local SetupPositionRow = function(dialog, onclick, positionIds)
@@ -254,7 +264,7 @@ function init(plugin)
             local sprite = app.activeSprite
             local dialog = Dialog("Track Cel(s)")
 
-            local layerNames, layers = GetAvailableLayers(sprite)
+            local layerNames, layers = GetAvailableLayers(sprite.layers)
             local anchorPosition = Position.TopLeft
             local framesOptions = GetFramesOptions(sprite)
 
@@ -428,7 +438,7 @@ function init(plugin)
             local sprite = app.activeSprite
             local dialog = Dialog("Snap to Cel(s)")
 
-            local layerNames, layers = GetAvailableLayers(sprite)
+            local layerNames, layers = GetAvailableLayers(sprite.layers)
             local snapPosition = Position.MiddleCenter
 
             local updateSnapPosition = function(newPosition)
