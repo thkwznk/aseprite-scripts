@@ -1,8 +1,8 @@
 {
   "name": "cel-tracking",
   "displayName": "Cel Tracking",
-  "description": "",
-  "version": "0.0.1",
+  "description": "Allows following the movement of cels from another layer.",
+  "version": "1.0.0",
   "author": {
     "name": "Kacper Woźniak",
     "email": "kac.wozniak@gmail.com",

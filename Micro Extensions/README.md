@@ -22,3 +22,7 @@ Provides options to transform a custom brush on the fly.
 
 ## Modify Frame Rate
 Provides an option to speed up or slow down multiple frames at the same time to a percentage of their current frame rate.
+
+## Cel Tracking
+
+Provides an option to follow the movement of cels from another layer.
