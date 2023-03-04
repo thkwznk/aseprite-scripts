@@ -250,9 +250,20 @@ function FontsProvider:_RefreshAvailableFonts()
 end
 
 function FontsProvider:_GetSystemFonts()
+    -- Windows
+    local roamingPath = os.getenv("APPDATA")
+    local appDataPath = roamingPath and app.fs.filePath(roamingPath)
+    local windowsUserFontsPath = app.fs.joinPath(appDataPath,
+                                                 "Local\\Microsoft\\Windows\\Fonts") or
+                                     ""
+
+    -- Mac
+    local homePath = os.getenv("HOME")
+    local macUserFontsPath = app.fs.joinPath(homePath, "Library/Fonts") or ""
+
     local fontsDirectories = {
-        "C:/Windows/Fonts", -- Windows
-        "/Library/Fonts/", -- Mac
+        "C:/Windows/Fonts", windowsUserFontsPath, -- Windows
+        "/Library/Fonts/", "/System/Library/Fonts/", macUserFontsPath, -- Mac
         "~/.fonts", "/usr/local/share/fonts", "/usr/share/fonts" -- Linux
     }
 
