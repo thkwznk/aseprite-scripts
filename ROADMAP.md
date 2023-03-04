@@ -13,13 +13,7 @@ Update v1.0.3.
 
 Unreleased:
 
-- [Fix] Updating the theme while the active sprite is in Indexed (or Grayscale) color mode no longer breaks the theme
-- [Fix] Correctly load system fonts for macOS
-- [Improvement] For Windows and macOS - allow for choosing user fonts
-
-Next:
-
-- [Fix] Test and fix font file paths for different OSs
+- ...
 
 Update v2.0.0:
 
