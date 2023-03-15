@@ -1,29 +1,38 @@
+local ModeFactory = dofile("./ModeFactory.lua")
+
+-- Automatically load all modes
+local extensionsDirectory = app.fs.joinPath(app.fs.userConfigPath, "extensions")
+local magicPencilDirectory = app.fs
+                                 .joinPath(extensionsDirectory, "magic-pencil")
+local modesDirectory = app.fs.joinPath(magicPencilDirectory, "modes")
+
+ModeFactory:Init(modesDirectory)
+
 -- Colors
-local Transparent = Color {gray = 0, alpha = 0}
 local MagicPink = Color {red = 255, green = 0, blue = 255, alpha = 128}
 local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 
 -- Modes
 local Modes = {
-    Regular = "regular",
-    Outline = "outline",
-    OutlineLive = "outline-live",
-    Cut = "cut",
-    Selection = "selection",
-    Yeet = "yeet",
-    Mix = "mix",
-    MixProportional = "mix-proportional",
-    Colorize = "colorize",
-    Desaturate = "desaturate",
-    ShiftHsvHue = "shift-hsv-hue",
-    ShiftHsvSaturation = "shift-hsv-saturation",
-    ShiftHsvValue = "shift-hsv-value",
-    ShiftHslHue = "shift-hsl-hue",
-    ShiftHslSaturation = "shift-hsl-saturation",
-    ShiftHslLightness = "shift-hsl-lightness",
-    ShiftRgbRed = "shift-rgb-red",
-    ShiftRgbGreen = "shift-rgb-green",
-    ShiftRgbBlue = "shift-rgb-blue"
+    Regular = "RegularMode",
+    Outline = "OutlineMode",
+    OutlineLive = "OutlineLiveMode",
+    Cut = "CutMode",
+    Selection = "SelectionMode",
+    Yeet = "YeetMode",
+    Mix = "MixMode",
+    MixProportional = "MixProportionalMode",
+    Colorize = "ColorizeMode",
+    Desaturate = "DesaturateMode",
+    ShiftHsvHue = "ShiftHsvHueMode",
+    ShiftHsvSaturation = "ShiftHsvSaturationMode",
+    ShiftHsvValue = "ShiftHsvValueMode",
+    ShiftHslHue = "ShiftHslHueMode",
+    ShiftHslSaturation = "ShiftHslSaturationMode",
+    ShiftHslLightness = "ShiftHslLightnessMode",
+    ShiftRgbRed = "ShiftRgbRedMode",
+    ShiftRgbGreen = "ShiftRgbGreenMode",
+    ShiftRgbBlue = "ShiftRgbBlueMode"
 }
 
 local SpecialCursorModes = {
@@ -37,6 +46,8 @@ local SpecialCursorModes = {
 local CanExtendModes = {
     Modes.OutlineLive, Modes.Selection, Modes.Mix, Modes.MixProportional
 }
+
+local MixModes = {Modes.Mix, Modes.MixProportional}
 
 local ShiftHsvModes = {
     Modes.ShiftHsvHue, Modes.ShiftHsvSaturation, Modes.ShiftHsvValue
@@ -189,44 +200,9 @@ function GetButtonsPressed(pixels, previous, next)
     return leftPressed, rightPressed
 end
 
-function Outline(selection, image, x, y)
-    local outlinePixels = {}
-    RecursiveOutline(selection, image, x, y, outlinePixels, {})
-    return outlinePixels
-end
-
-function RecursiveOutline(selection, image, x, y, outlinePixels, visited)
-    -- Out of selection
-    if selection then
-        if not RectangleContains(selection, Point(x, y)) then return end
-    end
-
-    -- Out of bounds
-    if x < 0 or x > image.width - 1 or y < 0 or y > image.height - 1 then
-        table.insert(outlinePixels, {x = x, y = y})
-        return
-    end
-
-    local pixelCoordinate = tostring(x) .. ":" .. tostring(y)
-    -- Already visited
-    if visited[pixelCoordinate] then return end
-    -- Mark a pixel as visited
-    visited[pixelCoordinate] = true
-
-    if Color(image:getPixel(x, y)).alpha == 0 then
-        table.insert(outlinePixels, {x = x, y = y})
-        return
-    end
-
-    RecursiveOutline(selection, image, x - 1, y, outlinePixels, visited)
-    RecursiveOutline(selection, image, x + 1, y, outlinePixels, visited)
-    RecursiveOutline(selection, image, x, y - 1, outlinePixels, visited)
-    RecursiveOutline(selection, image, x, y + 1, outlinePixels, visited)
-end
-
 function CalculateChange(previous, next, canExtend)
     -- If size changed then it's a clear indicator of a change
-    -- Pencil can only add which means the new image can only be bigger
+    -- Pencil can only add which means the new image can only be bigger (not true, you COULD paint with color 0...)
 
     local pixels = {}
     local prevPixelValue = nil
@@ -377,7 +353,7 @@ function MagicPencil:Execute(options)
         if app.activeCel == nil then return end
 
         if app.activeTool.id ~= "pencil" or -- If it's the wrong tool then ignore
-        selectedMode == Modes.Regular or -- If it's the wrong mode then ignore
+        selectedMode == Modes.Regular or -- If it's the regular mode then ignore
         lastKnownNumberOfCels ~= #sprite.cels or -- If last layer/frame/cel was removed then ignore
         lastActiveCel ~= app.activeCel or -- If it's just a layer/frame/cel change then ignore
         lastActiveCel == nil -- If a cel was created where previously was none or cel was copied
@@ -400,6 +376,7 @@ function MagicPencil:Execute(options)
             end
             -- Otherwise, do nothing
         elseif not change.leftPressed and not change.rightPressed then
+            -- TODO: This can be checked with the new API since 1.3-rc1
             -- Not a user change - most probably an undo action, do nothing
         else
             self:ProcessMode(selectedMode, change, sprite, lastCel,
@@ -612,340 +589,23 @@ function MagicPencil:Execute(options)
 end
 
 function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
-    if mode == Modes.Outline then
-        -- Calculate outline pixels from the center of the change bound
-        local selection = nil
-
-        if not sprite.selection.isEmpty then
-            local b = sprite.selection.bounds
-            selection = Rectangle(b.x - cel.bounds.x, b.y - cel.bounds.y,
-                                  b.width, b.height)
-        end
-
-        local outlinePixels = Outline(selection, cel.image,
-                                      change.center.x - cel.bounds.x,
-                                      change.center.y - cel.bounds.y)
-
-        local bounds = GetBoundsForPixels(outlinePixels)
-
-        if bounds then
-            local boundsGlobal = Rectangle(bounds.x + cel.bounds.x,
-                                           bounds.y + cel.bounds.y,
-                                           bounds.width, bounds.height)
-            local newImageBounds = cel.bounds:union(boundsGlobal)
-
-            local shift = Point(cel.bounds.x - newImageBounds.x,
-                                cel.bounds.y - newImageBounds.y)
-
-            local newImage = Image(newImageBounds.width, newImageBounds.height)
-            newImage:drawImage(cel.image, shift.x, shift.y)
-
-            local outlineColor = change.leftPressed and app.fgColor or
-                                     app.bgColor
-
-            local drawPixel = newImage.drawPixel
-
-            for _, pixel in ipairs(outlinePixels) do
-                drawPixel(newImage, pixel.x + shift.x, pixel.y + shift.y,
-                          outlineColor)
-            end
-
-            app.activeCel.image = newImage
-            app.activeCel.position = Point(newImageBounds.x, newImageBounds.y)
-        else
-            app.activeCel.image = cel.image
-            app.activeCel.position = cel.position
-        end
-    elseif mode == Modes.OutlineLive then
-        local color = parameters.outlineColor.rgbaPixel
-
-        local selection = sprite.selection
-        local extend = {}
-
-        for _, pixel in ipairs(change.pixels) do
-            local ix = pixel.x - app.activeCel.bounds.x
-            local iy = pixel.y - app.activeCel.bounds.y
-
-            if ix == 0 then extend.left = true end
-            if ix == app.activeCel.image.width - 1 then
-                extend.right = true
-            end
-            if iy == 0 then extend.up = true end
-            if iy == app.activeCel.image.height - 1 then
-                extend.down = true
-            end
-        end
-
-        local width = app.activeCel.image.width
-        local height = app.activeCel.image.height
-
-        if extend.left then width = width + 1 end
-        if extend.right then width = width + 1 end
-        if extend.up then height = height + 1 end
-        if extend.down then height = height + 1 end
-
-        local newImage = Image(width, height)
-
-        local dpx = If(extend.left, 1, 0)
-        local dpy = If(extend.up, 1, 0)
-
-        newImage:drawImage(app.activeCel.image, Point(dpx, dpy))
-
-        local CanOutline = function(x, y)
-            return selection.isEmpty or
-                       (not selection.isEmpty and selection:contains(x, y))
-        end
-
-        local getPixel, drawPixel = newImage.getPixel, newImage.drawPixel
-
-        for _, pixel in ipairs(change.pixels) do
-            local ix = pixel.x - app.activeCel.bounds.x + dpx
-            local iy = pixel.y - app.activeCel.bounds.y + dpy
-
-            if CanOutline(pixel.x - 1, pixel.y) then
-                if getPixel(newImage, ix - 1, iy) == 0 then
-                    drawPixel(newImage, ix - 1, iy, color)
-                end
-            end
-
-            if CanOutline(pixel.x + 1, pixel.y) then
-                if getPixel(newImage, ix + 1, iy) == 0 then
-                    drawPixel(newImage, ix + 1, iy, color)
-                end
-            end
-
-            if CanOutline(pixel.x, pixel.y - 1) then
-                if getPixel(newImage, ix, iy - 1) == 0 then
-                    drawPixel(newImage, ix, iy - 1, color)
-                end
-            end
-
-            if CanOutline(pixel.x, pixel.y + 1) then
-                if getPixel(newImage, ix, iy + 1) == 0 then
-                    drawPixel(newImage, ix, iy + 1, color)
-                end
-            end
-        end
-
-        app.activeCel.image = newImage
-        app.activeCel.position = Point(app.activeCel.position.x - dpx,
-                                       app.activeCel.position.y - dpy)
-    elseif mode == Modes.Cut then
-        local intersection = Rectangle(cel.bounds):intersect(change.bounds)
-        local image = Image(intersection.width, intersection.height)
-        local color = nil
-
-        local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
-
-        for _, pixel in ipairs(change.pixels) do
-            if RectangleContains(intersection, pixel) then
-                color = getPixel(cel.image, pixel.x - cel.position.x,
-                                 pixel.y - cel.position.y)
-                drawPixel(cel.image, pixel.x - cel.position.x,
-                          pixel.y - cel.position.y, Transparent)
-
-                drawPixel(image, pixel.x - intersection.x,
-                          pixel.y - intersection.y, color)
-            end
-        end
-
-        app.activeCel.image = cel.image
-        app.activeCel.position = cel.position
-
-        local activeLayerIndex = app.activeLayer.stackIndex
-        local activeLayerParent = app.activeLayer.parent
-
-        local newLayer = sprite:newLayer()
-        newLayer.parent = activeLayerParent
-        if change.leftPressed then
-            newLayer.stackIndex = activeLayerIndex + 1
-        else
-            newLayer.stackIndex = activeLayerIndex
-        end
-
-        newLayer.name = "Lifted Content"
-
-        sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, image,
-                      Point(intersection.x, intersection.y))
-    elseif mode == Modes.Selection then
-        -- FIX: If the whole selection is out of the original cel's bounds it will not be processed
-
-        local newSelection = Selection()
-
-        for _, pixel in ipairs(change.pixels) do
-            newSelection:add(Rectangle(pixel.x, pixel.y, 1, 1))
-        end
-
-        if change.leftPressed then
-            if sprite.selection.isEmpty then
-                sprite.selection:add(newSelection)
-            else
-                sprite.selection:intersect(newSelection)
-            end
-        else
-            sprite.selection:subtract(newSelection)
-        end
-
-        app.activeCel.image = cel.image
-        app.activeCel.position = cel.position
-    elseif mode == Modes.Yeet then
-        local startFrame = app.activeFrame.frameNumber
-
-        local x, y = cel.position.x, cel.position.y
-        local xSpeed = math.floor(change.bounds.width / 2)
-        local ySpeed = -math.floor(change.bounds.height / 2)
-
-        sprite:newCel(app.activeLayer, startFrame, cel.image, cel.position)
-
-        local MaxFrames = 50
-
-        for frame = startFrame + 1, startFrame + MaxFrames do
-            if x < 0 or x > sprite.width or y > sprite.height then
-                break
-            end
-
-            x, y = x + xSpeed, y + ySpeed
-            xSpeed, ySpeed = xSpeed, ySpeed + 2
-
-            if frame > #sprite.frames then sprite:newEmptyFrame() end
-            sprite:newCel(app.activeLayer, frame, cel.image, Point(x, y))
-        end
-    elseif mode == Modes.Mix or mode == Modes.MixProportional then
-        local colors = {}
-
-        for _, pixel in ipairs(change.pixels) do
-            if pixel.color and pixel.color.alpha == 255 then
-                if mode == Modes.Mix then
-                    if not Contains(colors, pixel.color) then
-                        table.insert(colors, pixel.color)
-                    end
-                elseif mode == Modes.MixProportional then
-                    table.insert(colors, pixel.color)
-                end
-            end
-        end
-
-        local averageColor = If(change.leftPressed, AverageColorRGB,
-                                AverageColorHSV)(colors)
-
-        if parameters.indexedMode then
-            averageColor = sprite.palettes[1]:getColor(averageColor.index)
-        end
-
-        local newBounds = app.activeCel.bounds
-        local shift = Point(cel.bounds.x - newBounds.x,
-                            cel.bounds.y - newBounds.y)
-
-        local newImage = Image(app.activeCel.image.width,
-                               app.activeCel.image.height)
-        newImage:drawImage(cel.image, shift.x, shift.y)
-
-        local drawPixel = newImage.drawPixel
-
-        for _, pixel in ipairs(change.pixels) do
-            drawPixel(newImage, pixel.x - newBounds.x, pixel.y - newBounds.y,
-                      averageColor)
-        end
-
-        app.activeCel.image = newImage
-        app.activeCel.position = Point(newBounds.x, newBounds.y)
-    elseif mode == Modes.Colorize then
-        local x, y, c
-        local hue = If(change.leftPressed, app.fgColor.hsvHue,
-                       app.bgColor.hsvHue)
-
-        local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
-
-        for _, pixel in ipairs(change.pixels) do
-            x = pixel.x - cel.position.x
-            y = pixel.y - cel.position.y
-            c = Color(getPixel(cel.image, x, y))
-
-            if c.alpha > 0 then
-                c.hsvHue = hue
-                c.hsvSaturation =
-                    (c.hsvSaturation + app.fgColor.hsvSaturation) / 2
-
-                if parameters.indexedMode then
-                    c = sprite.palettes[1]:getColor(c.index)
-                end
-
-                drawPixel(cel.image, x, y, c)
-            end
-        end
-
-        app.activeCel.image = cel.image
-        app.activeCel.position = cel.position
-    elseif mode == Modes.Desaturate then
-        local x, y, c
-
-        local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
-
-        for _, pixel in ipairs(change.pixels) do
-            x = pixel.x - cel.position.x
-            y = pixel.y - cel.position.y
-            c = Color(getPixel(cel.image, x, y))
-
-            if c.alpha > 0 then
-                c = Color {
-                    gray = 0.299 * c.red + 0.114 * c.blue + 0.587 * c.green,
-                    alpha = c.alpha
-                }
-
-                if parameters.indexedMode then
-                    c = sprite.palettes[1]:getColor(c.index)
-                end
-
-                drawPixel(cel.image, x, y, c)
-            end
-        end
-
-        app.activeCel.image = cel.image
-        app.activeCel.position = cel.position
-    elseif Contains(ShiftHsvModes, mode) or Contains(ShiftHslModes, mode) or
+    if Contains(ShiftHsvModes, mode) or Contains(ShiftHslModes, mode) or
         Contains(ShiftRgbModes, mode) then
-        local shift = parameters.shiftPercentage / 100 *
-                          If(change.leftPressed, 1, -1)
-        local x, y, c
-
-        local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
-
-        for _, pixel in ipairs(change.pixels) do
-            x = pixel.x - cel.position.x
-            y = pixel.y - cel.position.y
-            c = Color(getPixel(cel.image, x, y))
-
-            if c.alpha > 0 then
-                if mode == Modes.ShiftHsvHue then
-                    c.hsvHue = (c.hsvHue + shift * 360) % 360
-                elseif mode == Modes.ShiftHsvSaturation then
-                    c.hsvSaturation = c.hsvSaturation + shift
-                elseif mode == Modes.ShiftHsvValue then
-                    c.hsvValue = c.hsvValue + shift
-                elseif mode == Modes.ShiftHslHue then
-                    c.hslHue = (c.hslHue + shift * 360) % 360
-                elseif mode == Modes.ShiftHslSaturation then
-                    c.hslSaturation = c.hslSaturation + shift
-                elseif mode == Modes.ShiftHslLightness then
-                    c.hslLightness = c.hslLightness + shift
-                elseif mode == Modes.ShiftRgbRed then
-                    c.red = math.min(math.max(c.red + shift * 255, 0), 255)
-                elseif mode == Modes.ShiftRgbGreen then
-                    c.green = math.min(math.max(c.green + shift * 255, 0), 255)
-                elseif mode == Modes.ShiftRgbBlue then
-                    c.blue = math.min(math.max(c.blue + shift * 255, 0), 255)
-                end
-
-                if parameters.indexedMode then
-                    c = sprite.palettes[1]:getColor(c.index)
-                end
-
-                drawPixel(cel.image, x, y, c)
-            end
-        end
-
-        app.activeCel.image = cel.image
-        app.activeCel.position = cel.position
+        local modeProcessor = ModeFactory:Create("ShiftMode")
+        modeProcessor:Process(change, sprite, cel, {
+            mode = mode,
+            shiftPercentage = parameters.shiftPercentage,
+            indexedMode = parameters.indexedMode
+        })
+    elseif Contains(MixModes, mode) then
+        local modeProcessor = ModeFactory:Create("MixMode")
+        modeProcessor:Process(change, sprite, cel, {
+            mode = mode,
+            indexedMode = parameters.indexedMode
+        })
+    else
+        local modeProcessor = ModeFactory:Create(mode)
+        modeProcessor:Process(change, sprite, cel, parameters)
     end
 end
 
