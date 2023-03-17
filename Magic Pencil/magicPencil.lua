@@ -517,7 +517,7 @@ function MagicPencil:Execute(options)
         visible = false,
         min = 1,
         max = 100,
-        value = 20
+        value = 50
     }
 
     self.dialog:separator{text = "Outline"} --
