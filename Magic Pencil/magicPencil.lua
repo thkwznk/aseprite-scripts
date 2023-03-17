@@ -15,6 +15,7 @@ local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 -- Modes
 local Modes = {
     Regular = "RegularMode",
+    Graffiti = "GraffitiMode",
     Outline = "OutlineMode",
     OutlineLive = "OutlineLiveMode",
     Cut = "CutMode",
@@ -44,7 +45,8 @@ local SpecialCursorModes = {
 }
 
 local CanExtendModes = {
-    Modes.OutlineLive, Modes.Selection, Modes.Mix, Modes.MixProportional
+    Modes.Graffiti, Modes.OutlineLive, Modes.Selection, Modes.Mix,
+    Modes.MixProportional
 }
 
 local MixModes = {Modes.Mix, Modes.MixProportional}
@@ -234,14 +236,16 @@ function CalculateChange(previous, next, canExtend)
                         table.insert(pixels, {
                             x = x + next.position.x,
                             y = y + next.position.y,
-                            color = nil
+                            color = nil,
+                            newColor = Color(nextPixelValue)
                         })
                     end
                 elseif prevPixelValue ~= nextPixelValue then
                     table.insert(pixels, {
                         x = x + next.position.x,
                         y = y + next.position.y,
-                        color = Color(prevPixelValue)
+                        color = Color(prevPixelValue),
+                        newColor = Color(nextPixelValue)
                     })
                 end
             end
@@ -259,13 +263,18 @@ function CalculateChange(previous, next, canExtend)
                 -- Next image in some rare cases can be smaller
                 if RectangleContains(next.bounds, Point(x + previous.position.x,
                                                         y + previous.position.y)) then
+                    -- Saving the new pixel's colors would be necessary for working with brushes, I think
+                    local nextPixelValue =
+                        next.image:getPixel(x + shift.x, y + shift.y)
+
                     if prevPixelValue ~=
                         getPixel(next.image, x + shift.x, y + shift.y) then
                         -- Save X and Y as canvas global
                         table.insert(pixels, {
                             x = x + previous.position.x,
                             y = y + previous.position.y,
-                            color = Color(prevPixelValue)
+                            color = Color(prevPixelValue),
+                            newColor = Color(nextPixelValue)
                         })
                     end
                 end
@@ -487,15 +496,29 @@ function MagicPencil:Execute(options)
                 local pencilPreferences = app.preferences.tool("pencil")
                 pencilPreferences.ink = If(isSpecial, "simple", lastInk)
 
-                self.dialog:modify{
+                self.dialog --
+                :modify{
                     id = "outlineColor",
                     visible = selectedMode == Modes.OutlineLive
-                }
+                } --
+                :modify{
+                    id = "graffitiPower",
+                    visible = selectedMode == Modes.Graffiti
+                } --
             end
         }:newrow() --
     end
 
     Mode(Modes.Regular, "Regular", true, true)
+
+    Mode(Modes.Graffiti, "Graffiti", true)
+    self.dialog:slider{
+        id = "graffitiPower",
+        visible = false,
+        min = 1,
+        max = 100,
+        value = 20
+    }
 
     self.dialog:separator{text = "Outline"} --
     Mode(Modes.Outline, "Tool")
