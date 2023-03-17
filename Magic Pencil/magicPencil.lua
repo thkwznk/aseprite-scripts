@@ -152,9 +152,9 @@ function WasColorBlended(old, color, new)
                math.abs(finalAlpha - new.alpha) < 1
 end
 
-function RectangleContains(rect, p)
-    return p.x >= rect.x and p.x <= rect.x + rect.width - 1 and --
-    p.y >= rect.y and p.y <= rect.y + rect.height - 1
+function RectangleContains(rect, x, y)
+    return x >= rect.x and x <= rect.x + rect.width - 1 and --
+    y >= rect.y and y <= rect.y + rect.height - 1
 end
 
 function RectangleCenter(rect)
@@ -173,7 +173,7 @@ function GetButtonsPressed(pixels, previous, next)
 
     local getPixel = next.image.getPixel
 
-    if not RectangleContains(previous.bounds, pixel) then
+    if not RectangleContains(previous.bounds, pixel.x, pixel.y) then
         local newPixelValue = getPixel(next.image, pixel.x - next.position.x,
                                        pixel.y - next.position.y)
 
@@ -261,14 +261,13 @@ function CalculateChange(previous, next, canExtend)
                 prevPixelValue = getPixel(previous.image, x, y)
 
                 -- Next image in some rare cases can be smaller
-                if RectangleContains(next.bounds, Point(x + previous.position.x,
-                                                        y + previous.position.y)) then
+                if RectangleContains(next.bounds, x + previous.position.x,
+                                     y + previous.position.y) then
                     -- Saving the new pixel's colors would be necessary for working with brushes, I think
                     local nextPixelValue =
-                        next.image:getPixel(x + shift.x, y + shift.y)
+                        getPixel(next.image, x + shift.x, y + shift.y)
 
-                    if prevPixelValue ~=
-                        getPixel(next.image, x + shift.x, y + shift.y) then
+                    if prevPixelValue ~= nextPixelValue then
                         -- Save X and Y as canvas global
                         table.insert(pixels, {
                             x = x + previous.position.x,

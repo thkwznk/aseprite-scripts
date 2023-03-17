@@ -55,7 +55,7 @@ function OutlineMode:_RecursiveOutline(selection, image, x, y, outlinePixels,
                                        visited)
     -- Out of selection
     if selection then
-        if not RectangleContains(selection, Point(x, y)) then return end
+        if not RectangleContains(selection, x, y) then return end
     end
 
     -- Out of bounds

@@ -8,7 +8,7 @@ function CutMode:Process(change, sprite, cel, parameters)
     local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
 
     for _, pixel in ipairs(change.pixels) do
-        if RectangleContains(intersection, pixel) then
+        if RectangleContains(intersection, pixel.x, pixel.y) then
             color = getPixel(cel.image, pixel.x - cel.position.x,
                              pixel.y - cel.position.y)
             drawPixel(cel.image, pixel.x - cel.position.x,

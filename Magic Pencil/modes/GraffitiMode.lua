@@ -1,6 +1,8 @@
 local GraffitiMode = {}
 
 function GraffitiMode:Process(change, sprite, cel, parameters)
+    local drawPixel = cel.image.drawPixel
+
     local brushSize = app.preferences.tool("pencil").brush.size
     local power = parameters.graffitiPower / 100
 
@@ -20,7 +22,7 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
         local x = pixel.x - cel.position.x
         local y = pixel.y - cel.position.y
 
-        cel.image:drawPixel(x, y, pixel.newColor)
+        drawPixel(cel.image, x, y, pixel.newColor)
 
         local shouldDrip = math.random() <= chanceToDrip
         local shouldSpeck = math.random() <= chanceToSpeck
@@ -34,8 +36,8 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
 
             for i = 1, dripLength do
                 for j = 1, dripSize do
-                    cel.image:drawPixel(x - (dripSize / 2) + j, y + i,
-                                        pixel.newColor)
+                    drawPixel(cel.image, x - (dripSize / 2) + j, y + i,
+                              pixel.newColor)
                 end
             end
         end
@@ -53,7 +55,7 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
 
                     if math.sqrt(((ex - speckX) ^ 2) + ((ey - speckY) ^ 2)) <=
                         speckSize then
-                        cel.image:drawPixel(ex, ey, pixel.newColor)
+                        drawPixel(cel.image, ex, ey, pixel.newColor)
                     end
                 end
             end
