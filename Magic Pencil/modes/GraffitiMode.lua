@@ -16,53 +16,67 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
     local maxSpeckDist = safeValue(brushSize * 3 * power)
     local maxSpeckSize = safeValue(brushSize * 0.2 * power)
 
-    -- TODO: Make the mode correctly expand the image
+    local paintPixels = {}
 
     for _, pixel in ipairs(change.pixels) do
-        local x = pixel.x - cel.position.x
-        local y = pixel.y - cel.position.y
-
-        drawPixel(cel.image, x, y, pixel.newColor)
-
         local shouldDrip = math.random() <= chanceToDrip
         local shouldSpeck = math.random() <= chanceToSpeck
 
         if shouldDrip then
             local proportions = math.random(10) / 10
-            local dripLength = math.ceil(
-                                   math.random(maxDripLength) * proportions)
-            local dripSize = math.ceil(math.random(maxDripSize) *
-                                           (1 - proportions))
+            local length = math.ceil(math.random(maxDripLength) * proportions)
+            local size = math.ceil(math.random(maxDripSize) * (1 - proportions))
 
-            for i = 1, dripLength do
-                for j = 1, dripSize do
-                    drawPixel(cel.image, x - (dripSize / 2) + j, y + i,
-                              pixel.newColor)
-                end
-            end
+            self:_DrawDrip(pixel.x, pixel.y, length, size, pixel.newColor,
+                           paintPixels)
         end
 
         if shouldSpeck then
-            local speckDistX = math.floor((math.random() - 0.5) * maxSpeckDist)
-            local speckDistY = math.floor((math.random() - 0.5) * maxSpeckDist)
-            local speckSize = math.floor(math.random() * maxSpeckSize)
+            local distX = math.floor((math.random() - 0.5) * maxSpeckDist)
+            local distY = math.floor((math.random() - 0.5) * maxSpeckDist)
+            local size = math.floor(math.random() * maxSpeckSize)
 
-            local speckX = x + speckDistX
-            local speckY = y + speckDistY
+            local speckX = pixel.x + distX
+            local speckY = pixel.y + distY
 
-            for ex = speckX - speckSize, speckX + speckSize do
-                for ey = speckY - speckSize, speckY + speckSize do
-
-                    if math.sqrt(((ex - speckX) ^ 2) + ((ey - speckY) ^ 2)) <=
-                        speckSize then
-                        drawPixel(cel.image, ex, ey, pixel.newColor)
-                    end
-                end
-            end
+            self:_DrawSpeck(speckX, speckY, size, pixel.newColor, paintPixels)
         end
     end
 
-    sprite:newCel(app.activeLayer, app.activeFrame, cel.image, cel.position)
+    local paintBounds = GetBoundsForPixels(paintPixels)
+    local newImageBounds = cel.bounds:union(paintBounds)
+    local shift = Point(cel.bounds.x - newImageBounds.x,
+                        cel.bounds.y - newImageBounds.y)
+
+    local newImage = Image(newImageBounds.width, newImageBounds.height)
+    newImage:drawImage(cel.image, shift.x, shift.y)
+
+    for _, pixel in ipairs(paintPixels) do
+        drawPixel(newImage, pixel.x - newImageBounds.x,
+                  pixel.y - newImageBounds.y, pixel.color)
+    end
+
+    sprite:newCel(app.activeLayer, app.activeFrame, newImage,
+                  Point(newImageBounds.x, newImageBounds.y))
+end
+
+function GraffitiMode:_DrawDrip(x, y, length, size, color, pixels)
+    for i = 1, length do
+        for j = 1, size do
+            table.insert(pixels,
+                         {x = x - (size / 2) + j, y = y + i, color = color})
+        end
+    end
+end
+
+function GraffitiMode:_DrawSpeck(x, y, size, color, pixels)
+    for ex = x - size, x + size do
+        for ey = y - size, y + size do
+            if math.sqrt(((ex - x) ^ 2) + ((ey - y) ^ 2)) <= size then
+                table.insert(pixels, {x = ex, y = ey, color = color})
+            end
+        end
+    end
 end
 
 return GraffitiMode

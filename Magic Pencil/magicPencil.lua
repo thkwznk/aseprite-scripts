@@ -590,6 +590,9 @@ function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
             mode = mode,
             indexedMode = parameters.indexedMode
         })
+    elseif mode == Modes.Graffiti then
+        local modeProcessor = ModeFactory:Create("GraffitiMode")
+        modeProcessor:Process(change, sprite, app.activeCel, parameters)
     else
         local modeProcessor = ModeFactory:Create(mode)
         modeProcessor:Process(change, sprite, cel, parameters)
