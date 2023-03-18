@@ -1,4 +1,4 @@
-local YeetMode = {}
+local YeetMode = {deleteOnEmptyCel = true}
 
 function YeetMode:Process(change, sprite, cel, parameters)
     local startFrame = app.activeFrame.frameNumber

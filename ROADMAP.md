@@ -46,16 +46,18 @@ Future:
 
 Unreleased:
 
+- [Feature] Move graffiti simulation to Magic Pencil from Substance Sim
 - [Improvement] Improve performance
 - [Fix] Ignore the selected pencil ink to avoid it causing issues with the Magic Pencil
-
+- [Fix] Using the Magic Pencil on an empty cel no longer results in the first stroke being treated as a regular pencil
+- 
 Update v1.0.4:
 
-- [Feature] Move graffiti simulation to Magic Pencil from Substance Sim
-- [Improvement] Rework the dialog UI to accommodate the number of options
+- ...
 
 Future:
 
+- [Improvement] Rework the dialog UI to accommodate the number of options
 - [Feature] Two Tone
 - [Improvement] Allow for shifting multiple components at the same time (also, possibly, with different values?)
 - [Fix] Edge case where drawing on an empty cel results in not processing the image correctly - just check if the whole image is only magic color

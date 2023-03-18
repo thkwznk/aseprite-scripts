@@ -1,4 +1,4 @@
-local OutlineMode = {}
+local OutlineMode = {deleteOnEmptyCel = true}
 
 function OutlineMode:Process(change, sprite, cel, parameters)
     -- Calculate outline pixels from the center of the change bound

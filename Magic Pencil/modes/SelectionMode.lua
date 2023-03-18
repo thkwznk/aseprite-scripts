@@ -1,4 +1,8 @@
-local SelectionMode = {canExtend = true, useMaskColor = true}
+local SelectionMode = {
+    canExtend = true,
+    useMaskColor = true,
+    deleteOnEmptyCel = true
+}
 
 function SelectionMode:Process(change, sprite, cel, parameters)
     -- FIX: If the whole selection is out of the original cel's bounds it will not be processed

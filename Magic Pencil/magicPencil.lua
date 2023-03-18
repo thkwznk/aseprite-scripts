@@ -286,17 +286,24 @@ function MagicPencil:Execute(options)
     local selectedMode = Modes.Regular
     local sprite = app.activeSprite
 
-    local lastKnownNumberOfCels, lastActiveCel, lastCel
+    local lastKnownNumberOfCels, lastActiveCel, lastActiveLayer,
+          lastActiveFrame, newCelFromEmpty, lastCelData
 
     local updateLast = function()
         if sprite then lastKnownNumberOfCels = #sprite.cels end
 
+        newCelFromEmpty = (lastActiveCel == nil) and
+                              (lastActiveLayer == app.activeLayer) and
+                              (lastActiveFrame == app.activeFrame)
+
+        lastActiveLayer = app.activeLayer
+        lastActiveFrame = app.activeFrame
         lastActiveCel = app.activeCel
-        lastCel = nil
+        lastCelData = nil
 
         -- When creating a new layer or cel this can be triggered
         if lastActiveCel then
-            lastCel = {
+            lastCelData = {
                 image = lastActiveCel.image:clone(),
                 position = lastActiveCel.position,
                 bounds = lastActiveCel.bounds
@@ -321,24 +328,35 @@ function MagicPencil:Execute(options)
         end
 
         local modeProcessor = ModeFactory:Create(selectedMode)
-        local change = CalculateChange(lastCel, app.activeCel,
+        local celData = newCelFromEmpty and
+                            {
+                image = Image(0, 0),
+                position = Point(0, 0),
+                bounds = Rectangle(0, 0, 0, 0)
+            } or lastCelData
+
+        local change = CalculateChange(celData, app.activeCel,
                                        modeProcessor.canExtend)
 
         -- If no pixel was changed, but the size changed then revert to original
         if #change.pixels == 0 then
-            if change.sizeChanged and modeProcessor.canExtend and lastCel then
+            if change.sizeChanged and modeProcessor.canExtend and lastCelData then
                 -- If instead I just replace image and positon in the active cel, Aseprite will crash if I undo when hovering mouse over dialog
                 -- sprite:newCel(app.activeLayer, app.activeFrame.frameNumber,
                 --               lastCel.image, lastCel.position)
-                app.activeCel.image = lastCel.image
-                app.activeCel.position = lastCel.position
+                app.activeCel.image = lastCelData.image
+                app.activeCel.position = lastCelData.position
             end
             -- Otherwise, do nothing
         elseif not change.leftPressed and not change.rightPressed then
             -- TODO: This can be checked with the new API since 1.3-rc1
             -- Not a user change - most probably an undo action, do nothing
         else
-            modeProcessor:Process(change, sprite, lastCel, self.dialog.data)
+            modeProcessor:Process(change, sprite, celData, self.dialog.data)
+        end
+
+        if newCelFromEmpty and modeProcessor.deleteOnEmptyCel then
+            app.activeSprite:deleteCel(app.activeCel)
         end
 
         app.refresh()

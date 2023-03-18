@@ -10,7 +10,11 @@ local Variant = {
     ShiftRgbBlue = "ShiftRgbBlueMode"
 }
 
-local ShiftModeBase = {useMaskColor = true, variantId = ""}
+local ShiftModeBase = {
+    useMaskColor = true,
+    deleteOnEmptyCel = true,
+    variantId = ""
+}
 
 function ShiftModeBase:New(id)
     local o = {variantId = id}
