@@ -8,11 +8,11 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
 
     local safeValue = function(x) return math.ceil(x) end
 
-    local chanceToDrip = (2 + 3 * power) / 100
+    local chanceToDrip = ((3 * power) + (4 / brushSize)) / 100
     local maxDripLength = safeValue(brushSize * 8)
     local maxDripSize = safeValue(brushSize * 0.2)
 
-    local chanceToSpeck = (3 * power) / 100
+    local chanceToSpeck = ((2 * power) + (4 / brushSize)) / 100
     local maxSpeckDist = math.max(safeValue(brushSize * 2), 3)
     local maxSpeckSize = safeValue(brushSize * 0.2)
 
