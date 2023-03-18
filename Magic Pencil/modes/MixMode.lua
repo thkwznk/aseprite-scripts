@@ -1,15 +1,24 @@
-local MixMode = {canExtend = true}
+local Variant = {Unique = "MixMode", Propotional = "MixProportionalMode"}
 
-function MixMode:Process(mode, change, sprite, cel, parameters)
+local MixModeBase = {canExtend = true, variantId = ""}
+
+function MixModeBase:New(id)
+    local o = {variantId = id}
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
+function MixModeBase:Process(change, sprite, cel, parameters)
     local colors = {}
 
     for _, pixel in ipairs(change.pixels) do
         if pixel.color and pixel.color.alpha == 255 then
-            if mode == "MixMode" then
+            if self.variantId == Variant.Unique then
                 if not Contains(colors, pixel.color) then
                     table.insert(colors, pixel.color)
                 end
-            elseif mode == "MixProportionalMode" then
+            elseif self.variantId == Variant.Propotional then
                 table.insert(colors, pixel.color)
             end
         end
@@ -40,7 +49,7 @@ function MixMode:Process(mode, change, sprite, cel, parameters)
     app.activeCel.position = Point(newBounds.x, newBounds.y)
 end
 
-function MixMode:_AverageColorRGB(colors)
+function MixModeBase:_AverageColorRGB(colors)
     local r, g, b = 0, 0, 0
 
     for _, color in ipairs(colors) do
@@ -57,7 +66,7 @@ function MixMode:_AverageColorRGB(colors)
     }
 end
 
-function MixMode:_AverageColorHSV(colors)
+function MixModeBase:_AverageColorHSV(colors)
     local h1, h2, s, v = 0, 0, 0, 0
 
     for _, color in ipairs(colors) do
@@ -75,4 +84,10 @@ function MixMode:_AverageColorHSV(colors)
     }
 end
 
-return MixMode
+local variants = {}
+
+for _, variantId in pairs(Variant) do
+    table.insert(variants, MixModeBase:New(variantId))
+end
+
+return variants

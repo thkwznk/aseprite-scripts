@@ -10,7 +10,13 @@ function ModeFactory:Init(modesDirectoryPath)
             local modeId = app.fs.fileTitle(filePath)
             local mode = dofile(modePath)
 
-            self.modes[modeId] = mode
+            if #mode == 0 then
+                self.modes[modeId] = mode
+            else
+                for _, modeVariant in ipairs(mode) do
+                    self.modes[modeVariant.variantId] = modeVariant
+                end
+            end
         end
     end
 end

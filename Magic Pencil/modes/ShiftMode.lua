@@ -1,6 +1,25 @@
-local ShiftMode = {}
+local Variant = {
+    ShiftHsvHue = "ShiftHsvHueMode",
+    ShiftHsvSaturation = "ShiftHsvSaturationMode",
+    ShiftHsvValue = "ShiftHsvValueMode",
+    ShiftHslHue = "ShiftHslHueMode",
+    ShiftHslSaturation = "ShiftHslSaturationMode",
+    ShiftHslLightness = "ShiftHslLightnessMode",
+    ShiftRgbRed = "ShiftRgbRedMode",
+    ShiftRgbGreen = "ShiftRgbGreenMode",
+    ShiftRgbBlue = "ShiftRgbBlueMode"
+}
 
-function ShiftMode:Process(mode, change, sprite, cel, parameters)
+local ShiftModeBase = {variantId = ""}
+
+function ShiftModeBase:New(id)
+    local o = {variantId = id}
+    setmetatable(o, self)
+    self.__index = self
+    return o
+end
+
+function ShiftModeBase:Process(change, sprite, cel, parameters)
     local shift = parameters.shiftPercentage / 100 *
                       If(change.leftPressed, 1, -1)
     local x, y, c
@@ -13,23 +32,23 @@ function ShiftMode:Process(mode, change, sprite, cel, parameters)
         c = Color(getPixel(cel.image, x, y))
 
         if c.alpha > 0 then
-            if mode == "ShiftHsvHueMode" then
+            if self.variantId == Variant.ShiftHsvHue then
                 c.hsvHue = (c.hsvHue + shift * 360) % 360
-            elseif mode == "ShiftHsvSaturationMode" then
+            elseif self.variantId == Variant.ShiftHsvSaturation then
                 c.hsvSaturation = c.hsvSaturation + shift
-            elseif mode == "ShiftHsvValueMode" then
+            elseif self.variantId == Variant.ShiftHsvValue then
                 c.hsvValue = c.hsvValue + shift
-            elseif mode == "ShiftHslHueMode" then
+            elseif self.variantId == Variant.ShiftHslHue then
                 c.hslHue = (c.hslHue + shift * 360) % 360
-            elseif mode == "ShiftHslSaturationMode" then
+            elseif self.variantId == Variant.ShiftHslSaturation then
                 c.hslSaturation = c.hslSaturation + shift
-            elseif mode == "ShiftHslLightnessMode" then
+            elseif self.variantId == Variant.ShiftHslLightness then
                 c.hslLightness = c.hslLightness + shift
-            elseif mode == "ShiftRgbRedMode" then
+            elseif self.variantId == Variant.ShiftRgbRed then
                 c.red = math.min(math.max(c.red + shift * 255, 0), 255)
-            elseif mode == "ShiftRgbGreenMode" then
+            elseif self.variantId == Variant.ShiftRgbGreen then
                 c.green = math.min(math.max(c.green + shift * 255, 0), 255)
-            elseif mode == "ShiftRgbBlueMode" then
+            elseif self.variantId == Variant.ShiftRgbBlue then
                 c.blue = math.min(math.max(c.blue + shift * 255, 0), 255)
             end
 
@@ -45,4 +64,11 @@ function ShiftMode:Process(mode, change, sprite, cel, parameters)
     app.activeCel.position = cel.position
 end
 
-return ShiftMode
+local variants = {}
+
+for _, variantId in pairs(Variant) do
+    table.insert(variants, ShiftModeBase:New(variantId))
+end
+
+return variants
+

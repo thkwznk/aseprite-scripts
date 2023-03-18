@@ -44,8 +44,6 @@ local SpecialCursorModes = {
     Modes.ShiftRgbBlue
 }
 
-local MixModes = {Modes.Mix, Modes.MixProportional}
-
 local ShiftHsvModes = {
     Modes.ShiftHsvHue, Modes.ShiftHsvSaturation, Modes.ShiftHsvValue
 }
@@ -330,7 +328,7 @@ function MagicPencil:Execute(options)
             return
         end
 
-        local modeProcessor = self:GetModeProcessor(selectedMode)
+        local modeProcessor = ModeFactory:Create(selectedMode)
         local change = CalculateChange(lastCel, app.activeCel,
                                        modeProcessor.canExtend)
 
@@ -348,8 +346,7 @@ function MagicPencil:Execute(options)
             -- TODO: This can be checked with the new API since 1.3-rc1
             -- Not a user change - most probably an undo action, do nothing
         else
-            modeProcessor:Process(selectedMode, change, sprite, lastCel,
-                                  self.dialog.data)
+            modeProcessor:Process(change, sprite, lastCel, self.dialog.data)
         end
 
         app.refresh()
@@ -569,17 +566,6 @@ function MagicPencil:Execute(options)
     :check{id = "indexedMode", text = "Indexed Mode"}
 
     self.dialog:show{wait = false}
-end
-
-function MagicPencil:GetModeProcessor(mode)
-    if Contains(ShiftHsvModes, mode) or Contains(ShiftHslModes, mode) or
-        Contains(ShiftRgbModes, mode) then
-        return ModeFactory:Create("ShiftMode")
-    elseif Contains(MixModes, mode) then
-        return ModeFactory:Create("MixMode")
-    else
-        return ModeFactory:Create(mode)
-    end
 end
 
 return MagicPencil

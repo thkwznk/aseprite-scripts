@@ -1,6 +1,6 @@
 local DesaturateMode = {}
 
-function DesaturateMode:Process(mode, change, sprite, cel, parameters)
+function DesaturateMode:Process(change, sprite, cel, parameters)
     local x, y, c
 
     local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel

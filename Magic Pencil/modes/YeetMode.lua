@@ -1,6 +1,6 @@
 local YeetMode = {}
 
-function YeetMode:Process(mode, change, sprite, cel, parameters)
+function YeetMode:Process(change, sprite, cel, parameters)
     local startFrame = app.activeFrame.frameNumber
 
     local x, y = cel.position.x, cel.position.y

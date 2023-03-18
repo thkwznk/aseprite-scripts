@@ -1,6 +1,6 @@
 local GraffitiMode = {canExtend = true}
 
-function GraffitiMode:Process(mode, change, sprite, cel, parameters)
+function GraffitiMode:Process(change, sprite, cel, parameters)
     -- Use the current image instead of the previous one
     local activeCel = app.activeCel
     local drawPixel = activeCel.image.drawPixel
