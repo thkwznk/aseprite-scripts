@@ -1,6 +1,6 @@
 local OutlineMode = {}
 
-function OutlineMode:Process(change, sprite, cel, parameters)
+function OutlineMode:Process(mode, change, sprite, cel, parameters)
     -- Calculate outline pixels from the center of the change bound
     local selection = nil
 

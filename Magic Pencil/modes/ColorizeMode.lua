@@ -1,6 +1,6 @@
 local ColorizeMode = {}
 
-function ColorizeMode:Process(change, sprite, cel, parameters)
+function ColorizeMode:Process(mode, change, sprite, cel, parameters)
     local x, y, c
     local hue = If(change.leftPressed, app.fgColor.hsvHue, app.bgColor.hsvHue)
 

@@ -1,6 +1,6 @@
-local SelectionMode = {}
+local SelectionMode = {canExtend = true}
 
-function SelectionMode:Process(change, sprite, cel, parameters)
+function SelectionMode:Process(mode, change, sprite, cel, parameters)
     -- FIX: If the whole selection is out of the original cel's bounds it will not be processed
 
     local newSelection = Selection()

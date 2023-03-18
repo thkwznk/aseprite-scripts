@@ -1,6 +1,6 @@
-local OutlineLiveMode = {}
+local OutlineLiveMode = {canExtend = true}
 
-function OutlineLiveMode:Process(change, sprite, cel, parameters)
+function OutlineLiveMode:Process(mode, change, sprite, cel, parameters)
     local color = parameters.outlineColor.rgbaPixel
 
     local selection = sprite.selection

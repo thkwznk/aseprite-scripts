@@ -1,7 +1,6 @@
 local ShiftMode = {}
 
-function ShiftMode:Process(change, sprite, cel, parameters)
-    local mode = parameters.mode
+function ShiftMode:Process(mode, change, sprite, cel, parameters)
     local shift = parameters.shiftPercentage / 100 *
                       If(change.leftPressed, 1, -1)
     local x, y, c

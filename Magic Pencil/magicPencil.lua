@@ -44,11 +44,6 @@ local SpecialCursorModes = {
     Modes.ShiftRgbBlue
 }
 
-local CanExtendModes = {
-    Modes.Graffiti, Modes.OutlineLive, Modes.Selection, Modes.Mix,
-    Modes.MixProportional
-}
-
 local MixModes = {Modes.Mix, Modes.MixProportional}
 
 local ShiftHsvModes = {
@@ -335,12 +330,13 @@ function MagicPencil:Execute(options)
             return
         end
 
-        local modeCanExtend = Contains(CanExtendModes, selectedMode)
-        local change = CalculateChange(lastCel, app.activeCel, modeCanExtend)
+        local modeProcessor = self:GetModeProcessor(selectedMode)
+        local change = CalculateChange(lastCel, app.activeCel,
+                                       modeProcessor.canExtend)
 
         -- If no pixel was changed, but the size changed then revert to original
         if #change.pixels == 0 then
-            if change.sizeChanged and modeCanExtend and lastCel then
+            if change.sizeChanged and modeProcessor.canExtend and lastCel then
                 -- If instead I just replace image and positon in the active cel, Aseprite will crash if I undo when hovering mouse over dialog
                 -- sprite:newCel(app.activeLayer, app.activeFrame.frameNumber,
                 --               lastCel.image, lastCel.position)
@@ -352,8 +348,8 @@ function MagicPencil:Execute(options)
             -- TODO: This can be checked with the new API since 1.3-rc1
             -- Not a user change - most probably an undo action, do nothing
         else
-            self:ProcessMode(selectedMode, change, sprite, lastCel,
-                             self.dialog.data)
+            modeProcessor:Process(selectedMode, change, sprite, lastCel,
+                                  self.dialog.data)
         end
 
         app.refresh()
@@ -575,27 +571,14 @@ function MagicPencil:Execute(options)
     self.dialog:show{wait = false}
 end
 
-function MagicPencil:ProcessMode(mode, change, sprite, cel, parameters)
+function MagicPencil:GetModeProcessor(mode)
     if Contains(ShiftHsvModes, mode) or Contains(ShiftHslModes, mode) or
         Contains(ShiftRgbModes, mode) then
-        local modeProcessor = ModeFactory:Create("ShiftMode")
-        modeProcessor:Process(change, sprite, cel, {
-            mode = mode,
-            shiftPercentage = parameters.shiftPercentage,
-            indexedMode = parameters.indexedMode
-        })
+        return ModeFactory:Create("ShiftMode")
     elseif Contains(MixModes, mode) then
-        local modeProcessor = ModeFactory:Create("MixMode")
-        modeProcessor:Process(change, sprite, cel, {
-            mode = mode,
-            indexedMode = parameters.indexedMode
-        })
-    elseif mode == Modes.Graffiti then
-        local modeProcessor = ModeFactory:Create("GraffitiMode")
-        modeProcessor:Process(change, sprite, app.activeCel, parameters)
+        return ModeFactory:Create("MixMode")
     else
-        local modeProcessor = ModeFactory:Create(mode)
-        modeProcessor:Process(change, sprite, cel, parameters)
+        return ModeFactory:Create(mode)
     end
 end
 

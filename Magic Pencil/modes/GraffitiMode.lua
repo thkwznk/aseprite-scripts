@@ -1,7 +1,9 @@
-local GraffitiMode = {}
+local GraffitiMode = {canExtend = true}
 
-function GraffitiMode:Process(change, sprite, cel, parameters)
-    local drawPixel = cel.image.drawPixel
+function GraffitiMode:Process(mode, change, sprite, cel, parameters)
+    -- Use the current image instead of the previous one
+    local activeCel = app.activeCel
+    local drawPixel = activeCel.image.drawPixel
 
     local brushSize = app.preferences.tool("pencil").brush.size
     local power = parameters.graffitiPower / 100
@@ -47,12 +49,12 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
     end
 
     local paintBounds = GetBoundsForPixels(paintPixels)
-    local newImageBounds = cel.bounds:union(paintBounds)
-    local shift = Point(cel.bounds.x - newImageBounds.x,
-                        cel.bounds.y - newImageBounds.y)
+    local newImageBounds = activeCel.bounds:union(paintBounds)
+    local shift = Point(activeCel.bounds.x - newImageBounds.x,
+                        activeCel.bounds.y - newImageBounds.y)
 
     local newImage = Image(newImageBounds.width, newImageBounds.height)
-    newImage:drawImage(cel.image, shift.x, shift.y)
+    newImage:drawImage(activeCel.image, shift.x, shift.y)
 
     for _, pixel in ipairs(paintPixels) do
         drawPixel(newImage, pixel.x - newImageBounds.x,

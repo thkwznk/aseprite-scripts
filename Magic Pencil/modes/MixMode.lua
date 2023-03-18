@@ -1,15 +1,15 @@
-local MixMode = {}
+local MixMode = {canExtend = true}
 
-function MixMode:Process(change, sprite, cel, parameters)
+function MixMode:Process(mode, change, sprite, cel, parameters)
     local colors = {}
 
     for _, pixel in ipairs(change.pixels) do
         if pixel.color and pixel.color.alpha == 255 then
-            if parameters.mode == "MixMode" then
+            if mode == "MixMode" then
                 if not Contains(colors, pixel.color) then
                     table.insert(colors, pixel.color)
                 end
-            elseif parameters.mode == "MixProportionalMode" then
+            elseif mode == "MixProportionalMode" then
                 table.insert(colors, pixel.color)
             end
         end

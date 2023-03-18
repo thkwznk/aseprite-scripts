@@ -1,6 +1,6 @@
 local CutMode = {}
 
-function CutMode:Process(change, sprite, cel, parameters)
+function CutMode:Process(mode, change, sprite, cel, parameters)
     local intersection = Rectangle(cel.bounds):intersect(change.bounds)
     local image = Image(intersection.width, intersection.height)
     local color = nil
