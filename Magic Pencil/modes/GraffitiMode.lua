@@ -49,10 +49,13 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
     end
 
     local paintBounds = GetBoundsForPixels(paintPixels)
+
+    if not paintBounds then return end
+
     local newImageBounds = activeCel.bounds:union(paintBounds):intersect(
                                sprite.bounds)
-    local shift = Point(math.max(activeCel.bounds.x - newImageBounds.x, 0),
-                        math.max(activeCel.bounds.y - newImageBounds.y))
+    local shift = Point(activeCel.bounds.x - newImageBounds.x,
+                        activeCel.bounds.y - newImageBounds.y)
 
     local newImage = Image(newImageBounds.width, newImageBounds.height)
     newImage:drawImage(activeCel.image, shift.x, shift.y)
