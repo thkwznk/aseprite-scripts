@@ -1,6 +1,6 @@
 local Variant = {Unique = "MixMode", Propotional = "MixProportionalMode"}
 
-local MixModeBase = {canExtend = true, variantId = ""}
+local MixModeBase = {canExtend = true, useMaskColor = true, variantId = ""}
 
 function MixModeBase:New(id)
     local o = {variantId = id}

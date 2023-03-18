@@ -36,14 +36,6 @@ local Modes = {
     ShiftRgbBlue = "ShiftRgbBlueMode"
 }
 
-local SpecialCursorModes = {
-    Modes.Cut, Modes.Selection, Modes.Mix, Modes.MixProportional,
-    Modes.Desaturate, Modes.ShiftHsvHue, Modes.ShiftHsvSaturation,
-    Modes.ShiftHsvValue, Modes.ShiftHslHue, Modes.ShiftHslSaturation,
-    Modes.ShiftHslLightness, Modes.ShiftRgbRed, Modes.ShiftRgbGreen,
-    Modes.ShiftRgbBlue
-}
-
 local ShiftHsvModes = {
     Modes.ShiftHsvHue, Modes.ShiftHsvSaturation, Modes.ShiftHsvValue
 }
@@ -393,7 +385,9 @@ function MagicPencil:Execute(options)
     local lastInk = app.preferences.tool("pencil").ink
 
     function OnFgColorChange()
-        if Contains(SpecialCursorModes, selectedMode) then
+        local modeProcessor = ModeFactory:Create(selectedMode)
+
+        if modeProcessor.useMaskColor then
             if app.fgColor.rgbaPixel ~= MagicPink.rgbaPixel then
                 lastFgColor = Color(app.fgColor.rgbaPixel)
                 app.fgColor = MagicPink
@@ -404,7 +398,9 @@ function MagicPencil:Execute(options)
     end
 
     function OnBgColorChange()
-        if Contains(SpecialCursorModes, selectedMode) then
+        local modeProcessor = ModeFactory:Create(selectedMode)
+
+        if modeProcessor.useMaskColor then
             if app.bgColor.rgbaPixel ~= MagicTeal.rgbaPixel then
                 lastBgColor = Color(app.bgColor.rgbaPixel)
                 app.bgColor = MagicTeal
@@ -446,12 +442,13 @@ function MagicPencil:Execute(options)
             onclick = function()
                 selectedMode = mode
 
-                local isSpecial = Contains(SpecialCursorModes, selectedMode)
-                app.fgColor = If(isSpecial, MagicPink, lastFgColor)
-                app.bgColor = If(isSpecial, MagicTeal, lastBgColor)
+                local useMaskColor =
+                    ModeFactory:Create(selectedMode).useMaskColor
+                app.fgColor = If(useMaskColor, MagicPink, lastFgColor)
+                app.bgColor = If(useMaskColor, MagicTeal, lastBgColor)
 
                 local pencilPreferences = app.preferences.tool("pencil")
-                pencilPreferences.ink = If(isSpecial, "simple", lastInk)
+                pencilPreferences.ink = If(useMaskColor, "simple", lastInk)
 
                 self.dialog --
                 :modify{

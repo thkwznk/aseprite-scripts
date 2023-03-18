@@ -10,7 +10,7 @@ local Variant = {
     ShiftRgbBlue = "ShiftRgbBlueMode"
 }
 
-local ShiftModeBase = {variantId = ""}
+local ShiftModeBase = {useMaskColor = true, variantId = ""}
 
 function ShiftModeBase:New(id)
     local o = {variantId = id}

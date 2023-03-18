@@ -1,4 +1,4 @@
-local CutMode = {}
+local CutMode = {useMaskColor = true}
 
 function CutMode:Process(change, sprite, cel, parameters)
     local intersection = Rectangle(cel.bounds):intersect(change.bounds)

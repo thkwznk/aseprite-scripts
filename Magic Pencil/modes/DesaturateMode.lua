@@ -1,4 +1,4 @@
-local DesaturateMode = {}
+local DesaturateMode = {useMaskColor = true}
 
 function DesaturateMode:Process(change, sprite, cel, parameters)
     local x, y, c
