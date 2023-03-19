@@ -10,6 +10,8 @@ Please note that most options use magic colors, selected colors will be restored
 
 ## Options
 
+**Graffiti** - adds an effect of paint drips and specks to the brush. After selecting this option, a slider controlling the effect's strength will appear underneath.
+
 **Tool [Outline]** - adds an outline around a closed shape that you click on, works with foreground (left-click) and background (right-click) colors.
 
 **Brush [Outline]** - adds an outline around the brush as you draw. After selecting this option, the outline's color can be changed under this option in the dialog window.
@@ -30,12 +32,13 @@ Please note that most options use magic colors, selected colors will be restored
 
 ## Known issues
 
-Using any option from the Magic Pencil on a completely empty cel will result in the first stroke being treated as a regular pencil
-Selecting colors from the palette when using any option from the Magic Pencil other than Outline or Colorize (which actually use the selected color) will interfere with its working and result in odd behaviour
+- Selecting colors from the palette **while** using any option from the Magic Pencil other than *Graffiti*, *Outline Tool*, *Outline Brush* or *Colorize* will interfere with its working and result in odd behaviour
 
 ## Previews
 
-![Outline Brush](/Magic%20Pencil/readme-images/outline-brush.gif "OutlineBrush")
+![Graffiti Brush](/Magic%20Pencil/readme-images/graffiti.gif "Graffiti Brush")
+
+![Outline Brush](/Magic%20Pencil/readme-images/outline-brush.gif "Outline Brush")
 
 ![Selection and RGB Shift](/Magic%20Pencil/readme-images/selection-rgb-shift.gif "Selection and RGB Shift")
 
