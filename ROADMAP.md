@@ -46,14 +46,6 @@ Future:
 
 Unreleased:
 
-- [Feature] Move graffiti simulation to Magic Pencil from Substance Sim
-- [Improvement] Improve performance
-- [Fix] Ignore the selected pencil ink to avoid it causing issues with the Magic Pencil
-- [Fix] Using the Magic Pencil on an empty cel no longer results in the first stroke being treated as a regular pencil
-- [Fix] From Aseprite v1.3-rc1, using Undo/Redo with Magic Pencil mode active and a mouse over a dialog window no longer crashes Aseprite
-
-Update v1.0.4:
-
 - ...
 
 Future:
