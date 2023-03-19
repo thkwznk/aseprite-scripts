@@ -50,7 +50,8 @@ Unreleased:
 - [Improvement] Improve performance
 - [Fix] Ignore the selected pencil ink to avoid it causing issues with the Magic Pencil
 - [Fix] Using the Magic Pencil on an empty cel no longer results in the first stroke being treated as a regular pencil
-- 
+- [Fix] From Aseprite v1.3-rc1, using Undo/Redo with Magic Pencil mode active and a mouse over a dialog window no longer crashes Aseprite
+
 Update v1.0.4:
 
 - ...
@@ -60,7 +61,6 @@ Future:
 - [Improvement] Rework the dialog UI to accommodate the number of options
 - [Feature] Two Tone
 - [Improvement] Allow for shifting multiple components at the same time (also, possibly, with different values?)
-- [Fix] Edge case where drawing on an empty cel results in not processing the image correctly - just check if the whole image is only magic color
 - Unlock as much as possible for all color modes - this is more difficult than I thought, I can't use magic colors on an indexed image (maybe I could use white/black there?)
 
 ## Sprite Analyzer

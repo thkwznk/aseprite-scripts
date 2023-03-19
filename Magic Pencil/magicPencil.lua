@@ -313,7 +313,7 @@ function MagicPencil:Execute(options)
 
     updateLast()
 
-    local onSpriteChange = function()
+    local onSpriteChange = function(ev)
         -- If there is no active cel, do nothing
         if app.activeCel == nil then return end
 
@@ -321,7 +321,8 @@ function MagicPencil:Execute(options)
         selectedMode == Modes.Regular or -- If it's the regular mode then ignore
         lastKnownNumberOfCels ~= #sprite.cels or -- If last layer/frame/cel was removed then ignore
         lastActiveCel ~= app.activeCel or -- If it's just a layer/frame/cel change then ignore
-        lastActiveCel == nil -- If a cel was created where previously was none or cel was copied
+        lastActiveCel == nil or -- If a cel was created where previously was none or cel was copied
+        (app.apiVersion >= 21 and ev.fromUndo) -- From API v21, ignore all changes from undo/redo
         then
             updateLast()
             return
