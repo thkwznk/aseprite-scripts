@@ -339,6 +339,9 @@ function MagicPencil:Execute(options)
         local change = CalculateChange(celData, app.activeCel,
                                        modeProcessor.canExtend)
 
+        -- Mode Processor can cause the data about the last cel update, we calcualate it here to mitigate issues  
+        local deleteCel = newCelFromEmpty and modeProcessor.deleteOnEmptyCel
+
         -- If no pixel was changed, but the size changed then revert to original
         if #change.pixels == 0 then
             if change.sizeChanged and modeProcessor.canExtend and lastCelData then
@@ -356,9 +359,7 @@ function MagicPencil:Execute(options)
             modeProcessor:Process(change, sprite, celData, self.dialog.data)
         end
 
-        if newCelFromEmpty and modeProcessor.deleteOnEmptyCel then
-            app.activeSprite:deleteCel(app.activeCel)
-        end
+        if deleteCel then app.activeSprite:deleteCel(app.activeCel) end
 
         app.refresh()
         updateLast()
