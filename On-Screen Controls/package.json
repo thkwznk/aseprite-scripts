@@ -17,7 +17,7 @@
   "contributes": {
     "scripts": [
       {
-        "path": "./OnScreenControls.lua"
+        "path": "./extension.lua"
       }
     ]
   }
