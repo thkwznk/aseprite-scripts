@@ -46,8 +46,7 @@ Future:
 
 Unreleased:
 
-- [Fix] Works correctly in Aseprite v1.3-rc2
-- [Fix] No longer breaks in some cases of using portable Aseprite
+- ...
 
 Future:
 
