@@ -41,7 +41,7 @@ function MixModeBase:Process(change, sprite, cel, parameters)
 
     local newImage =
         Image(app.activeCel.image.width, app.activeCel.image.height)
-    newImage:drawImage(cel.image, shift.x, shift.y)
+    newImage:drawImage(cel.image, shift)
 
     local drawPixel = newImage.drawPixel
 

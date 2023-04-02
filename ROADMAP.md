@@ -46,7 +46,7 @@ Future:
 
 Unreleased:
 
-- ...
+- [Fix] Works correctly in Aseprite v1.3-rc2
 
 Future:
 

@@ -58,7 +58,7 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
                         activeCel.bounds.y - newImageBounds.y)
 
     local newImage = Image(newImageBounds.width, newImageBounds.height)
-    newImage:drawImage(activeCel.image, shift.x, shift.y)
+    newImage:drawImage(activeCel.image, shift)
 
     for _, pixel in ipairs(paintPixels) do
         drawPixel(newImage, pixel.x - newImageBounds.x,
