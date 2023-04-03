@@ -48,12 +48,18 @@ Unreleased:
 
 - ...
 
-Future:
+Update v2.0.0:
 
 - [Improvement] Rework the dialog UI to accommodate the number of options
+- [Improvement] Create a new section called "Brush", with Outline and Graffiti modes
+- [Improvement] Create a new section called "Tool", with Outline
+- [Feature] Add a separate set of options for the Grayscale Color Mode
+- [Feature] Add a separate set of options for the Indexed Color Mode
+
+Future:
+
 - [Feature] Two Tone
 - [Improvement] Allow for shifting multiple components at the same time (also, possibly, with different values?)
-- Unlock as much as possible for all color modes - this is more difficult than I thought, I can't use magic colors on an indexed image (maybe I could use white/black there?)
 
 ## Sprite Analyzer
 
@@ -76,6 +82,8 @@ Unreleased:
 
 Update v2.0.0:
 
+- [Fix] After changing displays a dialog can be stuck out of screen
+- [Fix] Opening a submenu too close to the bottom of the screen the subdialog is clipped
 - [Improvement] Add sliders to resize color in the palette and thumbnails on the timeline
 - [Improvement] Add a button to make a new brush from selection
 - [Improvement] Add buttons for switching layers up/down, changing their visibility, locking them, and selecting layer content
@@ -94,3 +102,15 @@ Update v?.?.?:
 - [Fix] *Add Inbetween Frames* should work with groups, currently it doesn't
 - [Improvement] *Advanced Scaling* lock the UI when dialog is shown for consistency with the rest of Aseprite and show "Processing..." dialog when resizing
 - [Improvement] *Analyze Colors* reintroduce color replacement and color selection on click
+
+## Center Image
+
+Unreleased:
+
+- ...
+
+Update v2.0.0:
+
+- [Feature] Weighted Centering
+- [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Center options
+- [Improvement] From Aseprite v1.3.-rc2 - add centering on X or Y axis as menu options (previously only available as key bindings)
