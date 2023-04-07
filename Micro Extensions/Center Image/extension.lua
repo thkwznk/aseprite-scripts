@@ -9,8 +9,9 @@ function CanCenterImage()
 end
 
 function CenterImageInActiveSprite(options)
-    if options == nil then return end
-    if not options.xAxis and not options.yAxis then return end
+    if options == nil or (not options.xAxis and not options.yAxis) then
+        return
+    end
 
     app.transaction(function()
         local sprite = app.activeSprite
@@ -26,39 +27,36 @@ function CenterImageInActiveSprite(options)
 end
 
 function CenterSelection(options, sprite)
-    -- TODO: Trim the transparency
-
     local selection = sprite.selection.bounds
 
     for _, cel in ipairs(app.range.cels) do
-        local contentBounds = GetContentBounds(cel, selection)
-        local oldImage, contentImage = CutImagePart(cel.image, contentBounds)
+        local outerImage, centeredImage, centertedImageBounds = CutImagePart(
+                                                                    cel,
+                                                                    selection)
+        local imageCenter = GetImageCenter(centeredImage, options)
 
-        local centerX = cel.bounds.x + contentBounds.x
+        local x = centertedImageBounds.x
+        local y = centertedImageBounds.y
 
         if options.xAxis then
-            centerX = selection.x + math.floor(selection.width / 2) -
-                          math.floor(contentBounds.width / 2)
+            x = selection.x + math.floor(selection.width / 2) - imageCenter.x
         end
-
-        local centerY = cel.bounds.y + contentBounds.y
 
         if options.yAxis then
-            centerY = selection.y + math.floor(selection.height / 2) -
-                          math.floor(contentBounds.height / 2)
+            y = selection.y + math.floor(selection.height / 2) - imageCenter.y
         end
 
-        local contentNewBounds = Rectangle(centerX, centerY, contentImage.width,
-                                           contentImage.height)
+        local contentNewBounds = Rectangle(x, y, centeredImage.width,
+                                           centeredImage.height)
 
         local newImageBounds = contentNewBounds:union(cel.bounds)
         local newImage = Image(newImageBounds.width, newImageBounds.height,
                                sprite.colorMode)
 
-        newImage:drawImage(oldImage, Point(cel.position.x - newImageBounds.x,
-                                           cel.position.y - newImageBounds.y))
-        newImage:drawImage(contentImage, Point(centerX - newImageBounds.x,
-                                               centerY - newImageBounds.y))
+        newImage:drawImage(outerImage, Point(cel.position.x - newImageBounds.x,
+                                             cel.position.y - newImageBounds.y))
+        newImage:drawImage(centeredImage,
+                           Point(x - newImageBounds.x, y - newImageBounds.y))
 
         local trimmedImage, trimmedPosition =
             TrimImage(newImage, Point(newImageBounds.x, newImageBounds.y))
@@ -67,18 +65,94 @@ function CenterSelection(options, sprite)
     end
 end
 
+function GetImageCenter(image, options)
+    local getPixel = image.getPixel
+    local centerX = 0
+
+    if options.weighted then
+        local total = 0
+        local rows = {}
+
+        for x = 0, image.width do
+            for y = 0, image.height do
+                if getPixel(image, x, y) > 0 then
+                    total = total + 1
+                end
+            end
+
+            table.insert(rows, total)
+        end
+
+        local centerValue = total / 2
+        centerX = 0
+
+        for i = 1, #rows do
+            if rows[i] >= centerValue then
+                centerX = i - 1
+                break
+            end
+        end
+    else
+        centerX = math.floor(image.width / 2)
+    end
+
+    local centerY = 0
+
+    if options.weighted then
+        local total = 0
+        local columns = {}
+
+        for y = 0, image.height do
+            for x = 0, image.width do
+                if getPixel(image, x, y) > 0 then
+                    total = total + 1
+                end
+            end
+
+            table.insert(columns, total)
+        end
+
+        local centerValue = total / 2
+        centerY = 0
+
+        for i = 1, #columns do
+            if columns[i] >= centerValue then
+                centerY = i - 1
+                break
+            end
+        end
+    else
+        centerY = math.floor(image.height / 2)
+    end
+
+    return Point(centerX, centerY)
+end
+
 function CenterCels(options, sprite)
     for _, cel in ipairs(app.range.cels) do
         local x = cel.bounds.x
         local y = cel.bounds.y
 
-        if options.xAxis then
-            x = math.floor(sprite.width / 2) - math.floor(cel.bounds.width / 2)
-        end
+        if options.weighted then
+            local imageCenter = GetImageCenter(cel.image, options)
 
-        if options.yAxis then
-            y = math.floor(sprite.height / 2) -
-                    math.floor(cel.bounds.height / 2)
+            if options.xAxis then
+                x = math.floor(sprite.width / 2) - imageCenter.x
+            end
+
+            if options.yAxis then
+                y = math.floor(sprite.height / 2) - imageCenter.y
+            end
+        else
+            if options.xAxis then
+                x = math.floor(sprite.width / 2) -
+                        math.floor(cel.bounds.width / 2)
+            end
+
+            if options.yAxis then
+                y = math.floor(sprite.height / 2) -
+                        math.floor(cel.bounds.height / 2)
+            end
         end
 
         cel.position = Point(x, y)
@@ -107,20 +181,31 @@ function GetContentBounds(cel, selection)
     return Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1)
 end
 
-function CutImagePart(image, rectangle)
-    local oldImage = Image(image)
-    local imagePart = Image(rectangle.width, rectangle.height, image.colorMode)
+function CutImagePart(cel, selection)
+    local contentBounds = GetContentBounds(cel, selection)
 
-    for pixel in oldImage:pixels(rectangle) do
-        imagePart:drawPixel(pixel.x - rectangle.x, pixel.y - rectangle.y,
-                            pixel())
+    local oldImage = Image(cel.image)
+    local imagePart = Image(cel.image, contentBounds)
+
+    -- TODO: Fix for Aseprite v1.3-rc2
+    -- Draw an empty image to erase the part
+    -- oldImage:drawImage(Image(contentBounds.width, contentBounds.height),
+    --                    Point(contentBounds.x, contentBounds.y))
+
+    for pixel in oldImage:pixels(contentBounds) do
+        imagePart:drawPixel(pixel.x - contentBounds.x,
+                            pixel.y - contentBounds.y, pixel())
         pixel(0)
     end
 
-    return oldImage, imagePart
+    return oldImage, imagePart,
+           Rectangle(cel.bounds.x + contentBounds.x,
+                     cel.bounds.y + contentBounds.y, contentBounds.width,
+                     contentBounds.height)
 end
 
 function TrimImage(image, position)
+    -- TODO: Use Image:shrinkBounds() for apiVersion >= 21
     local found, left, top, right, bottom
 
     -- Left
@@ -220,6 +305,38 @@ function init(plugin)
                 CenterImageInActiveSprite {xAxis = false, yAxis = true}
             end
         }
+
+        plugin:newCommand{
+            id = "CenterWeighted",
+            title = "Center (Weighted)",
+            group = "edit_transform",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {
+                    xAxis = true,
+                    yAxis = true,
+                    weighted = true
+                }
+            end
+        }
+
+        plugin:newCommand{
+            id = "CenterXWeighted",
+            title = "Center X (Weighted)",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {xAxis = true, weighted = true}
+            end
+        }
+
+        plugin:newCommand{
+            id = "CenterYWeighted",
+            title = "Center Y (Weighted)",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {yAxis = true, weighted = true}
+            end
+        }
     else
         plugin:newMenuGroup{
             id = "edit_center",
@@ -236,8 +353,6 @@ function init(plugin)
                 CenterImageInActiveSprite {xAxis = true, yAxis = true}
             end
         }
-
-        plugin:newMenuSeparator{group = "edit_center"}
 
         plugin:newCommand{
             id = "CenterX",
@@ -258,7 +373,90 @@ function init(plugin)
                 CenterImageInActiveSprite {xAxis = false, yAxis = true}
             end
         }
+
+        plugin:newMenuSeparator{group = "edit_center"}
+
+        plugin:newCommand{
+            id = "CenterWeighted",
+            title = "Center (Weighted)",
+            group = "edit_center",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {
+                    xAxis = true,
+                    yAxis = true,
+                    weighted = true
+                }
+            end
+        }
+
+        plugin:newCommand{
+            id = "CenterXWeighted",
+            title = "Center X (Weighted)",
+            group = "edit_center",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {xAxis = true, weighted = true}
+            end
+        }
+
+        plugin:newCommand{
+            id = "CenterYWeighted",
+            title = "Center Y (Weighted)",
+            group = "edit_center",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {yAxis = true, weighted = true}
+            end
+        }
+
+        -- plugin:newMenuSeparator{group = "edit_center"}
+
+        -- plugin:newCommand{
+        --     id = "CenterWeightedAlpha",
+        --     title = "Center (Weighted + Alpha)",
+        --     group = "edit_center",
+        --     onenabled = CanCenterImage,
+        --     onclick = function()
+        --         CenterImageInActiveSprite {
+        --             xAxis = true,
+        --             yAxis = true,
+        --             weighted = true,
+        --             alpha = true
+        --         }
+        --     end
+        -- }
+
+        -- plugin:newCommand{
+        --     id = "CenterXWeighted",
+        --     title = "Center X (Weighted + Alpha)",
+        --     group = "edit_center",
+        --     onenabled = CanCenterImage,
+        --     onclick = function()
+        --         CenterImageInActiveSprite {
+        --             xAxis = true,
+        --             weighted = true,
+        --             alpha = true
+        --         }
+        --     end
+        -- }
+
+        -- plugin:newCommand{
+        --     id = "CenterYWeighted",
+        --     title = "Center Y (Weighted + Alpha)",
+        --     group = "edit_center",
+        --     onenabled = CanCenterImage,
+        --     onclick = function()
+        --         CenterImageInActiveSprite {
+        --             yAxis = true,
+        --             weighted = true,
+        --             alpha = true
+        --         }
+        --     end
+        -- }
     end
 end
 
 function exit(plugin) end
+
+-- TODO: Implement Weighted + Alpha centering
