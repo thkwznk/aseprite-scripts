@@ -107,10 +107,9 @@ Update v?.?.?:
 
 Unreleased:
 
-- ...
+- [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Center options
+- [Improvement] From Aseprite v1.3.-rc2 - add centering on X or Y axis as menu options (previously only available as key bindings)
 
 Update v2.0.0:
 
 - [Feature] Weighted Centering
-- [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Center options
-- [Improvement] From Aseprite v1.3.-rc2 - add centering on X or Y axis as menu options (previously only available as key bindings)

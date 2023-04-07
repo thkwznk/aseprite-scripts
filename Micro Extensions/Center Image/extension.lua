@@ -192,33 +192,73 @@ function TrimImage(image, position)
 end
 
 function init(plugin)
-    plugin:newCommand{
-        id = "Center",
-        title = "Center",
-        group = "edit_transform",
-        onenabled = CanCenterImage,
-        onclick = function()
-            CenterImageInActiveSprite {xAxis = true, yAxis = true}
-        end
-    }
+    if app.apiVersion < 22 then
+        plugin:newCommand{
+            id = "Center",
+            title = "Center",
+            group = "edit_transform",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {xAxis = true, yAxis = true}
+            end
+        }
 
-    plugin:newCommand{
-        id = "CenterX",
-        title = "Center X",
-        onenabled = CanCenterImage,
-        onclick = function()
-            CenterImageInActiveSprite {xAxis = true, yAxis = false}
-        end
-    }
+        plugin:newCommand{
+            id = "CenterX",
+            title = "Center X",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {xAxis = true, yAxis = false}
+            end
+        }
 
-    plugin:newCommand{
-        id = "CenterY",
-        title = "Center Y",
-        onenabled = CanCenterImage,
-        onclick = function()
-            CenterImageInActiveSprite {xAxis = false, yAxis = true}
-        end
-    }
+        plugin:newCommand{
+            id = "CenterY",
+            title = "Center Y",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {xAxis = false, yAxis = true}
+            end
+        }
+    else
+        plugin:newMenuGroup{
+            id = "edit_center",
+            title = "Center",
+            group = "edit_transform"
+        }
+
+        plugin:newCommand{
+            id = "Center",
+            title = "Center",
+            group = "edit_center",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {xAxis = true, yAxis = true}
+            end
+        }
+
+        plugin:newMenuSeparator{group = "edit_center"}
+
+        plugin:newCommand{
+            id = "CenterX",
+            title = "Center X",
+            group = "edit_center",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {xAxis = true, yAxis = false}
+            end
+        }
+
+        plugin:newCommand{
+            id = "CenterY",
+            title = "Center Y",
+            group = "edit_center",
+            onenabled = CanCenterImage,
+            onclick = function()
+                CenterImageInActiveSprite {xAxis = false, yAxis = true}
+            end
+        }
+    end
 end
 
 function exit(plugin) end
