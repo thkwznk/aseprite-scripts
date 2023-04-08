@@ -86,8 +86,8 @@ end
 function init(plugin)
     plugin:newCommand{
         id = "SetTagShortcut",
-        title = "Tag Play Shortcuts...",
-        group = "tag_popup_properties",
+        title = "Playback Shortcuts...",
+        group = "cel_animation",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             local sprite = app.activeSprite
@@ -96,7 +96,7 @@ function init(plugin)
                 plugin.preferences[sprite.filename] = {}
             end
 
-            local dialog = Dialog("Tag Play Shortcuts")
+            local dialog = Dialog("Playback Shortcuts")
             local tags = {"<Default>"}
 
             for _, tag in ipairs(sprite.tags) do
@@ -287,4 +287,3 @@ function exit(plugin) end
 -- TODO: Fix data persistance / Use the new Extension-defined properties (for older versions, use the same method as the Time Tracking does)
 -- TODO: Add settings for the play once/loop
 -- TODO: Try to implement playing a sequence of tags (use the new Timer class)
--- TODO: Move the Tag Play Properties out of the Tag context menu - it doens't work there
