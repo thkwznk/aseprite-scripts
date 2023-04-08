@@ -1,0 +1,30 @@
+{
+  "name": "run-script",
+  "displayName": "Run Script",
+  "description": "",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kacper Woźniak",
+    "email": "kac.wozniak@gmail.com",
+    "url": "https://thkaspar.itch.io/"
+  },
+  "contributors": [],
+  "publisher": "thkwznk",
+  "license": "CC-BY-4.0",
+  "categories": [
+    "Scripts"
+  ],
+  "contributes": {
+    "scripts": [
+      {
+        "path": "./extension.lua"
+      }
+    ],
+    "keys": [
+      {
+        "id": "go-to-layer-tag-keys",
+        "path": "./extension-keys.aseprite-keys"
+      }
+    ]
+  }
+}
