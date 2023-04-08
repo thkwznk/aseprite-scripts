@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<keyboard version="1">
+    <commands>
+        <key command="PlayFirstTag" shortcut="Ctrl+1" />
+        <key command="PlaySecondTag" shortcut="Ctrl+2" />
+        <key command="PlayThirdTag" shortcut="Ctrl+3" />
+        <key command="PlayFourthTag" shortcut="Ctrl+4" />
+        <key command="PlayFifthTag" shortcut="Ctrl+5" />
+        <key command="PlaySixthTag" shortcut="Ctrl+6" />
+        <key command="PlaySeventhTag" shortcut="Ctrl+7" />
+        <key command="PlayEightTag" shortcut="Ctrl+8" />
+        <key command="PlayNinthTag" shortcut="Ctrl+9" />
+        <key command="PlayAllFrames" shortcut="Ctrl+0" />
+        <key command="PlayNextTag" shortcut="Ctrl+." />
+        <key command="PlayPreviousTag" shortcut="Ctrl+," />
+    </commands>
+</keyboard>

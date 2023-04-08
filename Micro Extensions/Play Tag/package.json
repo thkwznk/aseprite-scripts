@@ -1,0 +1,30 @@
+{
+  "name": "play-tag",
+  "displayName": "Play Tag",
+  "description": "",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kacper Woźniak",
+    "email": "kac.wozniak@gmail.com",
+    "url": "https://thkaspar.itch.io/"
+  },
+  "contributors": [],
+  "publisher": "thkwznk",
+  "license": "CC-BY-4.0",
+  "categories": [
+    "Scripts"
+  ],
+  "contributes": {
+    "scripts": [
+      {
+        "path": "./extension.lua"
+      }
+    ],
+    "keys": [
+      {
+        "id": "play-tag",
+        "path": "./extension-keys.aseprite-keys"
+      }
+    ]
+  }
+}
