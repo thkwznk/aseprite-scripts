@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<keyboard version="1">
+    <commands>
+        <key command="CenterX" shortcut="Alt+Shift+X" />
+        <key command="CenterY" shortcut="Alt+Shift+Y" />
+        <key command="CenterXWeighted" shortcut="Ctrl+Alt+Shift+X" />
+        <key command="CenterYWeighted" shortcut="Ctrl+Alt+Shift+Y" />
+    </commands>
+</keyboard>

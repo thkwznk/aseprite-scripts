@@ -19,6 +19,12 @@
       {
         "path": "./extension.lua"
       }
+    ],
+    "keys": [
+      {
+        "id": "center-image-keys",
+        "path": "./extension-keys.aseprite-keys"
+      }
     ]
   }
 }
