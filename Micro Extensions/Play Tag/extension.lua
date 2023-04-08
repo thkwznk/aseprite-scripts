@@ -32,11 +32,55 @@ function PlayTagByIndex(sprite, tagIndex)
     app.preferences.editor.play_all = playAll
 end
 
-function FindClosestTagIndexToFrame(sprite, frameNumber)
+function FindTagIndex(sprite, frameNumber)
     for i, tag in ipairs(sprite.tags) do
         if tag.fromFrame.frameNumber <= frameNumber and tag.toFrame.frameNumber >=
             frameNumber then return i end
     end
+end
+
+function FindNextTagIndex(sprite, frameNumber)
+    local tagIndex = FindTagIndex(sprite, frameNumber)
+
+    -- If the frame is within a tag, return decremented index or last tag index
+    if tagIndex then return tagIndex < #sprite.tags and tagIndex + 1 or 1 end
+
+    local closestTagStart = #sprite.frames
+    local closestTagStartIndex = 0
+
+    for i, tag in ipairs(sprite.tags) do
+        if tag.fromFrame.frameNumber > frameNumber and tag.fromFrame.frameNumber -
+            frameNumber < closestTagStart then
+            closestTagStart = tag.fromFrame.frameNumber - frameNumber
+            closestTagStartIndex = i
+        end
+    end
+
+    if closestTagStartIndex == 0 then return 1 end
+
+    return closestTagStartIndex
+end
+
+function FindPreviousTagIndex(sprite, frameNumber)
+    local tagIndex = FindTagIndex(sprite, frameNumber)
+
+    -- If the frame is within a tag, return decremented index or last tag index
+    if tagIndex then return tagIndex > 1 and tagIndex - 1 or #sprite.tags end
+
+    local closestTagEnd = #sprite.frames
+    local closestTagEndIndex = 0
+
+    for i, tag in ipairs(sprite.tags) do
+        if tag.toFrame.frameNumber < frameNumber and frameNumber -
+            tag.toFrame.frameNumber < closestTagEnd then
+            closestTagEnd = frameNumber - tag.toFrame.frameNumber
+            closestTagEndIndex = i
+        end
+    end
+
+    if closestTagEndIndex == 0 then return #sprite.tags end
+
+    return closestTagEndIndex
 end
 
 function init(plugin)
@@ -217,12 +261,9 @@ function init(plugin)
         onclick = function()
             local sprite = app.activeSprite
             local currentFrameNumber = app.activeFrame.frameNumber
-            local closestTagIndex = FindClosestTagIndexToFrame(sprite,
-                                                               currentFrameNumber)
 
-            if closestTagIndex < #sprite.tags then
-                PlayTagByIndex(sprite, closestTagIndex + 1)
-            end
+            local nextTagIndex = FindNextTagIndex(sprite, currentFrameNumber)
+            PlayTagByIndex(sprite, nextTagIndex)
         end
     }
 
@@ -233,12 +274,10 @@ function init(plugin)
         onclick = function()
             local sprite = app.activeSprite
             local currentFrameNumber = app.activeFrame.frameNumber
-            local closestTagIndex = FindClosestTagIndexToFrame(sprite,
-                                                               currentFrameNumber)
 
-            if closestTagIndex > 1 then
-                PlayTagByIndex(sprite, closestTagIndex - 1)
-            end
+            local previouTagIndex = FindPreviousTagIndex(sprite,
+                                                         currentFrameNumber)
+            PlayTagByIndex(sprite, previouTagIndex)
         end
     }
 end
@@ -247,6 +286,5 @@ function exit(plugin) end
 
 -- TODO: Fix data persistance / Use the new Extension-defined properties (for older versions, use the same method as the Time Tracking does)
 -- TODO: Add settings for the play once/loop
--- TODO: Fix an issue when trying ot play next/previous tag when active frame is outside of a tag
 -- TODO: Try to implement playing a sequence of tags (use the new Timer class)
 -- TODO: Move the Tag Play Properties out of the Tag context menu - it doens't work there
