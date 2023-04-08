@@ -8,6 +8,8 @@ Unreleased:
 
 Update v1.0.3.
 - [Feature] Milestone trackers
+- [Feature] Actual Timer
+- [Improvement] Remember data using the new `properties`
 
 ## Theme Preferences
 
@@ -41,6 +43,7 @@ Future:
 - [Feature] Parallax - add an options for delaying layers reappearing
 - [Feature] Parallax - add an option to generate only from the selected frames
 - [Feature] Parallax - add alternative movement functions
+- [Improvement] Parallax - remember settings using the new `properties` 
 
 ## Magic Pencil
 
@@ -73,6 +76,21 @@ Update v1.0.1:
 - [Refactor] Use app.alert for the confirmation dialog
 - [Improvement] Try using linear RGB for distance calculations
 - [Improvement] Optimise how part of the image is taken from the source
+
+Update v2.0.0:
+
+- [Feature] New preview in a floating dialog window
+- [Improvement] Remember settings (using the new `properties`)
+
+## Animation Suite
+
+Unreleased:
+
+- ...
+
+Update v2.0.0:
+
+- [Improvement] New UI - animation steps preview in the dialog with interactive UI
 
 ## On-Screen Controls
 
@@ -115,3 +133,13 @@ Unreleased:
 Update v2.0.0:
 
 - ...
+
+## Brush Transformations
+
+Unreleased:
+
+- ...
+
+Update v2.0.0:
+
+- [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Brush Transformations options
