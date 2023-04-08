@@ -26,3 +26,11 @@ Provides an option to speed up or slow down multiple frames at the same time to 
 ## Cel Tracking
 
 Provides an option to follow the movement of cels from another layer.
+
+## Run Script
+
+*In progress...*
+
+## Repeat Cels
+
+*In progress...*
