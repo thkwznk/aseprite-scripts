@@ -110,7 +110,8 @@ Unreleased:
 - [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Center options
 - [Improvement] From Aseprite v1.3.-rc2 - add centering on X or Y axis as menu options (previously only available as key bindings)
 - [Feature] Weighted Centering
+- [Fix] Block centering on locked layers
 
 Update v2.0.0:
 
-- [Fix] Block centering on locked layers
+- ...

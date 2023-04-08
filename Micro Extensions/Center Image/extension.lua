@@ -15,85 +15,79 @@ function CenterImageInActiveSprite(options)
 
     app.transaction(function()
         local sprite = app.activeSprite
+        local center = not sprite.selection.isEmpty and CenterSelection or
+                           CenterCel
 
-        if not sprite.selection.isEmpty then
-            CenterSelection(options, sprite)
-        else
-            CenterCels(options, sprite)
+        for _, cel in ipairs(app.range.cels) do
+            if cel.layer.isEditable then center(cel, options, sprite) end
         end
     end)
 
     app.refresh()
 end
 
-function CenterSelection(options, sprite)
+function CenterSelection(cel, options, sprite)
     local selection = sprite.selection.bounds
 
-    for _, cel in ipairs(app.range.cels) do
-        local outerImage, centeredImage, centertedImageBounds = CutImagePart(
-                                                                    cel,
-                                                                    selection)
-        local imageCenter = GetImageCenter(centeredImage, options)
+    local outerImage, centeredImage, centertedImageBounds = CutImagePart(cel,
+                                                                         selection)
+    local imageCenter = GetImageCenter(centeredImage, options)
 
-        local x = centertedImageBounds.x
-        local y = centertedImageBounds.y
+    local x = centertedImageBounds.x
+    local y = centertedImageBounds.y
+
+    if options.xAxis then
+        x = selection.x + math.floor(selection.width / 2) - imageCenter.x
+    end
+
+    if options.yAxis then
+        y = selection.y + math.floor(selection.height / 2) - imageCenter.y
+    end
+
+    local contentNewBounds = Rectangle(x, y, centeredImage.width,
+                                       centeredImage.height)
+
+    local newImageBounds = contentNewBounds:union(cel.bounds)
+    local newImage = Image(newImageBounds.width, newImageBounds.height,
+                           sprite.colorMode)
+
+    newImage:drawImage(outerImage, Point(cel.position.x - newImageBounds.x,
+                                         cel.position.y - newImageBounds.y))
+    newImage:drawImage(centeredImage,
+                       Point(x - newImageBounds.x, y - newImageBounds.y))
+
+    local trimmedImage, trimmedPosition =
+        TrimImage(newImage, Point(newImageBounds.x, newImageBounds.y))
+
+    sprite:newCel(cel.layer, cel.frameNumber, trimmedImage, trimmedPosition)
+end
+
+function CenterCel(cel, options, sprite)
+    local x = cel.bounds.x
+    local y = cel.bounds.y
+
+    if options.weighted then
+        local imageCenter = GetImageCenter(cel.image, options)
 
         if options.xAxis then
-            x = selection.x + math.floor(selection.width / 2) - imageCenter.x
+            x = math.floor(sprite.width / 2) - imageCenter.x
         end
 
         if options.yAxis then
-            y = selection.y + math.floor(selection.height / 2) - imageCenter.y
+            y = math.floor(sprite.height / 2) - imageCenter.y
+        end
+    else
+        if options.xAxis then
+            x = math.floor(sprite.width / 2) - math.floor(cel.bounds.width / 2)
         end
 
-        local contentNewBounds = Rectangle(x, y, centeredImage.width,
-                                           centeredImage.height)
-
-        local newImageBounds = contentNewBounds:union(cel.bounds)
-        local newImage = Image(newImageBounds.width, newImageBounds.height,
-                               sprite.colorMode)
-
-        newImage:drawImage(outerImage, Point(cel.position.x - newImageBounds.x,
-                                             cel.position.y - newImageBounds.y))
-        newImage:drawImage(centeredImage,
-                           Point(x - newImageBounds.x, y - newImageBounds.y))
-
-        local trimmedImage, trimmedPosition =
-            TrimImage(newImage, Point(newImageBounds.x, newImageBounds.y))
-
-        sprite:newCel(cel.layer, cel.frameNumber, trimmedImage, trimmedPosition)
-    end
-end
-
-function CenterCels(options, sprite)
-    for _, cel in ipairs(app.range.cels) do
-        local x = cel.bounds.x
-        local y = cel.bounds.y
-
-        if options.weighted then
-            local imageCenter = GetImageCenter(cel.image, options)
-
-            if options.xAxis then
-                x = math.floor(sprite.width / 2) - imageCenter.x
-            end
-
-            if options.yAxis then
-                y = math.floor(sprite.height / 2) - imageCenter.y
-            end
-        else
-            if options.xAxis then
-                x = math.floor(sprite.width / 2) -
-                        math.floor(cel.bounds.width / 2)
-            end
-
-            if options.yAxis then
-                y = math.floor(sprite.height / 2) -
-                        math.floor(cel.bounds.height / 2)
-            end
+        if options.yAxis then
+            y = math.floor(sprite.height / 2) -
+                    math.floor(cel.bounds.height / 2)
         end
-
-        cel.position = Point(x, y)
     end
+
+    cel.position = Point(x, y)
 end
 
 function GetImageCenter(image, options)
