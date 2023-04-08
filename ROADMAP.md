@@ -113,5 +113,4 @@ Unreleased:
 
 Update v2.0.0:
 
-- [Feature] Weighted Centering + Alpha
 - [Fix] Block centering on locked layers
