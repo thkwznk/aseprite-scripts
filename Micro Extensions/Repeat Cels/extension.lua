@@ -1,10 +1,7 @@
-local RepeatCels = "REPEAT_CELS"
-local RepeatFrames = "REPEAT_FRAMES"
-
 local ReplaceExistingBehavior = "Replace"
 local PushExistingBehavior = "Push"
 
-function Repeat(n, linked, behavior, type)
+function Repeat(n, linked, behavior)
     app.transaction(function()
         local content = linked and "cellinked" or "cel"
 
@@ -12,76 +9,39 @@ function Repeat(n, linked, behavior, type)
         local originalRange = CopyRange(app.range)
         local originalTag = nil
 
-        if type == RepeatFrames then
-            local firstFrame = originalRange.frames[1]
-            local lastFrame = originalRange.frames[#originalRange.frames]
-
-            -- Check if any tag starts and ends with selected frames
-            for _, spriteTag in ipairs(sprite.tags) do
-                if spriteTag.fromFrame == firstFrame and spriteTag.toFrame ==
-                    lastFrame then
-                    originalTag = spriteTag
-                    break
-                end
-            end
-        end
-
         if behavior == PushExistingBehavior then
-            if type == RepeatCels then
-                -- If repeating CELS - cels need to be moved one by one, from the end, new empty frames need to be added at the end if necessary
-                local lastFrame = GetLastFrame(originalRange.frames)
+            -- If repeating CELS - cels need to be moved one by one, from the end, new empty frames need to be added at the end if necessary
+            local lastFrame = GetLastFrame(originalRange.frames)
 
-                local shiftFrames = n * #originalRange.frames
+            local shiftFrames = n * #originalRange.frames
 
-                for _, layer in ipairs(originalRange.layers) do
-                    -- If the sprite has less frames than last frame number + n - add missing frames (empty)
-                    local lastFrameOnLayer = GetLastFrameOnLayer(layer)
-                    local framesToAdd = lastFrameOnLayer.frameNumber +
-                                            shiftFrames - #sprite.frames
+            for _, layer in ipairs(originalRange.layers) do
+                -- If the sprite has less frames than last frame number + n - add missing frames (empty)
+                local lastFrameOnLayer = GetLastFrameOnLayer(layer)
+                local framesToAdd = lastFrameOnLayer.frameNumber + shiftFrames -
+                                        #sprite.frames
 
-                    if framesToAdd > 0 then
-                        app.activeFrame = GetLastFrame(sprite.frames)
-                        for _ = 1, framesToAdd do
-                            app.command.NewFrame {content = "empty"}
-                        end
-                    end
-
-                    -- For each layer in the original range, for each frame (descending), move the cel n frames
-                    for frameNumber = #sprite.frames, lastFrame.frameNumber + 1, -1 do
-                        local cel = layer:cel(frameNumber)
-
-                        if cel then
-                            sprite:newCel(layer, frameNumber + shiftFrames,
-                                          cel.image, cel.position)
-                        end
+                if framesToAdd > 0 then
+                    app.activeFrame = GetLastFrame(sprite.frames)
+                    for _ = 1, framesToAdd do
+                        app.command.NewFrame {content = "empty"}
                     end
                 end
 
-                app.range:clear()
-                app.range.frames = originalRange.frames
-                app.range.layers = originalRange.layers
+                -- For each layer in the original range, for each frame (descending), move the cel n frames
+                for frameNumber = #sprite.frames, lastFrame.frameNumber + 1, -1 do
+                    local cel = layer:cel(frameNumber)
+
+                    if cel then
+                        sprite:newCel(layer, frameNumber + shiftFrames,
+                                      cel.image, cel.position)
+                    end
+                end
             end
 
-            if type == RepeatFrames then
-                -- If repeating FRAMES - insert N number of new frames first, then restore range
-                app.activeFrame = GetLastFrame(originalRange.frames)
-
-                local numberOfEmptyFrames = n * #originalRange.frames
-
-                for _ = 0, numberOfEmptyFrames - 1 do
-                    app.command.NewFrame {content = "empty"}
-                end
-
-                app.range:clear()
-                app.range.frames = originalRange.frames
-
-                local layers = {}
-                for _, layer in ipairs(app.activeSprite.layers) do
-                    table.insert(layers, layer)
-                end
-
-                app.range.layers = layers
-            end
+            app.range:clear()
+            app.range.frames = originalRange.frames
+            app.range.layers = originalRange.layers
         end
 
         for i = 0, n - 1 do
@@ -143,32 +103,8 @@ function CopyRange(range)
     return copy
 end
 
-function RepeatDialog(title, type)
+function RepeatDialog(title)
     local dialog = Dialog(title)
-
-    if type == RepeatFrames then
-
-        local from = app.range.frames[1].frameNumber
-        local to = app.range.frames[#app.range.frames].frameNumber
-
-        local duration = 0
-
-        for _, frame in ipairs(app.range.frames) do
-            duration = duration + frame.duration
-        end
-
-        local frameNumber = from ~= to and
-                                ("[" .. tostring(from) .. "..." .. tostring(to) ..
-                                    "]") or ("[" .. tostring(from) .. "]")
-
-        dialog --
-        :separator{text = "Frames"} --
-        :label{label = "Frame number:", text = frameNumber} --
-        :label{
-            label = "Duration",
-            text = string.format("%.0f", duration * 1000) .. "ms"
-        } --
-    end
 
     dialog --
     :separator{text = "Repeat"} --
@@ -186,7 +122,7 @@ function RepeatDialog(title, type)
         id = "behavior",
         label = "Existing cels/frames:",
         options = {ReplaceExistingBehavior, PushExistingBehavior},
-        option = ReplaceExistingBehavior
+        option = PushExistingBehavior
     } --
     :check{id = "linked", label = "Repeat Linked:"} --
     :separator() --
@@ -194,7 +130,7 @@ function RepeatDialog(title, type)
         id = "ok-button",
         text = "&OK",
         onclick = function()
-            Repeat(dialog.data.n, dialog.data.linked, dialog.data.behavior, type)
+            Repeat(dialog.data.n, dialog.data.linked, dialog.data.behavior)
             dialog:close()
         end
     } --
@@ -205,21 +141,21 @@ end
 
 function init(plugin)
     plugin:newCommand{
-        id = "RepeatCels",
+        id = "RepeatCelsPopup",
         title = "Repeat Cel(s)",
         group = "cel_popup_new",
         onclick = function()
-            local dialog = RepeatDialog("Repeat Cel(s)", RepeatCels)
+            local dialog = RepeatDialog("Repeat Cel(s)")
             dialog:show()
         end
     }
 
     plugin:newCommand{
-        id = "RepeatFrames",
-        title = "Repeat Frames",
-        group = "frame_popup_reverse",
+        id = "RepeatCels",
+        title = "Repeat Cel(s)",
+        group = "cel_new",
         onclick = function()
-            local dialog = RepeatDialog("Repeat Frames", RepeatFrames)
+            local dialog = RepeatDialog("Repeat Cel(s)")
             dialog:show()
         end
     }
