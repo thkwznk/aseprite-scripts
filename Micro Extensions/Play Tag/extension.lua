@@ -1,3 +1,24 @@
+local pluginKey = "thkwznk/play-tag"
+
+function GetUniqueId()
+    local randomNumber = math.random(1, 16 ^ 8)
+    return string.format("%08x", randomNumber)
+end
+
+function GetTagUniqueId(tag)
+    if not tag then return nil end
+
+    local uniqueId = tag.properties(pluginKey).uniqueId
+
+    if uniqueId == nil then
+        uniqueId = GetUniqueId()
+        tag.properties(pluginKey).uniqueId = uniqueId
+
+    end
+
+    return uniqueId
+end
+
 function PlayAllFrames()
     local playAll = app.preferences.editor.play_all
     app.preferences.editor.play_all = true
@@ -7,14 +28,24 @@ function PlayAllFrames()
     app.preferences.editor.play_all = playAll
 end
 
-function PlayCustomTagByIndex(plugin, sprite, tagIndex)
-    local customTagIndex = plugin.preferences[sprite.filename] and
-                               plugin.preferences[sprite.filename]["tag-" ..
-                                   tostring(tagIndex)]
+function GetCustomTagIndex(sprite, tagIndex)
+    local tagKey = "tag-" .. tostring(tagIndex)
+    local tagUniqueId = sprite.properties(pluginKey)[tagKey]
 
-    if customTagIndex then tagIndex = customTagIndex end
+    if tagUniqueId then
+        for i, tag in ipairs(sprite.tags) do
+            if tag.properties(pluginKey).uniqueId == tagUniqueId then
+                return i
+            end
+        end
+    end
 
-    PlayTagByIndex(sprite, tagIndex)
+    return tagIndex
+end
+
+function PlayCustomTagByIndex(sprite, tagIndex)
+    local customTagIndex = GetCustomTagIndex(sprite, tagIndex)
+    PlayTagByIndex(sprite, customTagIndex)
 end
 
 function PlayTagByIndex(sprite, tagIndex)
@@ -91,31 +122,31 @@ function init(plugin)
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             local sprite = app.activeSprite
-
-            if not plugin.preferences[sprite.filename] then
-                plugin.preferences[sprite.filename] = {}
-            end
-
             local dialog = Dialog("Playback Shortcuts")
-            local tags = {"<Default>"}
+            local tagIndexes = {}
+            local tagOptions = {"<Default>"}
 
-            for _, tag in ipairs(sprite.tags) do
-                -- TODO: Differentiate tags with the same name
-                table.insert(tags, tag.name)
+            for index, tag in ipairs(sprite.tags) do
+                local optionName = string.format("%s [%d...%d]", tag.name,
+                                                 tag.fromFrame.frameNumber,
+                                                 tag.toFrame.frameNumber)
+
+                tagIndexes[optionName] = index
+                table.insert(tagOptions, optionName)
             end
 
             for i = 1, 9 do
-                local savedI = plugin.preferences[sprite.filename]["tag-" ..
-                                   tostring(i)]
+                local option = tagOptions[1]
+                local customTagIndex = GetCustomTagIndex(sprite, i)
 
-                local option = tags[1]
-
-                if savedI then option = tags[savedI + 1] end
+                if customTagIndex ~= i then
+                    option = tagOptions[customTagIndex + 1]
+                end
 
                 dialog:combobox{
                     id = "tag-" .. tostring(i),
                     label = "Ctrl+" .. tostring(i),
-                    options = tags,
+                    options = tagOptions,
                     option = option
                 }
             end
@@ -126,9 +157,10 @@ function init(plugin)
                 text = "Reset",
                 onclick = function()
                     for i = 1, 9 do
-                        local id = "tag-" .. tostring(i)
-
-                        dialog:modify{id = id, option = tags[1]}
+                        dialog:modify{
+                            id = "tag-" .. tostring(i),
+                            option = tagOptions[1]
+                        }
                     end
                 end
             } --
@@ -139,22 +171,11 @@ function init(plugin)
                     for shortcutIndex = 1, 9 do
                         local tagId = "tag-" .. tostring(shortcutIndex)
                         local tagName = dialog.data[tagId]
+                        local tagIndex = tagIndexes[tagName]
+                        local tag = sprite.tags[tagIndex]
 
-                        if tagName == tags[1] then -- Default
-                            plugin.preferences[sprite.filename][tagId] = nil
-                        else -- Custom
-                            local ix = shortcutIndex
-
-                            for j = 2, #tags do
-                                if tags[j] == tagName then
-                                    ix = j - 1
-                                    break
-                                end
-                            end
-                            print(shortcutIndex, ix, dialog.data[tagId])
-
-                            plugin.preferences[sprite.filename][tagId] = ix
-                        end
+                        sprite.properties(pluginKey)[tagId] = GetTagUniqueId(
+                                                                     tag)
                     end
 
                     dialog:close()
@@ -170,81 +191,63 @@ function init(plugin)
         id = "PlayFirstTag",
         title = "Play Tag #1",
         onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            PlayCustomTagByIndex(plugin, app.activeSprite, 1)
-        end
+        onclick = function() PlayCustomTagByIndex(app.activeSprite, 1) end
     }
 
     plugin:newCommand{
         id = "PlaySecondTag",
         title = "Play Tag #2",
         onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            PlayCustomTagByIndex(plugin, app.activeSprite, 2)
-        end
+        onclick = function() PlayCustomTagByIndex(app.activeSprite, 2) end
     }
 
     plugin:newCommand{
         id = "PlayThirdTag",
         title = "Play Tag #3",
         onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            PlayCustomTagByIndex(plugin, app.activeSprite, 3)
-        end
+        onclick = function() PlayCustomTagByIndex(app.activeSprite, 3) end
     }
 
     plugin:newCommand{
         id = "PlayFourthTag",
         title = "Play Tag #4",
         onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            PlayCustomTagByIndex(plugin, app.activeSprite, 4)
-        end
+        onclick = function() PlayCustomTagByIndex(app.activeSprite, 4) end
     }
 
     plugin:newCommand{
         id = "PlayFifthTag",
         title = "Play Tag #5",
         onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            PlayCustomTagByIndex(plugin, app.activeSprite, 5)
-        end
+        onclick = function() PlayCustomTagByIndex(app.activeSprite, 5) end
     }
 
     plugin:newCommand{
         id = "PlaySixthTag",
         title = "Play Tag #6",
         onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            PlayCustomTagByIndex(plugin, app.activeSprite, 6)
-        end
+        onclick = function() PlayCustomTagByIndex(app.activeSprite, 6) end
     }
 
     plugin:newCommand{
         id = "PlaySeventhTag",
         title = "Play Tag #7",
         onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            PlayCustomTagByIndex(plugin, app.activeSprite, 7)
-        end
+        onclick = function() PlayCustomTagByIndex(app.activeSprite, 7) end
     }
 
     plugin:newCommand{
         id = "PlayEightTag",
         title = "Play Tag #8",
         onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            PlayCustomTagByIndex(plugin, app.activeSprite, 8)
-        end
+        onclick = function() PlayCustomTagByIndex(app.activeSprite, 8) end
     }
 
     plugin:newCommand{
         id = "PlayNinthTag",
         title = "Play Tag #9",
         onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            PlayCustomTagByIndex(plugin, app.activeSprite, 9)
-        end
+        onclick = function() PlayCustomTagByIndex(app.activeSprite, 9) end
     }
 
     plugin:newCommand{
@@ -284,6 +287,4 @@ end
 
 function exit(plugin) end
 
--- TODO: Fix data persistance / Use the new Extension-defined properties (for older versions, use the same method as the Time Tracking does)
--- TODO: Add settings for the play once/loop
 -- TODO: Try to implement playing a sequence of tags (use the new Timer class)

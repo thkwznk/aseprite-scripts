@@ -22,7 +22,7 @@
     ],
     "keys": [
       {
-        "id": "play-tag",
+        "id": "play-tag-keys",
         "path": "./extension-keys.aseprite-keys"
       }
     ]
