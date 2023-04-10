@@ -13,10 +13,24 @@ function GetTagUniqueId(tag)
     if uniqueId == nil then
         uniqueId = GetUniqueId()
         tag.properties(pluginKey).uniqueId = uniqueId
-
     end
 
     return uniqueId
+end
+
+function GetTagOptions(sprite)
+    local names = {}
+    local tagDictionary = {}
+
+    for _, tag in ipairs(sprite.tags) do
+        local name = string.format("%s [%d...%d]", tag.name,
+                                   tag.fromFrame.frameNumber,
+                                   tag.toFrame.frameNumber)
+        table.insert(names, name)
+        tagDictionary[name] = tag
+    end
+
+    return names, tagDictionary
 end
 
 function PlayAllFrames()
@@ -114,9 +128,87 @@ function FindPreviousTagIndex(sprite, frameNumber)
     return closestTagEndIndex
 end
 
+function RecursiveTimer(sequence, currentSequenceIndex)
+    app.activeFrame = sequence[currentSequenceIndex].frameNumber
+
+    local timer
+    timer = Timer {
+        interval = sequence[currentSequenceIndex].duration,
+        ontick = function()
+            if currentSequenceIndex < #sequence and app.activeFrame.frameNumber ==
+                sequence[currentSequenceIndex].frameNumber then
+                RecursiveTimer(sequence, currentSequenceIndex + 1)
+            end
+
+            timer:stop()
+        end
+    }
+    timer:start()
+end
+
+function PlaybackSequencesDialog(options)
+    local tagNames, tagDictionary = GetTagOptions(options.sprite)
+
+    table.insert(tagNames, 1, "")
+
+    local dialog = Dialog(options.title)
+    -- TODO: Keep a cache of tags by their UUID
+
+    for i = 1, 9 do
+        dialog --
+        :combobox{
+            id = "sequence-tag-" .. tostring(i),
+            label = "Step " .. tostring(i),
+            options = tagNames,
+            -- option = nameDictionary[currentSequence[i].uniqueId]
+            visible = i == 1,
+            onchange = function()
+                for j = 9, 2, -1 do
+                    local isPreviousEmpty =
+                        #dialog.data["sequence-tag-" .. tostring(j - 1)] == 0
+
+                    dialog:modify{
+                        id = "sequence-tag-" .. tostring(j),
+                        visible = not isPreviousEmpty
+                    }
+
+                    if not isPreviousEmpty then break end
+                end
+            end
+        } --
+        :newrow()
+    end
+
+    dialog --
+    :button{
+        text = "&Play",
+        onclick = function()
+            local sequence = {}
+
+            for i = 1, 9 do
+                local tagName = dialog.data["sequence-tag-" .. tostring(i)]
+
+                if #tagName > 1 then
+                    local tag = tagDictionary[tagName]
+
+                    for frameNumber = tag.fromFrame.frameNumber, tag.toFrame
+                        .frameNumber do
+                        table.insert(sequence, tag.sprite.frames[frameNumber])
+                    end
+                end
+            end
+
+            RecursiveTimer(sequence, 1)
+        end
+    } --
+    :button{text = "Cancel"}
+
+    return dialog
+end
+
 function init(plugin)
     plugin:newCommand{
-        id = "SetTagShortcut",
+        id = "PlaybackShortcuts",
         title = "Playback Shortcuts...",
         group = "cel_animation",
         onenabled = function() return app.activeSprite ~= nil end,
@@ -174,8 +266,8 @@ function init(plugin)
                         local tagIndex = tagIndexes[tagName]
                         local tag = sprite.tags[tagIndex]
 
-                        sprite.properties(pluginKey)[tagId] = GetTagUniqueId(
-                                                                     tag)
+                        sprite.properties(pluginKey)[tagId] =
+                            GetTagUniqueId(tag)
                     end
 
                     dialog:close()
@@ -183,6 +275,24 @@ function init(plugin)
             } --
             :button{text = "&Cancel"} --
 
+            dialog:show()
+        end
+    }
+
+    plugin:newCommand{
+        id = "PlaybackSequences",
+        title = "Playback Sequences...",
+        group = "cel_animation",
+        onenabled = function()
+            return app.activeSprite ~= nil and #app.activeSprite.tags > 1
+        end,
+        onclick = function()
+            local sprite = app.activeSprite
+            local dialog = PlaybackSequencesDialog {
+                title = "Playback Sequences",
+                properties = sprite.properties(pluginKey),
+                sprite = sprite
+            }
             dialog:show()
         end
     }
@@ -287,4 +397,4 @@ end
 
 function exit(plugin) end
 
--- TODO: Try to implement playing a sequence of tags (use the new Timer class)
+-- TODO: Check if repeats work with this
