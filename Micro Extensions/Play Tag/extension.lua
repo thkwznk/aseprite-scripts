@@ -1,4 +1,7 @@
 local pluginKey = "thkwznk/play-tag"
+local DefaultPlaybackOption = "<Default>"
+local SequencePlaybackOption = "<Sequence>"
+local SequenceIndex = -1
 
 function GetUniqueId()
     local randomNumber = math.random(1, 16 ^ 8)
@@ -33,6 +36,12 @@ function GetTagOptions(sprite)
     return names, tagDictionary
 end
 
+function GetTagByUniqueId(sprite, uniqueId)
+    for _, tag in ipairs(sprite.tags) do
+        if tag.properties(pluginKey).uniqueId == uniqueId then return tag end
+    end
+end
+
 function PlayAllFrames()
     local playAll = app.preferences.editor.play_all
     app.preferences.editor.play_all = true
@@ -45,6 +54,8 @@ end
 function GetCustomTagIndex(sprite, tagIndex)
     local tagKey = "tag-" .. tostring(tagIndex)
     local tagUniqueId = sprite.properties(pluginKey)[tagKey]
+
+    if tagUniqueId == SequencePlaybackOption then return SequenceIndex end
 
     if tagUniqueId then
         for i, tag in ipairs(sprite.tags) do
@@ -59,6 +70,19 @@ end
 
 function PlayCustomTagByIndex(sprite, tagIndex)
     local customTagIndex = GetCustomTagIndex(sprite, tagIndex)
+
+    if customTagIndex == SequenceIndex then
+        local sequenceIds = sprite.properties(pluginKey).sequence
+        local tagSequence = {}
+
+        for _, tagId in ipairs(sequenceIds) do
+            table.insert(tagSequence, GetTagByUniqueId(sprite, tagId))
+        end
+
+        PlaySequence(tagSequence)
+        return
+    end
+
     PlayTagByIndex(sprite, customTagIndex)
 end
 
@@ -146,6 +170,18 @@ function RecursiveTimer(sequence, currentSequenceIndex)
     timer:start()
 end
 
+function PlaySequence(tagSequence)
+    local frameSequence = {}
+
+    for _, tag in ipairs(tagSequence) do
+        for frameNumber = tag.fromFrame.frameNumber, tag.toFrame.frameNumber do
+            table.insert(frameSequence, tag.sprite.frames[frameNumber])
+        end
+    end
+
+    RecursiveTimer(frameSequence, 1)
+end
+
 function PlaybackSequencesDialog(options)
     local tagNames, tagDictionary = GetTagOptions(options.sprite)
 
@@ -154,14 +190,27 @@ function PlaybackSequencesDialog(options)
     local dialog = Dialog(options.title)
     -- TODO: Keep a cache of tags by their UUID
 
+    local sequenceIds = options.sprite.properties(pluginKey).sequence
+
+    local sequenceNames = {}
+
+    for _, sequenceId in ipairs(sequenceIds) do
+        for tagName, tag in pairs(tagDictionary) do
+            if tag.properties(pluginKey).uniqueId == sequenceId then
+                table.insert(sequenceNames, tagName)
+                break
+            end
+        end
+    end
+
     for i = 1, 9 do
         dialog --
         :combobox{
             id = "sequence-tag-" .. tostring(i),
             label = "Step " .. tostring(i),
             options = tagNames,
-            -- option = nameDictionary[currentSequence[i].uniqueId]
-            visible = i == 1,
+            option = sequenceNames[i],
+            visible = i == 1 or sequenceNames[i - 1] ~= nil,
             onchange = function()
                 for j = 9, 2, -1 do
                     local isPreviousEmpty =
@@ -181,29 +230,58 @@ function PlaybackSequencesDialog(options)
 
     dialog --
     :button{
-        text = "&Play",
+        text = "OK",
         onclick = function()
-            local sequence = {}
+            local sequenceIds = {}
 
             for i = 1, 9 do
                 local tagName = dialog.data["sequence-tag-" .. tostring(i)]
 
                 if #tagName > 1 then
                     local tag = tagDictionary[tagName]
-
-                    for frameNumber = tag.fromFrame.frameNumber, tag.toFrame
-                        .frameNumber do
-                        table.insert(sequence, tag.sprite.frames[frameNumber])
-                    end
+                    table.insert(sequenceIds, GetTagUniqueId(tag))
                 end
             end
 
-            RecursiveTimer(sequence, 1)
+            options.sprite.properties(pluginKey).sequence = sequenceIds
+
+            dialog:close()
+        end
+    } --
+    :button{
+        text = "&Play",
+        onclick = function()
+            local tagSequence = {}
+
+            for i = 1, 9 do
+                local tagName = dialog.data["sequence-tag-" .. tostring(i)]
+
+                if #tagName > 1 then
+                    local tag = tagDictionary[tagName]
+                    table.insert(tagSequence, tag)
+                end
+            end
+
+            PlaySequence(tagSequence)
         end
     } --
     :button{text = "Cancel"}
 
     return dialog
+end
+
+function GetPlaybackOptions(sprite)
+    local playbackOptions = {DefaultPlaybackOption}
+    local tagNames, tagDictionary = GetTagOptions(sprite)
+
+    for _, tagName in ipairs(tagNames) do
+        table.insert(playbackOptions, tagName)
+    end
+
+    -- Add the sequence as the last option
+    table.insert(playbackOptions, SequencePlaybackOption)
+
+    return playbackOptions, tagDictionary
 end
 
 function init(plugin)
@@ -215,30 +293,23 @@ function init(plugin)
         onclick = function()
             local sprite = app.activeSprite
             local dialog = Dialog("Playback Shortcuts")
-            local tagIndexes = {}
-            local tagOptions = {"<Default>"}
 
-            for index, tag in ipairs(sprite.tags) do
-                local optionName = string.format("%s [%d...%d]", tag.name,
-                                                 tag.fromFrame.frameNumber,
-                                                 tag.toFrame.frameNumber)
-
-                tagIndexes[optionName] = index
-                table.insert(tagOptions, optionName)
-            end
+            local playbackOptions, tagDictionary = GetPlaybackOptions(sprite)
 
             for i = 1, 9 do
-                local option = tagOptions[1]
+                local option = playbackOptions[1]
                 local customTagIndex = GetCustomTagIndex(sprite, i)
 
-                if customTagIndex ~= i then
-                    option = tagOptions[customTagIndex + 1]
+                if customTagIndex == SequenceIndex then
+                    option = SequencePlaybackOption
+                elseif customTagIndex ~= i then
+                    option = playbackOptions[customTagIndex + 1]
                 end
 
                 dialog:combobox{
                     id = "tag-" .. tostring(i),
                     label = "Ctrl+" .. tostring(i),
-                    options = tagOptions,
+                    options = playbackOptions,
                     option = option
                 }
             end
@@ -251,7 +322,7 @@ function init(plugin)
                     for i = 1, 9 do
                         dialog:modify{
                             id = "tag-" .. tostring(i),
-                            option = tagOptions[1]
+                            option = DefaultPlaybackOption
                         }
                     end
                 end
@@ -263,11 +334,16 @@ function init(plugin)
                     for shortcutIndex = 1, 9 do
                         local tagId = "tag-" .. tostring(shortcutIndex)
                         local tagName = dialog.data[tagId]
-                        local tagIndex = tagIndexes[tagName]
-                        local tag = sprite.tags[tagIndex]
 
-                        sprite.properties(pluginKey)[tagId] =
-                            GetTagUniqueId(tag)
+                        if tagName == SequencePlaybackOption then
+                            sprite.properties(pluginKey)[tagId] =
+                                SequencePlaybackOption
+                        else
+                            local tag = tagDictionary[tagName]
+
+                            sprite.properties(pluginKey)[tagId] =
+                                GetTagUniqueId(tag)
+                        end
                     end
 
                     dialog:close()
