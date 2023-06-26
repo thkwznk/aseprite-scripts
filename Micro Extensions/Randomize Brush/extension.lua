@@ -58,8 +58,11 @@ local OnChange = function(ev)
     end
 
     if sizeOption == Option.Random then
-        local min = data["size-random-min"] or 1
-        local max = data["size-random-max"] or min
+        local sizeMin = data["size-random-min"] or 1
+        local sizeMax = data["size-random-max"] or sizeMin
+
+        local min = math.min(sizeMin, sizeMax)
+        local max = math.max(sizeMin, sizeMax)
 
         toolPreferences.brush.size = math.max(math.random(min, max), 1)
     end
