@@ -153,14 +153,29 @@ local OnChange = function(ev)
 end
 
 local OnSiteChange = function()
-    if sprite ~= app.activeSprite then
-        if sprite then sprite.events:off(onChangeListener) end
+    local previousSprite = sprite
 
-        sprite = app.activeSprite
+    -- If the sprite hasn't changed do nothing
+    if previousSprite == app.activeSprite then return end
 
-        if sprite then
-            onChangeListener = sprite.events:on('change', OnChange)
-        end
+    -- If the previous sprite wasn't nil stop listening for changes
+    if previousSprite then previousSprite.events:off(onChangeListener) end
+
+    -- Update the saved sprite
+    sprite = app.activeSprite
+
+    -- If the new sprite isn't nil start listening for changes
+    if sprite then onChangeListener = sprite.events:on('change', OnChange) end
+
+    -- If the dialog was open and the focus is back on any sprite, show the dialog
+    if not previousSprite and sprite and isDialogOpen then
+        dialog:show{wait = false}
+    end
+
+    -- If the dialog was open and the focus is away from any sprite, close the dialog
+    if previousSprite and not sprite and isDialogOpen then
+        dialog:close()
+        isDialogOpen = true -- Mark it is open again
     end
 end
 
