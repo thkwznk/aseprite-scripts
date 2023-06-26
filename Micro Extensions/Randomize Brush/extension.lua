@@ -165,7 +165,7 @@ local OnSiteChange = function()
 end
 
 local OnColorChange = function()
-    if #app.range.colors > 1 then
+    if isDialogOpen and colorOption ~= Option.None and #app.range.colors > 1 then
         local palette = sprite.palettes[1]
         local colors = {}
 
