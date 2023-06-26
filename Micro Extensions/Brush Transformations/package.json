@@ -23,7 +23,7 @@
     ],
     "keys": [
       {
-        "id": "swap-colors-keys",
+        "id": "brush-transformations-keys",
         "path": "./extension-keys.aseprite-keys"
       }
     ]
