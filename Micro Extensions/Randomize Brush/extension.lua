@@ -204,159 +204,171 @@ dialog = Dialog {
     onclose = function() isDialogOpen = false end
 }
 
-dialog --
-:separator{text = "Size:"} --
-:combobox{
-    id = "size",
-    label = "Option:",
-    options = {
-        Option.None, Option.Grow, Option.Shrink, Option.Random, Option.RandomSet
-    },
-    Option = sizeOption,
-    onchange = function()
-        sizeOption = dialog.data.size
-        local toolPreferences = GetToolPreferences()
+local SetupDialog = function()
+    dialog --
+    :separator{text = "Size:"} --
+    :combobox{
+        id = "size",
+        label = "Option:",
+        options = {
+            Option.None, Option.Grow, Option.Shrink, Option.Random,
+            Option.RandomSet
+        },
+        Option = sizeOption,
+        onchange = function()
+            sizeOption = dialog.data.size
+            local toolPreferences = GetToolPreferences()
 
-        dialog --
-        :modify{
-            id = "size-variable",
-            visible = sizeOption == Option.Grow or sizeOption == Option.Shrink
-        } --
-        :modify{
-            id = "size-random-min",
-            visible = sizeOption == Option.Random,
-            text = tostring(math.floor(toolPreferences.brush.size * 0.5))
-        } --
-        :modify{
-            id = "size-random-max",
-            visible = sizeOption == Option.Random,
-            text = tostring(math.ceil(toolPreferences.brush.size * 1.5))
-        } --
-        :modify{
-            id = "size-random-set",
-            visible = sizeOption == Option.RandomSet
-        }
-    end
-} --
-:number{id = "size-variable", label = "Value:", text = "1", visible = false} --
-:number{
-    id = "size-random-min",
-    label = "Min/Max:",
-    text = "1",
-    visible = false,
-    decimals = 0
-} --
-:number{id = "size-random-max", text = "10", visible = false, decimals = 0} --
-:entry{
-    id = "size-random-set",
-    label = "Values:",
-    text = "1,2,3",
-    visible = false
-}
-
-dialog --
-:separator{text = "Angle:"} --
-:combobox{
-    id = "angle",
-    label = "Option:",
-    options = {Option.None, Option.Rotate, Option.Random, Option.RandomSet},
-    Option = angleOption,
-    onchange = function()
-        angleOption = dialog.data.angle
-        local toolPreferences = GetToolPreferences()
-
-        dialog --
-        :modify{id = "angle-variable", visible = angleOption == Option.Rotate} --
-        :modify{
-            id = "angle-random-min",
-            visible = angleOption == Option.Random,
-            text = tostring(math.floor(toolPreferences.brush.angle * 0.5))
-        } --
-        :modify{
-            id = "angle-random-max",
-            visible = angleOption == Option.Random,
-            text = tostring(math.ceil(toolPreferences.brush.angle * 1.5))
-        } --
-        :modify{
-            id = "angle-random-set",
-            visible = angleOption == Option.RandomSet
-        }
-    end
-} --
-:slider{
-    id = "angle-variable",
-    label = "Value:",
-    visible = false,
-    min = -180,
-    max = 180,
-    value = 30
-} --
-:slider{
-    id = "angle-random-min",
-    label = "Min:",
-    visible = false,
-    min = -180,
-    max = 180,
-    value = 0
-} --
-:slider{
-    id = "angle-random-max",
-    label = "Max:",
-    visible = false,
-    min = -180,
-    max = 180,
-    value = 180
-} --
-:entry{
-    id = "angle-random-set",
-    label = "Values:",
-    text = "15,30,45",
-    visible = false
-}
-
-dialog --
-:separator{text = "Color:"} --
-:combobox{
-    id = "color",
-    label = "Option:",
-    options = {Option.None, Option.Next, Option.Previous, Option.RandomSet},
-    option = colorOption,
-    onchange = function()
-        colorOption = dialog.data.color
-
-        dialog --
-        :modify{id = "color-range", visible = colorOption ~= Option.None} --
-        :modify{
-            id = "color-reset",
-            visible = colorOption ~= Option.None and #dialog.data["color-range"] >
-                0
-        } --
-    end
-} --
-:shades{
-    id = "color-range",
-    label = "Range:",
-    mode = "sort",
-    visible = false,
-    colors = {},
-    onclick = function(ev)
-        if ev.color and ev.button == MouseButton.LEFT then
-            app.fgColor = ev.color
+            dialog --
+            :modify{
+                id = "size-variable",
+                visible = sizeOption == Option.Grow or sizeOption ==
+                    Option.Shrink
+            } --
+            :modify{
+                id = "size-random-min",
+                visible = sizeOption == Option.Random,
+                text = tostring(math.floor(toolPreferences.brush.size * 0.5))
+            } --
+            :modify{
+                id = "size-random-max",
+                visible = sizeOption == Option.Random,
+                text = tostring(math.ceil(toolPreferences.brush.size * 1.5))
+            } --
+            :modify{
+                id = "size-random-set",
+                visible = sizeOption == Option.RandomSet
+            }
         end
-    end
-} --
-:button{
-    id = "color-reset",
-    text = "Reset",
-    visible = false,
-    onclick = function()
-        dialog --
-        :modify{id = "color-range", colors = {}} --
-        :modify{id = "color-reset", visible = false} --
-    end
-}
+    } --
+    :number{id = "size-variable", label = "Value:", text = "1", visible = false} --
+    :number{
+        id = "size-random-min",
+        label = "Min/Max:",
+        text = "1",
+        visible = false,
+        decimals = 0
+    } --
+    :number{id = "size-random-max", text = "10", visible = false, decimals = 0} --
+    :entry{
+        id = "size-random-set",
+        label = "Values:",
+        text = "1,2,3",
+        visible = false
+    }
+
+    dialog --
+    :separator{text = "Angle:"} --
+    :combobox{
+        id = "angle",
+        label = "Option:",
+        options = {Option.None, Option.Rotate, Option.Random, Option.RandomSet},
+        Option = angleOption,
+        onchange = function()
+            angleOption = dialog.data.angle
+            local toolPreferences = GetToolPreferences()
+
+            dialog --
+            :modify{
+                id = "angle-variable",
+                visible = angleOption == Option.Rotate
+            } --
+            :modify{
+                id = "angle-random-min",
+                visible = angleOption == Option.Random,
+                text = tostring(math.floor(toolPreferences.brush.angle * 0.5))
+            } --
+            :modify{
+                id = "angle-random-max",
+                visible = angleOption == Option.Random,
+                text = tostring(math.ceil(toolPreferences.brush.angle * 1.5))
+            } --
+            :modify{
+                id = "angle-random-set",
+                visible = angleOption == Option.RandomSet
+            }
+        end
+    } --
+    :slider{
+        id = "angle-variable",
+        label = "Value:",
+        visible = false,
+        min = -180,
+        max = 180,
+        value = 30
+    } --
+    :slider{
+        id = "angle-random-min",
+        label = "Min:",
+        visible = false,
+        min = -180,
+        max = 180,
+        value = 0
+    } --
+    :slider{
+        id = "angle-random-max",
+        label = "Max:",
+        visible = false,
+        min = -180,
+        max = 180,
+        value = 180
+    } --
+    :entry{
+        id = "angle-random-set",
+        label = "Values:",
+        text = "15,30,45",
+        visible = false
+    }
+
+    dialog --
+    :separator{text = "Color:"} --
+    :combobox{
+        id = "color",
+        label = "Option:",
+        options = {Option.None, Option.Next, Option.Previous, Option.RandomSet},
+        option = colorOption,
+        onchange = function()
+            colorOption = dialog.data.color
+
+            dialog --
+            :modify{id = "color-range", visible = colorOption ~= Option.None} --
+            :modify{
+                id = "color-reset",
+                visible = colorOption ~= Option.None and
+                    #dialog.data["color-range"] > 0
+            } --
+        end
+    } --
+    :shades{
+        id = "color-range",
+        label = "Range:",
+        mode = "sort",
+        visible = false,
+        colors = {},
+        onclick = function(ev)
+            if ev.color and ev.button == MouseButton.LEFT then
+                app.fgColor = ev.color
+            end
+        end
+    } --
+    :button{
+        id = "color-reset",
+        text = "Reset",
+        visible = false,
+        onclick = function()
+            dialog --
+            :modify{id = "color-range", colors = {}} --
+            :modify{id = "color-reset", visible = false} --
+        end
+    }
+end
 
 function init(plugin)
+    if not app.isUIAvailable then return end
+
+    -- Only setup the dialog if the UI is available
+    SetupDialog()
+
     -- Listen for a site change to monitor the sprite changes
     onSiteChangeListener = app.events:on('sitechange', OnSiteChange)
 
