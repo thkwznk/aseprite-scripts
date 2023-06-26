@@ -11,6 +11,10 @@
         "Rectangle",
         "Selection",
         "Brush",
-        "BlendMode"
+        "BlendMode",
+        "Palette",
+        "SelectionMode",
+        "MouseButton",
+        "Timer"
     ]
 }
