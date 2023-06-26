@@ -36,10 +36,12 @@ local sizeOption, angleOption, colorOption = Option.None, Option.None,
                                              Option.None
 
 local dialog
+local isDialogOpen = false
 local sprite = app.activeSprite
 local onChangeListener, onSiteChangeListener, onColorChangeListener
 
 local OnChange = function(ev)
+    if not isDialogOpen then return end
     if ev.fromUndo then return end
 
     local data = dialog.data
@@ -152,10 +154,13 @@ end
 
 local OnSiteChange = function()
     if sprite ~= app.activeSprite then
-        sprite.events:off(onChangeListener)
+        if sprite then sprite.events:off(onChangeListener) end
 
         sprite = app.activeSprite
-        onChangeListener = sprite.events:on('change', OnChange)
+
+        if sprite then
+            onChangeListener = sprite.events:on('change', OnChange)
+        end
     end
 end
 
@@ -176,12 +181,7 @@ end
 
 dialog = Dialog {
     title = "Brush Properties", -- Randomize Brush in Aseprite 
-    onclose = function()
-        if sprite then sprite.events:off(onChangeListener) end
-
-        app.events:off(onSiteChangeListener)
-        app.events:off(onColorChangeListener)
-    end
+    onclose = function() isDialogOpen = false end
 }
 
 dialog --
@@ -337,20 +337,27 @@ dialog --
 }
 
 function init(plugin)
+    -- Listen for a site change to monitor the sprite changes
+    onSiteChangeListener = app.events:on('sitechange', OnSiteChange)
+
+    -- Listen for a color change as a trigger to check if there are colors selected
+    onColorChangeListener = app.events:on('fgcolorchange', OnColorChange)
+
     plugin:newCommand{
         id = "RandomizeBrush",
         title = "Brush Properties",
         group = "edit_transform",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
-            onChangeListener = sprite.events:on('change', OnChange)
-            onSiteChangeListener = app.events:on('sitechange', OnSiteChange)
-            onColorChangeListener =
-                app.events:on('fgcolorchange', OnColorChange)
+            isDialogOpen = true
 
             dialog:show{wait = false}
         end
     }
 end
 
-function exit(plugin) end
+function exit(plugin)
+    if sprite then sprite.events:off(onChangeListener) end
+    app.events:off(onSiteChangeListener)
+    app.events:off(onColorChangeListener)
+end
