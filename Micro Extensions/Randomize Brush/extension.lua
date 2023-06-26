@@ -150,6 +150,30 @@ local OnChange = function(ev)
     end
 end
 
+local OnSiteChange = function()
+    if sprite ~= app.activeSprite then
+        sprite.events:off(onChangeListener)
+
+        sprite = app.activeSprite
+        onChangeListener = sprite.events:on('change', OnChange)
+    end
+end
+
+local OnColorChange = function()
+    if #app.range.colors > 1 then
+        local palette = sprite.palettes[1]
+        local colors = {}
+
+        for _, colorIndex in ipairs(app.range.colors) do
+            table.insert(colors, palette:getColor(colorIndex))
+        end
+
+        dialog --
+        :modify{id = "color-range", colors = colors} --
+        :modify{id = "color-reset", visible = true}
+    end
+end
+
 dialog = Dialog {
     title = "Brush Properties", -- Randomize Brush in Aseprite 
     onclose = function()
@@ -320,29 +344,9 @@ function init(plugin)
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             onChangeListener = sprite.events:on('change', OnChange)
-            onSiteChangeListener = app.events:on('sitechange', function()
-                if sprite ~= app.activeSprite then
-                    sprite.events:off(onChangeListener)
-
-                    sprite = app.activeSprite
-                    onChangeListener = sprite.events:on('change', OnChange)
-                end
-            end)
-
-            onColorChangeListener = app.events:on('fgcolorchange', function()
-                if #app.range.colors > 1 then
-                    local palette = sprite.palettes[1]
-                    local colors = {}
-
-                    for _, colorIndex in ipairs(app.range.colors) do
-                        table.insert(colors, palette:getColor(colorIndex))
-                    end
-
-                    dialog --
-                    :modify{id = "color-range", colors = colors} --
-                    :modify{id = "color-reset", visible = true}
-                end
-            end)
+            onSiteChangeListener = app.events:on('sitechange', OnSiteChange)
+            onColorChangeListener =
+                app.events:on('fgcolorchange', OnColorChange)
 
             dialog:show{wait = false}
         end
