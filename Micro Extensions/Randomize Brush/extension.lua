@@ -42,7 +42,9 @@ local onChangeListener, onSiteChangeListener, onColorChangeListener
 
 local OnChange = function(ev)
     if not isDialogOpen then return end
-    if ev.fromUndo then return end
+
+    -- From v1.3-rc1, skip changes from undo
+    if app.apiVersion >= 21 and ev.fromUndo then return end
 
     local data = dialog.data
     local toolPreferences = GetToolPreferences()
