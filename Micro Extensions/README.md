@@ -38,3 +38,7 @@ Provides an option to follow the movement of cels from another layer.
 ## Repeat Cels
 
 *In progress...*
+
+## Randomize Brush
+
+Provides an option to change brush properties (size, angle, color) on every click.

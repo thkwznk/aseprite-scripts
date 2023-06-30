@@ -1,7 +1,7 @@
 {
   "name": "randomize-brush",
   "displayName": "Randomize Brush",
-  "description": "",
+  "description": "Provides an option to change brush properties (size, angle, color) on every click.",
   "version": "1.0.0",
   "author": {
     "name": "Kacper Woźniak",
