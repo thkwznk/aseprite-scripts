@@ -12,6 +12,10 @@ local Option = {
 local SplitString = function(string, separator)
     local result = {}
 
+    if type(string) ~= "string" or type(separator) ~= "string" then
+        return result
+    end
+
     local partial = ""
     for i = 1, #string do
         local c = string:sub(i, i)
@@ -32,10 +36,7 @@ local GetToolPreferences = function(toolId)
     return app.preferences.tool(toolId or app.activeTool)
 end
 
-local sizeOption, angleOption, colorOption = Option.None, Option.None,
-                                             Option.None
-
-local dialog
+local propertiesDialog
 local isDialogOpen = false
 local sprite = app.activeSprite
 local onChangeListener, onSiteChangeListener, onColorChangeListener
@@ -46,81 +47,75 @@ local OnChange = function(ev)
     -- From v1.3-rc1, skip changes from undo
     if app.apiVersion >= 21 and ev.fromUndo then return end
 
-    local data = dialog.data
-    local toolPreferences = GetToolPreferences()
+    local data = propertiesDialog.data
+    local tool = GetToolPreferences()
 
-    if sizeOption == Option.Grow or sizeOption == Option.Shrink then
-        local variable = data["size-variable"] or 0
-        local size = toolPreferences.brush.size
+    if data.sizeOption == Option.Grow or data.sizeOption == Option.Shrink then
+        local variable = data.sizeVariable or 0
+        local size = tool.brush.size
 
-        if sizeOption == Option.Grow then size = size + variable end
-        if sizeOption == Option.Shrink then size = size - variable end
+        if data.sizeOption == Option.Grow then size = size + variable end
+        if data.sizeOption == Option.Shrink then size = size - variable end
 
-        toolPreferences.brush.size = math.max(size, 1)
+        tool.brush.size = math.max(size, 1)
     end
 
-    if sizeOption == Option.Random then
-        local sizeMin = data["size-random-min"] or 1
-        local sizeMax = data["size-random-max"] or sizeMin
+    if data.sizeOption == Option.Random then
+        local sizeMin = data.sizeRandomMin or 1
+        local sizeMax = data.sizeRandomMax or sizeMin
 
         local min = math.min(sizeMin, sizeMax)
         local max = math.max(sizeMin, sizeMax)
 
-        toolPreferences.brush.size = math.max(math.random(min, max), 1)
+        tool.brush.size = math.max(math.random(min, max), 1)
     end
 
-    if sizeOption == Option.RandomSet then
-        local set = data["size-random-set"]
-        if set then
-            local rawValues = SplitString(set, ",")
-            local values = {}
-
-            for _, rawValue in ipairs(rawValues) do
-                table.insert(values, tonumber(rawValue))
-            end
-
-            local size = values[math.random(1, #values)]
-            size = math.abs(math.ceil(size)) -- Size needs to be a positive, non-zero value
-
-            toolPreferences.brush.size = size
-        end
-    end
-
-    local angleSet = data["angle-random-set"]
-
-    if angleOption == Option.Rotate then
-        local variable = data["angle-variable"] or 0
-        local angle = toolPreferences.brush.angle + variable
-
-        toolPreferences.brush.angle = (angle % 360) - 180
-    end
-
-    if angleOption == Option.Random then
-        local angleMin = data["angle-random-min"]
-        local angleMax = data["angle-random-max"]
-
-        local smallerValue = math.min(angleMin, angleMax)
-        local biggerValue = math.max(angleMin, angleMax)
-
-        local d = math.min(biggerValue - smallerValue,
-                           360 + smallerValue - biggerValue)
-
-        toolPreferences.brush.angle = ((angleMin + math.random(0, d)) % 360) -
-                                          180
-    end
-
-    if angleOption == Option.RandomSet and angleSet then
-        local rawValues = SplitString(angleSet, ",")
+    if data.sizeOption == Option.RandomSet then
+        local rawValues = SplitString(data.sizeRandomSet, ",")
         local values = {}
 
         for _, rawValue in ipairs(rawValues) do
             table.insert(values, tonumber(rawValue))
         end
 
-        toolPreferences.brush.angle = values[math.random(1, #values)]
+        if #values == 0 then return end
+
+        local size = values[math.random(1, #values)]
+        size = math.abs(math.ceil(size)) -- Size needs to be a positive, non-zero value
+
+        tool.brush.size = size
     end
 
-    local colorRange = data["color-range"]
+    if data.angleOption == Option.Rotate then
+        local variable = data.angleVariable or 0
+        local angle = tool.brush.angle + variable
+
+        tool.brush.angle = (angle % 360) - 180
+    end
+
+    if data.angleOption == Option.Random then
+        local smallerValue = math.min(data.angleRandomMin, data.angleRandomMax)
+        local biggerValue = math.max(data.angleRandomMin, data.angleRandomMax)
+
+        local d = math.min(biggerValue - smallerValue,
+                           360 + smallerValue - biggerValue)
+
+        tool.brush.angle = ((data.angleRandomMin + math.random(0, d)) % 360) -
+                               180
+    end
+
+    if data.angleOption == Option.RandomSet then
+        local rawValues = SplitString(data.angleRandomSet, ",")
+        local values = {}
+
+        for _, rawValue in ipairs(rawValues) do
+            table.insert(values, tonumber(rawValue))
+        end
+
+        tool.brush.angle = values[math.random(1, #values)]
+    end
+
+    local colorRange = data.colorRange
 
     if #colorRange == 0 then
         local palette = sprite.palettes[1]
@@ -131,7 +126,7 @@ local OnChange = function(ev)
         end
     end
 
-    if colorOption == Option.Next or colorOption == Option.Previous then
+    if data.colorOption == Option.Next or data.colorOption == Option.Previous then
         local index
 
         for i = 1, #colorRange do
@@ -141,17 +136,17 @@ local OnChange = function(ev)
             end
         end
 
-        if colorOption == Option.Next then
+        if data.colorOption == Option.Next then
             index = math.min(index + 1, #colorRange)
         end
-        if colorOption == Option.Previous then
+        if data.colorOption == Option.Previous then
             index = math.max(index - 1, 1)
         end
 
         app.fgColor = colorRange[index]
     end
 
-    if colorOption == Option.RandomSet then
+    if data.colorOption == Option.RandomSet then
         local randomIndex = math.random(1, #colorRange)
         app.fgColor = colorRange[randomIndex]
     end
@@ -164,7 +159,9 @@ local OnSiteChange = function()
     if previousSprite == app.activeSprite then return end
 
     -- If the previous sprite wasn't nil stop listening for changes
-    if previousSprite then previousSprite.events:off(onChangeListener) end
+    if previousSprite and onChangeListener then
+        previousSprite.events:off(onChangeListener)
+    end
 
     -- Update the saved sprite
     sprite = app.activeSprite
@@ -174,18 +171,19 @@ local OnSiteChange = function()
 
     -- If the dialog was open and the focus is back on any sprite, show the dialog
     if not previousSprite and sprite and isDialogOpen then
-        dialog:show{wait = false}
+        propertiesDialog:show{wait = false}
     end
 
     -- If the dialog was open and the focus is away from any sprite, close the dialog
     if previousSprite and not sprite and isDialogOpen then
-        dialog:close()
+        propertiesDialog:close()
         isDialogOpen = true -- Mark it is open again
     end
 end
 
 local OnColorChange = function()
-    if isDialogOpen and colorOption ~= Option.None and #app.range.colors > 1 then
+    if isDialogOpen and propertiesDialog.data.colorOption ~= Option.None and
+        #app.range.colors > 1 then
         local palette = sprite.palettes[1]
         local colors = {}
 
@@ -193,65 +191,61 @@ local OnColorChange = function()
             table.insert(colors, palette:getColor(colorIndex))
         end
 
-        dialog --
-        :modify{id = "color-range", colors = colors} --
-        :modify{id = "color-reset", visible = true}
+        propertiesDialog --
+        :modify{id = "colorRange", colors = colors} --
+        :modify{id = "colorReset", visible = true}
     end
 end
 
-dialog = Dialog {
-    title = "Brush Properties", -- Randomize Brush in Aseprite 
-    onclose = function() isDialogOpen = false end
-}
+local BrushPropertiesDialog = function()
+    local dialog = Dialog {
+        title = "Brush Properties", -- Randomize Brush in Aseprite 
+        onclose = function() isDialogOpen = false end
+    }
 
-local SetupDialog = function()
     dialog --
     :separator{text = "Size:"} --
     :combobox{
-        id = "size",
+        id = "sizeOption",
         label = "Option:",
         options = {
             Option.None, Option.Grow, Option.Shrink, Option.Random,
             Option.RandomSet
         },
-        Option = sizeOption,
+        Option = Option.None,
         onchange = function()
-            sizeOption = dialog.data.size
-            local toolPreferences = GetToolPreferences()
+            local option = dialog.data.sizeOption
+            local tool = GetToolPreferences()
 
             dialog --
             :modify{
-                id = "size-variable",
-                visible = sizeOption == Option.Grow or sizeOption ==
-                    Option.Shrink
+                id = "sizeVariable",
+                visible = option == Option.Grow or option == Option.Shrink
             } --
             :modify{
-                id = "size-random-min",
-                visible = sizeOption == Option.Random,
-                text = tostring(math.floor(toolPreferences.brush.size * 0.5))
+                id = "sizeRandomMin",
+                visible = option == Option.Random,
+                text = tostring(math.floor(tool.brush.size * 0.5))
             } --
             :modify{
-                id = "size-random-max",
-                visible = sizeOption == Option.Random,
-                text = tostring(math.ceil(toolPreferences.brush.size * 1.5))
+                id = "sizeRandomMax",
+                visible = option == Option.Random,
+                text = tostring(math.ceil(tool.brush.size * 1.5))
             } --
-            :modify{
-                id = "size-random-set",
-                visible = sizeOption == Option.RandomSet
-            }
+            :modify{id = "sizeRandomSet", visible = option == Option.RandomSet}
         end
     } --
-    :number{id = "size-variable", label = "Value:", text = "1", visible = false} --
+    :number{id = "sizeVariable", label = "Value:", text = "1", visible = false} --
     :number{
-        id = "size-random-min",
+        id = "sizeRandomMin",
         label = "Min/Max:",
         text = "1",
         visible = false,
         decimals = 0
     } --
-    :number{id = "size-random-max", text = "10", visible = false, decimals = 0} --
+    :number{id = "sizeRandomMax", text = "10", visible = false, decimals = 0} --
     :entry{
-        id = "size-random-set",
+        id = "sizeRandomSet",
         label = "Values:",
         text = "1,2,3",
         visible = false
@@ -260,37 +254,31 @@ local SetupDialog = function()
     dialog --
     :separator{text = "Angle:"} --
     :combobox{
-        id = "angle",
+        id = "angleOption",
         label = "Option:",
         options = {Option.None, Option.Rotate, Option.Random, Option.RandomSet},
-        Option = angleOption,
+        Option = Option.None,
         onchange = function()
-            angleOption = dialog.data.angle
-            local toolPreferences = GetToolPreferences()
+            local option = dialog.data.angleOption
+            local tool = GetToolPreferences()
 
             dialog --
+            :modify{id = "angleVariable", visible = option == Option.Rotate} --
             :modify{
-                id = "angle-variable",
-                visible = angleOption == Option.Rotate
+                id = "angleRandomMin",
+                visible = option == Option.Random,
+                text = tostring(math.floor(tool.brush.angle * 0.5))
             } --
             :modify{
-                id = "angle-random-min",
-                visible = angleOption == Option.Random,
-                text = tostring(math.floor(toolPreferences.brush.angle * 0.5))
+                id = "angleRandomMax",
+                visible = option == Option.Random,
+                text = tostring(math.ceil(tool.brush.angle * 1.5))
             } --
-            :modify{
-                id = "angle-random-max",
-                visible = angleOption == Option.Random,
-                text = tostring(math.ceil(toolPreferences.brush.angle * 1.5))
-            } --
-            :modify{
-                id = "angle-random-set",
-                visible = angleOption == Option.RandomSet
-            }
+            :modify{id = "angleRandomSet", visible = option == Option.RandomSet}
         end
     } --
     :slider{
-        id = "angle-variable",
+        id = "angleVariable",
         label = "Value:",
         visible = false,
         min = -180,
@@ -298,7 +286,7 @@ local SetupDialog = function()
         value = 30
     } --
     :slider{
-        id = "angle-random-min",
+        id = "angleRandomMin",
         label = "Min:",
         visible = false,
         min = -180,
@@ -306,7 +294,7 @@ local SetupDialog = function()
         value = 0
     } --
     :slider{
-        id = "angle-random-max",
+        id = "angleRandomMax",
         label = "Max:",
         visible = false,
         min = -180,
@@ -314,7 +302,7 @@ local SetupDialog = function()
         value = 180
     } --
     :entry{
-        id = "angle-random-set",
+        id = "angleRandomSet",
         label = "Values:",
         text = "15,30,45",
         visible = false
@@ -323,24 +311,24 @@ local SetupDialog = function()
     dialog --
     :separator{text = "Color:"} --
     :combobox{
-        id = "color",
+        id = "colorOption",
         label = "Option:",
         options = {Option.None, Option.Next, Option.Previous, Option.RandomSet},
-        option = colorOption,
+        option = Option.None,
         onchange = function()
-            colorOption = dialog.data.color
+            local option = dialog.data.colorOption
+            local hasColorRange = #dialog.data.colorRange > 0
 
             dialog --
-            :modify{id = "color-range", visible = colorOption ~= Option.None} --
+            :modify{id = "colorRange", visible = option ~= Option.None} --
             :modify{
-                id = "color-reset",
-                visible = colorOption ~= Option.None and
-                    #dialog.data["color-range"] > 0
+                id = "colorReset",
+                visible = option ~= Option.None and hasColorRange
             } --
         end
     } --
     :shades{
-        id = "color-range",
+        id = "colorRange",
         label = "Range:",
         mode = "sort",
         visible = false,
@@ -352,22 +340,24 @@ local SetupDialog = function()
         end
     } --
     :button{
-        id = "color-reset",
+        id = "colorReset",
         text = "Reset",
         visible = false,
         onclick = function()
             dialog --
-            :modify{id = "color-range", colors = {}} --
-            :modify{id = "color-reset", visible = false} --
+            :modify{id = "colorRange", colors = {}} --
+            :modify{id = "colorReset", visible = false} --
         end
     }
+
+    return dialog
 end
 
 function init(plugin)
     if not app.isUIAvailable then return end
 
     -- Only setup the dialog if the UI is available
-    SetupDialog()
+    propertiesDialog = BrushPropertiesDialog()
 
     -- Listen for a site change to monitor the sprite changes
     onSiteChangeListener = app.events:on('sitechange', OnSiteChange)
@@ -383,7 +373,7 @@ function init(plugin)
         onclick = function()
             isDialogOpen = true
 
-            dialog:show{wait = false}
+            propertiesDialog:show{wait = false}
         end
     }
 end
