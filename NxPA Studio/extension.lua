@@ -21,7 +21,9 @@ function init(plugin)
         id = "AddInbetweenFrames",
         title = "Inbetween Frames",
         group = "frame_popup_reverse",
-        onenabled = function() return app.activeSprite ~= nil end,
+        onenabled = function()
+            return app.activeSprite ~= nil and #app.range.frames > 1
+        end,
         onclick = function()
             local dialog = TweenDialog("Add Inbetween Frames")
             dialog:show()

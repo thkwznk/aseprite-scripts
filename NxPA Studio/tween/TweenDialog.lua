@@ -42,9 +42,10 @@ return function(dialogTitle)
     } --
     :separator() --
     :number{id = "framesToAdd", label = "# of frames to add", text = "1"} --
+    :separator() --
     :button{
         id = "tweenButton",
-        text = "Tween",
+        text = "OK",
         onclick = function()
             Tweener:Tween{
                 sprite = sprite,
