@@ -118,10 +118,12 @@ Unreleased:
   - [Improvement] Rename to "Inbetween Frames"
   - [Improvement] Change sliders to number inputs for the frame range, this should allow for easier selection in files with a high number of frames
   - [Fix] Works correctly with groups
+- *Advanced Scaling*
+  - [Improvement] Reworked dialog window for UX consistency with Aseprite
+  - [Improvement] Add an option to scale an image multiple times
 
 Update v?.?.?:
 
-- [Improvement] *Advanced Scaling* lock the UI when dialog is shown for consistency with the rest of Aseprite and show "Processing..." dialog when resizing
 - [Improvement] *Analyze Colors* reintroduce color replacement and color selection on click
 
 ## Center Image

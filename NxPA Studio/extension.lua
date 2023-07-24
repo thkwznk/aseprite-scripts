@@ -8,12 +8,12 @@ function init(plugin)
 
     plugin:newCommand{
         id = "AdvancedScaling",
-        title = "Advanced Scaling",
+        title = "Advanced Scaling...",
         group = "sprite_size",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             local dialog = ScaleDialog("Advanced Scaling")
-            dialog:show{wait = false}
+            dialog:show()
         end
     }
 
@@ -24,7 +24,7 @@ function init(plugin)
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             local dialog = TweenDialog("Add Inbetween Frames")
-            dialog:show{wait = true}
+            dialog:show()
         end
     }
 
