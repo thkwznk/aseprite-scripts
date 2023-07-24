@@ -121,6 +121,7 @@ Unreleased:
 - *Advanced Scaling*
   - [Improvement] Reworked dialog window for UX consistency with Aseprite
   - [Improvement] Add an option to scale an image multiple times
+- [Improvement] Add keyboard shortcuts
 
 Update v?.?.?:
 

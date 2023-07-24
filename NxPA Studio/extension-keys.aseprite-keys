@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<keyboard version="1">
+    <commands>
+        <key command="AddInbetweenFrames" shortcut="Alt+Shift+I" />
+        <key command="AdvancedScaling" shortcut="Ctrl+Alt+Shift+I" />
+    </commands>
+</keyboard>

@@ -19,6 +19,12 @@
       {
         "path": "./extension.lua"
       }
+    ],
+    "keys": [
+      {
+        "id": "nxpa-studio-keys",
+        "path": "./extension-keys.aseprite-keys"
+      }
     ]
   }
 }
