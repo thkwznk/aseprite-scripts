@@ -1,5 +1,13 @@
-Transaction = dofile("../shared/Transaction.lua");
 ScaleAlgorithm = dofile("./ScaleAlgorithm.lua");
+
+local Transaction = function(action)
+    return function()
+        if app.activeSprite == nil then return end
+
+        app.transaction(action)
+        app.refresh()
+    end
+end
 
 return function(dialogTitle)
     -- Declare a variable for dialog to reference in "onSiteChange" event handler
