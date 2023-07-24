@@ -1,87 +1,87 @@
 local Tweener = {isDebug = false}
 
-function Tweener:tween(config)
-    if not config or not config["sprite"] or not config["framesToAdd"] then
-        return
-    end
+function Tweener:Tween(config)
+    if not config or not config.sprite then return end
 
     app.transaction(function()
-        local sprite = config["sprite"]
-        local firstFrame = config["firstFrame"]
-        local lastFrame = config["lastFrame"]
-        local numberOfFramesToAdd = config["framesToAdd"]
+        config.firstFrame = config.firstFrame or 1
+        config.lastFrame = config.lastFrame or #config.sprite.frames
+        config.framesToAdd = config.framesToAdd or 1
 
-        local lastFrameToMove = lastFrame + (lastFrame - firstFrame) *
-                                    numberOfFramesToAdd
-
-        self:addInbetweenFrames(sprite, firstFrame, lastFrame,
-                                numberOfFramesToAdd)
-        self:moveInbetweenFrames(sprite, firstFrame, lastFrameToMove,
-                                 numberOfFramesToAdd)
+        self:AddInbetweenFrames(config)
+        self:MoveInbetweenFrames(config.sprite.layers, config)
     end)
 end
 
-function Tweener:addInbetweenFrames(sprite, firstFrame, lastFrame,
-                                    numberOfFramesToAdd)
+function Tweener:AddInbetweenFrames(config)
     -- Add inbetween frames after all frames except for the last one
-    for i = firstFrame, lastFrame - 1 do
-        local frameToClone = i + (i - firstFrame) * numberOfFramesToAdd
+    for i = config.firstFrame, config.lastFrame - 1 do
+        local frameToClone = i + (i - config.firstFrame) * config.framesToAdd
 
-        for j = 1, numberOfFramesToAdd do sprite:newFrame(frameToClone) end
+        for _ = 1, config.framesToAdd do
+            config.sprite:newFrame(frameToClone)
+        end
     end
 end
 
-function Tweener:moveInbetweenFrames(sprite, firstFrame, lastFrame,
-                                     numberOfFramesToAdd)
+function Tweener:MoveInbetweenFrames(layers, config)
+    self:Log("Processing frames: %d-%d", config.firstFrame, config.lastFrame)
+
+    for _, layer in ipairs(layers) do
+        self:Log("Processing layer %s", layer.name)
+
+        if layer.isGroup then
+            self:MoveInbetweenFrames(layer.layers, config)
+        else
+            self:MoveLayerFrames(layer, config)
+        end
+
+        self:Log(" ")
+    end
+end
+
+function Tweener:MoveLayerFrames(layer, config)
+    local delta = config.framesToAdd + 1
+    self:Log("Delta %d", delta)
+
+    local lastFrameToMove = config.lastFrame +
+                                (config.lastFrame - config.firstFrame) *
+                                config.framesToAdd
+
     local stepX = 0
     local stepY = 0
 
-    local delta = numberOfFramesToAdd + 1
+    local cels = {}
 
-    self:log("Delta " .. tostring(delta))
+    for frameNumber = config.firstFrame, lastFrameToMove do
+        local cel = layer:cel(frameNumber)
+        table.insert(cels, cel)
+    end
 
-    self:log("Processing frames from " .. tostring(firstFrame) .. " to " ..
-                 tostring(lastFrame))
+    for _, cel in ipairs(cels) do
+        self:Log("Processing cel %d", cel.frameNumber)
 
-    for layerNumber, layer in ipairs(sprite.layers) do
-        self:log("Processing layer " .. tostring(layerNumber) .. "...")
+        local step = (cel.frameNumber - config.firstFrame) % delta
+        self:Log("Step %d", step)
 
-        for _, cel in ipairs(layer.cels) do
-            local celNumber = cel.frameNumber
+        if step == 0 then
+            self:Log("Next Original Cel %d", cel.frameNumber + delta)
 
-            if celNumber < firstFrame or celNumber >= lastFrame then
-                goto continue
+            local next = layer:cel(cel.frameNumber + delta)
+
+            if next then
+                stepX = (next.position.x - cel.position.x) / delta
+                stepY = (next.position.y - cel.position.y) / delta
             end
-
-            self:log("Processing cel " .. tostring(celNumber) .. "")
-
-            local step = (celNumber - firstFrame) % delta
-
-            self:log("Step " .. tostring(step))
-
-            if step == 0 then
-                self:log("Next Original Cel " .. tostring(celNumber + delta))
-
-                local next = layer.cels[celNumber + delta]
-
-                if next then
-                    stepX = (next.position.x - cel.position.x) / delta
-                    stepY = (next.position.y - cel.position.y) / delta
-                end
-            else
-                cel.position = {
-                    x = cel.position.x + math.floor(stepX * step),
-                    y = cel.position.y + math.floor(stepY * step)
-                }
-            end
-
-            ::continue::
+        else
+            cel.position = {
+                x = cel.position.x + math.floor(stepX * step),
+                y = cel.position.y + math.floor(stepY * step)
+            }
         end
-
-        self:log(" ")
     end
 end
 
-function Tweener:log(message) if self.isDebug then print(message) end end
+function Tweener:Log(...) if self.isDebug then print(string.format(...)) end end
 
-return Tweener;
+return Tweener

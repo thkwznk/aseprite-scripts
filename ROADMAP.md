@@ -116,11 +116,11 @@ Unreleased:
 - *Add Inbetween Frames*
   - [Improvement] Move the option to the frames context menu
   - [Improvement] Rename to "Inbetween Frames"
-  - [Improvement] Change sliders to number inputs for the frame range, this should allow for easier selection in files with a high number of frames 
+  - [Improvement] Change sliders to number inputs for the frame range, this should allow for easier selection in files with a high number of frames
+  - [Fix] Works correctly with groups
 
 Update v?.?.?:
 
-- [Fix] *Add Inbetween Frames* should work with groups, currently it doesn't
 - [Improvement] *Advanced Scaling* lock the UI when dialog is shown for consistency with the rest of Aseprite and show "Processing..." dialog when resizing
 - [Improvement] *Analyze Colors* reintroduce color replacement and color selection on click
 

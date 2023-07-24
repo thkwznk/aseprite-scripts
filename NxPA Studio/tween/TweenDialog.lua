@@ -18,8 +18,8 @@ return function(dialogTitle)
 
         dialog:modify{
             id = "tweenButton",
-            enabled = firstFrame > 0 and lastFrame <= #sprite.frames and
-                firstFrame < lastFrame
+            enabled = firstFrame > 0 and lastFrame > 0 and lastFrame <=
+                #sprite.frames and firstFrame < lastFrame
         }
 
         -- Highlight selected frames
@@ -46,8 +46,8 @@ return function(dialogTitle)
         id = "tweenButton",
         text = "Tween",
         onclick = function()
-            Tweener:tween{
-                sprite = app.activeSprite,
+            Tweener:Tween{
+                sprite = sprite,
                 firstFrame = dialog.data["firstFrame"],
                 lastFrame = dialog.data["lastFrame"],
                 framesToAdd = dialog.data["framesToAdd"]
