@@ -17,7 +17,7 @@
   "contributes": {
     "scripts": [
       {
-        "path": "./NxPAStudio.lua"
+        "path": "./extension.lua"
       }
     ]
   }

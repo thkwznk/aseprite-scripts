@@ -7,15 +7,20 @@ function SelectFrames(from, to)
 end
 
 return function(dialogTitle)
+    local sprite = app.activeSprite
     local dialog = Dialog(dialogTitle)
 
-    if app.range.isEmpty then SelectFrames(1, #app.activeSprite.frames) end
+    if app.range.isEmpty then SelectFrames(1, #sprite.frames) end
 
     local function onchange()
         local firstFrame = dialog.data["firstFrame"]
         local lastFrame = dialog.data["lastFrame"]
 
-        dialog:modify{id = "tweenButton", enabled = firstFrame < lastFrame}
+        dialog:modify{
+            id = "tweenButton",
+            enabled = firstFrame > 0 and lastFrame <= #sprite.frames and
+                firstFrame < lastFrame
+        }
 
         -- Highlight selected frames
         SelectFrames(firstFrame, lastFrame)
@@ -23,20 +28,16 @@ return function(dialogTitle)
 
     dialog --
     :separator{text = "Frames"} --
-    :slider{
+    :number{
         id = "firstFrame",
-        label = "From",
-        min = 1,
-        max = #app.activeSprite.frames,
-        value = app.range.frames[1].frameNumber,
+        label = "From:",
+        text = tostring(app.range.frames[1].frameNumber),
         onchange = onchange
     } --
-    :slider{
+    :number{
         id = "lastFrame",
-        label = "To",
-        min = 1,
-        max = #app.activeSprite.frames,
-        value = app.range.frames[#app.range.frames].frameNumber,
+        label = "To:",
+        text = tostring(app.range.frames[#app.range.frames].frameNumber),
         onchange = onchange
     } --
     :separator() --
@@ -56,5 +57,5 @@ return function(dialogTitle)
     } --
     :button{text = "Cancel"}
 
-    return dialog;
+    return dialog
 end

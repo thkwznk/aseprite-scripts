@@ -113,7 +113,10 @@ Update v2.0.0:
 
 Unreleased:
 
-- ...
+- *Add Inbetween Frames*
+  - [Improvement] Move the option to the frames context menu
+  - [Improvement] Rename to "Inbetween Frames"
+  - [Improvement] Change sliders to number inputs for the frame range, this should allow for easier selection in files with a high number of frames 
 
 Update v?.?.?:
 

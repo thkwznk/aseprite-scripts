@@ -3,44 +3,37 @@ TweenDialog = dofile("./tween/TweenDialog.lua");
 ColorAnalyzerDialog = dofile("./color-analyzer/ColorAnalyzerDialog.lua");
 
 function init(plugin)
+    -- Check is UI available
+    if not app.isUIAvailable then return end
+
     plugin:newCommand{
-        id = "advanced-scaling",
+        id = "AdvancedScaling",
         title = "Advanced Scaling",
         group = "sprite_size",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
-            -- Check is UI available
-            if not app.isUIAvailable then return end
-
             local dialog = ScaleDialog("Advanced Scaling")
             dialog:show{wait = false}
         end
     }
 
     plugin:newCommand{
-        id = "add-inbetween-frame",
-        title = "Add Inbetween Frames",
-        group = "cel_delete",
+        id = "AddInbetweenFrames",
+        title = "Inbetween Frames",
+        group = "frame_popup_reverse",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
-            -- Check is UI available
-            if not app.isUIAvailable then return end
-
             local dialog = TweenDialog("Add Inbetween Frames")
             dialog:show{wait = true}
         end
     }
 
     plugin:newCommand{
-        id = "color-analyzer",
+        id = "ColorAnalyzer",
         title = "Analyze Colors",
         group = "sprite_color",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
-            -- Check are UI and sprite available
-            if not app.isUIAvailable then return end
-            if app.activeSprite == nil then return end
-
             ColorAnalyzerDialog:Create("Analyze Colors")
             ColorAnalyzerDialog:Show()
         end
