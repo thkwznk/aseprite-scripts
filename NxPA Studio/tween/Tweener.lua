@@ -3,10 +3,12 @@ local Tweener = {isDebug = false}
 function Tweener:Tween(config)
     if not config or not config.sprite then return end
 
+    config.firstFrame = config.firstFrame or 1
+    config.lastFrame = config.lastFrame or #config.sprite.frames
+    config.framesToAdd = config.framesToAdd or 1
+
     app.transaction(function()
-        config.firstFrame = config.firstFrame or 1
-        config.lastFrame = config.lastFrame or #config.sprite.frames
-        config.framesToAdd = config.framesToAdd or 1
+        self:Log("Processing Frames: %d-%d", config.firstFrame, config.lastFrame)
 
         self:AddInbetweenFrames(config)
         self:MoveInbetweenFrames(config.sprite.layers, config)
@@ -14,21 +16,23 @@ function Tweener:Tween(config)
 end
 
 function Tweener:AddInbetweenFrames(config)
+    self:Log("Adding Inbetween Frames: %d-%d", config.firstFrame,
+             config.lastFrame)
+
     -- Add inbetween frames after all frames except for the last one
-    for i = config.firstFrame, config.lastFrame - 1 do
-        local frameToClone = i + (i - config.firstFrame) * config.framesToAdd
+    for i = 0, config.lastFrame - config.firstFrame - 1 do
+        local originalFrame = config.firstFrame + i * (config.framesToAdd + 1)
 
         for _ = 1, config.framesToAdd do
-            config.sprite:newFrame(frameToClone)
+            local frame = config.sprite:newFrame(originalFrame)
+            self:Log("Copied Frames %d as %d", originalFrame, frame.frameNumber)
         end
     end
 end
 
 function Tweener:MoveInbetweenFrames(layers, config)
-    self:Log("Processing frames: %d-%d", config.firstFrame, config.lastFrame)
-
     for _, layer in ipairs(layers) do
-        self:Log("Processing layer %s", layer.name)
+        self:Log("Processing Layer: %s", layer.name)
 
         if layer.isGroup then
             self:MoveInbetweenFrames(layer.layers, config)
@@ -36,7 +40,7 @@ function Tweener:MoveInbetweenFrames(layers, config)
             self:MoveLayerFrames(layer, config)
         end
 
-        self:Log(" ")
+        self:Log("==========")
     end
 end
 
@@ -59,7 +63,7 @@ function Tweener:MoveLayerFrames(layer, config)
     end
 
     for _, cel in ipairs(cels) do
-        self:Log("Processing cel %d", cel.frameNumber)
+        self:Log("Processing Cel %d", cel.frameNumber)
 
         local step = (cel.frameNumber - config.firstFrame) % delta
         self:Log("Step %d", step)
