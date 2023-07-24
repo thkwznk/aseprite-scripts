@@ -121,6 +121,8 @@ Unreleased:
 - *Advanced Scaling*
   - [Improvement] Reworked dialog window for UX consistency with Aseprite
   - [Improvement] Add an option to scale an image multiple times
+- *Analyze Colors*
+  - [Improvement] Improve the speed of color analysis
 - [Improvement] Add keyboard shortcuts
 
 Update v?.?.?:

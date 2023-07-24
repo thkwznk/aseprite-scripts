@@ -3,22 +3,28 @@ SortOptions = dofile("./SortOptions.lua")
 local ColorList = {}
 
 function ColorList:LoadColorsFromImage(image)
-    for pixel in image:pixels() do
-        local color = Color(pixel())
+    local getPixel = image.getPixel
 
-        -- Skip fully transparent pixels
-        if color.alpha == 0 then goto skipPixel end
+    for x = 0, image.width - 1 do
+        for y = 0, image.height - 1 do
+            local colorValue = getPixel(image, x, y)
 
-        for i, colorEntry in ipairs(self) do
-            if colorEntry.color.rgbaPixel == color.rgbaPixel then
-                self[i].count = self[i].count + 1
-                goto skipPixel
+            -- Skip fully transparent pixels
+            if colorValue > 0 then
+                local exists = false
+                for _, colorEntry in ipairs(self) do
+                    if colorEntry.color.rgbaPixel == colorValue then
+                        colorEntry.count = colorEntry.count + 1
+                        exists = true
+                        break
+                    end
+                end
+
+                if not exists then
+                    table.insert(self, {color = Color(colorValue), count = 1})
+                end
             end
         end
-
-        table.insert(self, {color = color, count = 1})
-
-        ::skipPixel::
     end
 
     return self

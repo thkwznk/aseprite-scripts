@@ -58,11 +58,7 @@ local ColorAnalyzerDialog = function(title)
         options = SortOptions,
         onchange = function()
             sortBy = dialog.data["sortBy"]
-
-            colorEntries = ColorList --
-            :Clear() --
-            :LoadColorsFromImage(image) --
-            :GetColors(sortBy)
+            colorEntries = ColorList:GetColors(sortBy)
 
             Refresh()
         end
