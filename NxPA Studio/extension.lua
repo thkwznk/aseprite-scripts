@@ -36,8 +36,17 @@ function init(plugin)
         group = "sprite_color",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
-            ColorAnalyzerDialog:Create("Analyze Colors")
-            ColorAnalyzerDialog:Show()
+            local dialog = ColorAnalyzerDialog("Analyze Colors")
+
+            dialog:show{wait = false}
+            dialog:close()
+
+            -- Don't display the dialog in the center of the screen, It covers the image
+            local bounds = dialog.bounds
+            bounds.x = bounds.x / 2
+            bounds.width = 250
+
+            dialog:show{bounds = bounds}
         end
     }
 end
