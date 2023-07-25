@@ -113,25 +113,11 @@ Update v2.0.0:
 
 Unreleased:
 
-- *Add Inbetween Frames*
-  - [Improvement] Move the option to the frames context menu
-  - [Improvement] Rename to "Inbetween Frames"
-  - [Improvement] Change sliders to number inputs for the frame range, this should allow for easier selection in files with a high number of frames
-  - [Fix] Works correctly with groups
-- *Advanced Scaling*
-  - [Improvement] Reworked dialog window for UX consistency with Aseprite
-  - [Improvement] Add an option to scale an image multiple times
-  - [Improvement] Reintroduce the Hawk scaling algorithm
-  - [Improvement] Improve performance of image scaling
-- *Analyze Colors*
-  - [Improvement] Improve performance of color analysis
-  - [Improvement] Reintroduce color replacement
-  - [Improvement] Reworked dialog window to fit on smaller screens
-- [Improvement] Add keyboard shortcuts
-
-Update v?.?.?:
-
 - 
+
+Update v3.0.0:
+
+- [Improvement] Rebuild the *Analyze Colors* using the canvas widget
 
 ## Center Image
 
