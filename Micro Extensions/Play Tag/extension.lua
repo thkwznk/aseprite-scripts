@@ -182,7 +182,7 @@ function PlaySequence(tagSequence)
         end
     end
 
-    RecursiveTimer(frameSequence, 1)
+    if #frameSequence > 0 then RecursiveTimer(frameSequence, 1) end
 end
 
 function PlaybackSequencesDialog(options)
