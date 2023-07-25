@@ -191,8 +191,6 @@ function PlaybackSequencesDialog(options)
     table.insert(tagNames, 1, "")
 
     local dialog = Dialog(options.title)
-    -- TODO: Keep a cache of tags by their UUID
-
     local sequenceIds = options.properties(pluginKey).sequence or {}
     local sequenceNames = {}
 
@@ -479,5 +477,3 @@ function init(plugin)
 end
 
 function exit(plugin) end
-
--- TODO: Check if repeats work with this
