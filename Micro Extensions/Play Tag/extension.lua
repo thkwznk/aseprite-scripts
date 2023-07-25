@@ -52,6 +52,9 @@ function PlayAllFrames()
 end
 
 function GetCustomTagIndex(sprite, tagIndex)
+    -- Custom tags are only available from v1.3-rc1
+    if app.apiVersion < 21 then return tagIndex end
+
     local tagKey = "tag-" .. tostring(tagIndex)
     local tagUniqueId = sprite.properties(pluginKey)[tagKey]
 
@@ -285,93 +288,98 @@ function GetPlaybackOptions(sprite)
 end
 
 function init(plugin)
-    plugin:newCommand{
-        id = "PlaybackShortcuts",
-        title = "Playback Shortcuts...",
-        group = "cel_animation",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            local sprite = app.activeSprite
-            local dialog = Dialog("Playback Shortcuts")
+    -- Custom tags are only available from v1.3-rc1
+    if app.apiVersion >= 21 then
 
-            local playbackOptions, tagDictionary = GetPlaybackOptions(sprite)
+        plugin:newCommand{
+            id = "PlaybackShortcuts",
+            title = "Playback Shortcuts...",
+            group = "cel_animation",
+            onenabled = function() return app.activeSprite ~= nil end,
+            onclick = function()
+                local sprite = app.activeSprite
+                local dialog = Dialog("Playback Shortcuts")
 
-            for i = 1, 9 do
-                local option = playbackOptions[1]
-                local customTagIndex = GetCustomTagIndex(sprite, i)
+                local playbackOptions, tagDictionary =
+                    GetPlaybackOptions(sprite)
 
-                if customTagIndex == SequenceIndex then
-                    option = SequencePlaybackOption
-                elseif customTagIndex ~= i then
-                    option = playbackOptions[customTagIndex + 1]
-                end
+                for i = 1, 9 do
+                    local option = playbackOptions[1]
+                    local customTagIndex = GetCustomTagIndex(sprite, i)
 
-                dialog:combobox{
-                    id = "tag-" .. tostring(i),
-                    label = "Ctrl+" .. tostring(i),
-                    options = playbackOptions,
-                    option = option
-                }
-            end
-
-            dialog --
-            :separator() --
-            :button{
-                text = "Reset",
-                onclick = function()
-                    for i = 1, 9 do
-                        dialog:modify{
-                            id = "tag-" .. tostring(i),
-                            option = DefaultPlaybackOption
-                        }
+                    if customTagIndex == SequenceIndex then
+                        option = SequencePlaybackOption
+                    elseif customTagIndex ~= i then
+                        option = playbackOptions[customTagIndex + 1]
                     end
+
+                    dialog:combobox{
+                        id = "tag-" .. tostring(i),
+                        label = "Ctrl+" .. tostring(i),
+                        options = playbackOptions,
+                        option = option
+                    }
                 end
-            } --
-            :separator() --
-            :button{
-                text = "&OK",
-                onclick = function()
-                    for shortcutIndex = 1, 9 do
-                        local tagId = "tag-" .. tostring(shortcutIndex)
-                        local tagName = dialog.data[tagId]
 
-                        if tagName == SequencePlaybackOption then
-                            sprite.properties(pluginKey)[tagId] =
-                                SequencePlaybackOption
-                        else
-                            local tag = tagDictionary[tagName]
-
-                            sprite.properties(pluginKey)[tagId] =
-                                GetTagUniqueId(tag)
+                dialog --
+                :separator() --
+                :button{
+                    text = "Reset",
+                    onclick = function()
+                        for i = 1, 9 do
+                            dialog:modify{
+                                id = "tag-" .. tostring(i),
+                                option = DefaultPlaybackOption
+                            }
                         end
                     end
+                } --
+                :separator() --
+                :button{
+                    text = "&OK",
+                    onclick = function()
+                        for shortcutIndex = 1, 9 do
+                            local tagId = "tag-" .. tostring(shortcutIndex)
+                            local tagName = dialog.data[tagId]
 
-                    dialog:close()
-                end
-            } --
-            :button{text = "&Cancel"} --
+                            if tagName == SequencePlaybackOption then
+                                sprite.properties(pluginKey)[tagId] =
+                                    SequencePlaybackOption
+                            else
+                                local tag = tagDictionary[tagName]
 
-            dialog:show()
-        end
-    }
+                                sprite.properties(pluginKey)[tagId] =
+                                    GetTagUniqueId(tag)
+                            end
+                        end
 
-    plugin:newCommand{
-        id = "PlaybackSequences",
-        title = "Playback Sequences...",
-        group = "cel_animation",
-        onenabled = function()
-            return app.activeSprite ~= nil and #app.activeSprite.tags > 1
-        end,
-        onclick = function()
-            local sprite = app.activeSprite
-            local dialog = PlaybackSequencesDialog {
-                title = "Playback Sequences",
-                properties = sprite.properties(pluginKey),
-                sprite = sprite
-            }
-            dialog:show()
-        end
-    }
+                        dialog:close()
+                    end
+                } --
+                :button{text = "&Cancel"} --
+
+                dialog:show()
+            end
+        }
+
+        plugin:newCommand{
+            id = "PlaybackSequences",
+            title = "Playback Sequences...",
+            group = "cel_animation",
+            onenabled = function()
+                return app.activeSprite ~= nil and #app.activeSprite.tags > 1
+            end,
+            onclick = function()
+                local sprite = app.activeSprite
+                local dialog = PlaybackSequencesDialog {
+                    title = "Playback Sequences",
+                    properties = sprite.properties(pluginKey),
+                    sprite = sprite
+                }
+                dialog:show()
+            end
+        }
+    end
 
     plugin:newCommand{
         id = "PlayFirstTag",
