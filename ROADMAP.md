@@ -124,6 +124,7 @@ Unreleased:
 - *Analyze Colors*
   - [Improvement] Improve the speed of color analysis
   - [Improvement] Reintroduce color replacement
+  - [Improvement] Reworked dialog window to fit on smaller screens
 - [Improvement] Add keyboard shortcuts
 
 Update v?.?.?:

@@ -1,7 +1,7 @@
 ColorList = dofile("./ColorList.lua")
 SortOptions = dofile("./SortOptions.lua")
 
-local PageSize = 16
+local PageSize = 10
 
 local sortBy = SortOptions.UsageDesc
 
@@ -53,7 +53,10 @@ local ColorAnalyzerDialog = function(title)
         id = "sortBy",
         label = "Sort By",
         option = sortBy,
-        options = SortOptions,
+        options = {
+            SortOptions.UsageDesc, SortOptions.UsageAsc, SortOptions.ValueDesc,
+            SortOptions.ValueAsc
+        },
         onchange = function()
             sortBy = dialog.data["sortBy"]
             colorEntries = ColorList:GetColors(sortBy)
@@ -62,6 +65,33 @@ local ColorAnalyzerDialog = function(title)
         end
     } --
     :separator{text = "Colors"}
+
+    -- Color List
+    for i = 1, PageSize do
+        dialog --
+        :shades{
+            id = "color-" .. tostring(i),
+            label = "",
+            mode = "pick",
+            visible = false,
+            onclick = function(ev)
+                if ev.button == MouseButton.LEFT then
+                    local color = dialog.data["color-" .. tostring(i)]
+
+                    app.command.ReplaceColor {
+                        ui = true,
+                        from = color,
+                        to = color,
+                        tolerance = 0
+                    }
+
+                    -- Get colors entries again after replacing a color 
+                    colorEntries = GetColorEntries()
+                    Refresh()
+                end
+            end
+        }
+    end
 
     local numberOfPages = math.ceil(#colorEntries / PageSize)
 
@@ -100,33 +130,6 @@ local ColorAnalyzerDialog = function(title)
 
     RefreshButtons()
 
-    -- Color List
-    for i = 1, PageSize do
-        dialog --
-        :shades{
-            id = "color-" .. tostring(i),
-            label = "",
-            mode = "pick",
-            visible = false,
-            onclick = function(ev)
-                if ev.button == MouseButton.LEFT then
-                    local color = dialog.data["color-" .. tostring(i)]
-
-                    app.command.ReplaceColor {
-                        ui = true,
-                        from = color,
-                        to = color,
-                        tolerance = 0
-                    }
-
-                    -- Get colors entries again after replacing a color 
-                    colorEntries = GetColorEntries()
-                    Refresh()
-                end
-            end
-        }
-    end
-
     -- Palette
     dialog --
     :separator{text = "Palette"} --
@@ -140,6 +143,7 @@ local ColorAnalyzerDialog = function(title)
             dialog:close()
         end
     } --
+    :separator() --
     :button{text = "Close"}
 
     Refresh()
