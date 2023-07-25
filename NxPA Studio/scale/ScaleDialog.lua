@@ -1,13 +1,17 @@
 ScaleAlgorithm = dofile("./ScaleAlgorithm.lua")
 
-local Algorithm = {Eagle = "Eagle", Scale2x = "Scale2x", Scale3x = "Scale3x"}
+local Algorithm = {
+    Eagle = "Eagle",
+    Scale2x = "Scale2x",
+    Scale3x = "Scale3x",
+    Hawk = "Hawk (Light)",
+    HawkDark = "Hawk (Dark)"
+}
 
 local GetScaleBase = function(algorithm)
-    if algorithm == Algorithm.Eagle or algorithm == Algorithm.Scale2x then
-        return 2
-    elseif algorithm == Algorithm.Scale3x then
-        return 3
-    end
+    if algorithm == Algorithm.Scale3x then return 3 end
+
+    return 2
 end
 
 local GetSizes = function(scale)
@@ -30,7 +34,10 @@ return function(dialogTitle)
         id = "algorithm",
         label = "Algorithm:",
         option = selectedAlgorithm,
-        options = {Algorithm.Eagle, Algorithm.Scale2x, Algorithm.Scale3x},
+        options = {
+            Algorithm.Eagle, Algorithm.Scale2x, Algorithm.Scale3x,
+            Algorithm.Hawk, Algorithm.HawkDark
+        },
         onchange = function()
             local lastScaleBase = selectedScaleBase
 
@@ -80,6 +87,10 @@ return function(dialogTitle)
                         ScaleAlgorithm:Scale2x(app.activeSprite)
                     elseif algorithm == Algorithm.Scale3x then
                         ScaleAlgorithm:Scale3x(app.activeSprite)
+                    elseif algorithm == Algorithm.Hawk then
+                        ScaleAlgorithm:Hawk(app.activeSprite)
+                    elseif algorithm == Algorithm.HawkDark then
+                        ScaleAlgorithm:Hawk(app.activeSprite, true)
                     end
                 end
             end)

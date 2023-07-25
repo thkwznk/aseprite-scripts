@@ -1,4 +1,20 @@
-ColorHelper = dofile("./ColorHelper.lua");
+local ColorHelper = {}
+
+function ColorHelper:gray(c) return app.pixelColor.grayaV(c) end
+function ColorHelper:getLightValue(c) return self:gray(c) end
+function ColorHelper:isLighter(ca, cb)
+    return self:getLightValue(ca) > self:getLightValue(cb)
+end
+function ColorHelper:isDarker(ca, cb)
+    return self:getLightValue(ca) < self:getLightValue(cb)
+end
+function ColorHelper:areEqual(ca, cb, cc)
+    return ca == cb and cb == cc and cc == ca
+end
+function ColorHelper:getLighter(ca, cb)
+    return self:isLighter(ca, cb) and ca or cb
+end
+function ColorHelper:getDarker(ca, cb) return self:isDarker(ca, cb) and ca or cb end
 
 local ScaleAlgorithm = {}
 
@@ -59,21 +75,23 @@ function ScaleAlgorithm:Eagle(sprite)
                 local yDown = math.min(y + 1, newHeight - 1)
 
                 imageResult:putPixel(x, y,
-                                     ColorHelper:areEqual(upperLeft, upperCenter,
-                                                    middleLeft) and upperLeft or
-                                         middleCenter);
+                                     ColorHelper:areEqual(upperLeft,
+                                                          upperCenter,
+                                                          middleLeft) and
+                                         upperLeft or middleCenter);
                 imageResult:putPixel(xRight, y,
-                                     ColorHelper:areEqual(upperCenter, upperRight,
-                                                    middleRight) and upperRight or
-                                         middleCenter);
-                imageResult:putPixel(x, yDown, ColorHelper:areEqual(middleLeft,
-                                                              downLeft,
-                                                              downCenter) and
+                                     ColorHelper:areEqual(upperCenter,
+                                                          upperRight,
+                                                          middleRight) and
+                                         upperRight or middleCenter);
+                imageResult:putPixel(x, yDown,
+                                     ColorHelper:areEqual(middleLeft, downLeft,
+                                                          downCenter) and
                                          downLeft or middleCenter);
                 imageResult:putPixel(xRight, yDown,
                                      ColorHelper:areEqual(downCenter, downRight,
-                                                    middleRight) and downRight or
-                                         middleCenter);
+                                                          middleRight) and
+                                         downRight or middleCenter);
             end
         end
 
@@ -234,11 +252,13 @@ function ScaleAlgorithm:Hawk(sprite, focusOnDark)
     local sizeFactor = 2
 
     function isBetter(a, b)
-        return focusOnDark and ColorHelper:isDarker(a, b) or ColorHelper:isLighter(a, b)
+        return focusOnDark and ColorHelper:isDarker(a, b) or
+                   ColorHelper:isLighter(a, b)
     end
 
     function getBetter(a, b)
-        return focusOnDark and ColorHelper:getLighter(a, b) or ColorHelper:getDarker(a, b)
+        return focusOnDark and ColorHelper:getLighter(a, b) or
+                   ColorHelper:getDarker(a, b)
     end
 
     ScaleAlgorithm:ResizeCanvas(sprite, sizeFactor)
