@@ -122,8 +122,9 @@ Unreleased:
   - [Improvement] Reworked dialog window for UX consistency with Aseprite
   - [Improvement] Add an option to scale an image multiple times
   - [Improvement] Reintroduce the Hawk scaling algorithm
+  - [Improvement] Improve performance of image scaling
 - *Analyze Colors*
-  - [Improvement] Improve the speed of color analysis
+  - [Improvement] Improve performance of color analysis
   - [Improvement] Reintroduce color replacement
   - [Improvement] Reworked dialog window to fit on smaller screens
 - [Improvement] Add keyboard shortcuts

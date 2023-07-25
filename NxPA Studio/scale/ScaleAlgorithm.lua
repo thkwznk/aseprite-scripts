@@ -1,20 +1,9 @@
-local ColorHelper = {}
-
-function ColorHelper:gray(c) return app.pixelColor.grayaV(c) end
-function ColorHelper:getLightValue(c) return self:gray(c) end
-function ColorHelper:isLighter(ca, cb)
-    return self:getLightValue(ca) > self:getLightValue(cb)
-end
-function ColorHelper:isDarker(ca, cb)
-    return self:getLightValue(ca) < self:getLightValue(cb)
-end
-function ColorHelper:areEqual(ca, cb, cc)
-    return ca == cb and cb == cc and cc == ca
-end
-function ColorHelper:getLighter(ca, cb)
-    return self:isLighter(ca, cb) and ca or cb
-end
-function ColorHelper:getDarker(ca, cb) return self:isDarker(ca, cb) and ca or cb end
+local AreEqual = function(a, b, c) return a == b and b == c and c == a end
+local Value = function(c) return app.pixelColor.grayaV(c) end
+local IsLighter = function(ca, cb) return Value(ca) > Value(cb) end
+local IsDarker = function(ca, cb) return Value(ca) < Value(cb) end
+local GetLighter = function(ca, cb) return IsLighter(ca, cb) and ca or cb end
+local GetDarker = function(ca, cb) return IsDarker(ca, cb) and ca or cb end
 
 local ScaleAlgorithm = {}
 
@@ -37,10 +26,12 @@ function ScaleAlgorithm:Eagle(sprite)
 
     ScaleAlgorithm:ResizeCanvas(sprite, sizeFactor)
 
-    for i, cel in ipairs(sprite.cels) do
+    for _, cel in ipairs(sprite.cels) do
         ScaleAlgorithm:MoveCel(cel, sizeFactor)
 
         local image = cel.image
+        -- Save references to methods to improve performance
+        local getPixel, drawPixel = image.getPixel, image.drawPixel
 
         local width = image.width
         local height = image.height
@@ -57,41 +48,37 @@ function ScaleAlgorithm:Eagle(sprite)
                 local right = math.min(ix + 1, width - 1)
                 local left = math.max(ix - 1, 0)
 
-                local upperLeft = image:getPixel(left, up)
-                local upperCenter = image:getPixel(ix, up)
-                local upperRight = image:getPixel(right, up)
+                local upperLeft = getPixel(image, left, up)
+                local upperCenter = getPixel(image, ix, up)
+                local upperRight = getPixel(image, right, up)
 
-                local middleLeft = image:getPixel(left, iy)
-                local middleCenter = image:getPixel(ix, iy)
-                local middleRight = image:getPixel(right, iy)
+                local middleLeft = getPixel(image, left, iy)
+                local middleCenter = getPixel(image, ix, iy)
+                local middleRight = getPixel(image, right, iy)
 
-                local downLeft = image:getPixel(left, down)
-                local downCenter = image:getPixel(ix, down)
-                local downRight = image:getPixel(right, down)
+                local downLeft = getPixel(image, left, down)
+                local downCenter = getPixel(image, ix, down)
+                local downRight = getPixel(image, right, down)
 
                 local x = ix * sizeFactor;
                 local y = iy * sizeFactor;
                 local xRight = math.min(x + 1, newWidth - 1)
                 local yDown = math.min(y + 1, newHeight - 1)
 
-                imageResult:putPixel(x, y,
-                                     ColorHelper:areEqual(upperLeft,
-                                                          upperCenter,
-                                                          middleLeft) and
-                                         upperLeft or middleCenter);
-                imageResult:putPixel(xRight, y,
-                                     ColorHelper:areEqual(upperCenter,
-                                                          upperRight,
-                                                          middleRight) and
-                                         upperRight or middleCenter);
-                imageResult:putPixel(x, yDown,
-                                     ColorHelper:areEqual(middleLeft, downLeft,
+                drawPixel(imageResult, x, y, AreEqual(upperLeft, upperCenter,
+                                                      middleLeft) and upperLeft or
+                              middleCenter);
+                drawPixel(imageResult, xRight, y, AreEqual(upperCenter,
+                                                           upperRight,
+                                                           middleRight) and
+                              upperRight or middleCenter);
+                drawPixel(imageResult, x, yDown, AreEqual(middleLeft, downLeft,
                                                           downCenter) and
-                                         downLeft or middleCenter);
-                imageResult:putPixel(xRight, yDown,
-                                     ColorHelper:areEqual(downCenter, downRight,
-                                                          middleRight) and
-                                         downRight or middleCenter);
+                              downLeft or middleCenter);
+                drawPixel(imageResult, xRight, yDown, AreEqual(downCenter,
+                                                               downRight,
+                                                               middleRight) and
+                              downRight or middleCenter);
             end
         end
 
@@ -104,10 +91,12 @@ function ScaleAlgorithm:Scale2x(sprite)
 
     ScaleAlgorithm:ResizeCanvas(sprite, sizeFactor)
 
-    for i, cel in ipairs(sprite.cels) do
+    for _, cel in ipairs(sprite.cels) do
         ScaleAlgorithm:MoveCel(cel, sizeFactor)
 
         local image = cel.image
+        -- Save references to methods to improve performance
+        local getPixel, drawPixel = image.getPixel, image.drawPixel
 
         local width = image.width
         local height = image.height
@@ -121,37 +110,37 @@ function ScaleAlgorithm:Scale2x(sprite)
                 local x = ix * sizeFactor
                 local y = iy * sizeFactor
 
-                local center = image:getPixel(ix, iy)
+                local center = getPixel(image, ix, iy)
 
-                imageResult:putPixel(x, y, center)
-                imageResult:putPixel(x + 1, y, center)
-                imageResult:putPixel(x, y + 1, center)
-                imageResult:putPixel(x + 1, y + 1, center)
+                drawPixel(imageResult, x, y, center)
+                drawPixel(imageResult, x + 1, y, center)
+                drawPixel(imageResult, x, y + 1, center)
+                drawPixel(imageResult, x + 1, y + 1, center)
 
                 local iyUp = math.max(iy - 1, 0)
                 local iyDown = math.min(iy + 1, height - 1)
                 local ixRight = math.min(ix + 1, width - 1)
                 local ixLeft = math.max(ix - 1, 0)
 
-                local up = image:getPixel(ix, iyUp)
-                local right = image:getPixel(ixRight, iy)
-                local left = image:getPixel(ixLeft, iy)
-                local down = image:getPixel(ix, iyDown)
+                local up = getPixel(image, ix, iyUp)
+                local right = getPixel(image, ixRight, iy)
+                local left = getPixel(image, ixLeft, iy)
+                local down = getPixel(image, ix, iyDown)
 
                 if left == up and left ~= down and up ~= right then
-                    imageResult:putPixel(x, y, up)
+                    drawPixel(imageResult, x, y, up)
                 end
 
                 if up == right and up ~= left and right ~= down then
-                    imageResult:putPixel(x + 1, y, right)
+                    drawPixel(imageResult, x + 1, y, right)
                 end
 
                 if down == left and down ~= right and left ~= up then
-                    imageResult:putPixel(x, y + 1, left)
+                    drawPixel(imageResult, x, y + 1, left)
                 end
 
                 if right == down and right ~= up and down ~= left then
-                    imageResult:putPixel(x + 1, y + 1, down)
+                    drawPixel(imageResult, x + 1, y + 1, down)
                 end
             end
         end
@@ -167,6 +156,9 @@ function ScaleAlgorithm:Scale3x(sprite)
 
     for _, cel in ipairs(sprite.cels) do
         ScaleAlgorithm:MoveCel(cel, sizeFactor)
+
+        -- Save references to methods to improve performance
+        local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
 
         local width = cel.image.width
         local height = cel.image.height
@@ -184,62 +176,62 @@ function ScaleAlgorithm:Scale3x(sprite)
                 local ixRight = math.min(ix + 1, width - 1)
                 local ixLeft = math.max(ix - 1, 0)
 
-                local A = cel.image:getPixel(ixLeft, iyUp)
-                local B = cel.image:getPixel(ix, iyUp)
-                local C = cel.image:getPixel(ixRight, iyUp)
+                local A = getPixel(cel.image, ixLeft, iyUp)
+                local B = getPixel(cel.image, ix, iyUp)
+                local C = getPixel(cel.image, ixRight, iyUp)
 
-                local D = cel.image:getPixel(ixLeft, iy)
-                local E = cel.image:getPixel(ix, iy)
-                local F = cel.image:getPixel(ixRight, iy)
+                local D = getPixel(cel.image, ixLeft, iy)
+                local E = getPixel(cel.image, ix, iy)
+                local F = getPixel(cel.image, ixRight, iy)
 
-                local G = cel.image:getPixel(ixLeft, iyDown)
-                local H = cel.image:getPixel(ix, iyDown)
-                local I = cel.image:getPixel(ixRight, iyDown)
+                local G = getPixel(cel.image, ixLeft, iyDown)
+                local H = getPixel(cel.image, ix, iyDown)
+                local I = getPixel(cel.image, ixRight, iyDown)
 
-                imageResult:putPixel(x, y, E)
-                imageResult:putPixel(x, y + 1, E)
-                imageResult:putPixel(x, y + 2, E)
-                imageResult:putPixel(x + 1, y, E)
-                imageResult:putPixel(x + 1, y + 1, E)
-                imageResult:putPixel(x + 1, y + 2, E)
-                imageResult:putPixel(x + 2, y, E)
-                imageResult:putPixel(x + 2, y + 1, E)
-                imageResult:putPixel(x + 2, y + 2, E)
+                drawPixel(imageResult, x, y, E)
+                drawPixel(imageResult, x, y + 1, E)
+                drawPixel(imageResult, x, y + 2, E)
+                drawPixel(imageResult, x + 1, y, E)
+                drawPixel(imageResult, x + 1, y + 1, E)
+                drawPixel(imageResult, x + 1, y + 2, E)
+                drawPixel(imageResult, x + 2, y, E)
+                drawPixel(imageResult, x + 2, y + 1, E)
+                drawPixel(imageResult, x + 2, y + 2, E)
 
                 if D == B and D ~= H and B ~= F then
-                    imageResult:putPixel(x, y, D);
+                    drawPixel(imageResult, x, y, D);
                 end
 
                 if (D == B and D ~= H and B ~= F and E ~= C) or
                     (B == F and B ~= D and F ~= H and E ~= A) then
-                    imageResult:putPixel(x + 1, y, B);
+                    drawPixel(imageResult, x + 1, y, B);
                 end
 
                 if B == F and B ~= D and F ~= H then
-                    imageResult:putPixel(x + 2, y, F);
+                    drawPixel(imageResult, x + 2, y, F);
                 end
 
                 if (H == D and H ~= F and D ~= B and E ~= A) or
                     (D == B and D ~= H and B ~= F and E ~= G) then
-                    imageResult:putPixel(x, y + 1, D);
+                    drawPixel(imageResult, x, y + 1, D);
                 end
 
                 if (B == F and B ~= D and F ~= H and E ~= I) or
                     (F == H and F ~= B and H ~= D and E ~= C) then
-                    imageResult:putPixel(x + 2, y + 1, F);
+                    drawPixel(imageResult, x + 2, y + 1, F);
                 end
 
                 if H == D and H ~= F and D ~= B then
-                    imageResult:putPixel(x, y + 2, D);
+                    drawPixel(imageResult, x, y + 2, D);
                 end
 
                 if (F == H and F ~= B and H ~= D and E ~= G) or
                     (H == D and H ~= F and D ~= B and E ~= I) then
-                    imageResult:putPixel(x + 1, y + 2, H);
+                    drawPixel(imageResult, x + 1, y + 2, H);
                 end
 
                 if F == H and F ~= B and H ~= D then
-                    imageResult:putPixel(x + 2, y + 2, F);
+                    drawPixel(imageResult, x + 2, y + 2, F);
                 end
             end
         end
@@ -251,15 +243,8 @@ end
 function ScaleAlgorithm:Hawk(sprite, focusOnDark)
     local sizeFactor = 2
 
-    function isBetter(a, b)
-        return focusOnDark and ColorHelper:isDarker(a, b) or
-                   ColorHelper:isLighter(a, b)
-    end
-
-    function getBetter(a, b)
-        return focusOnDark and ColorHelper:getLighter(a, b) or
-                   ColorHelper:getDarker(a, b)
-    end
+    local isBetter = focusOnDark and IsDarker or IsLighter
+    local getBetter = focusOnDark and GetLighter or GetDarker
 
     ScaleAlgorithm:ResizeCanvas(sprite, sizeFactor)
 
@@ -267,6 +252,8 @@ function ScaleAlgorithm:Hawk(sprite, focusOnDark)
         ScaleAlgorithm:MoveCel(cel, sizeFactor)
 
         local image = cel.image
+        -- Save references to methods to improve performance
+        local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
 
         local width = image.width
         local height = image.height
@@ -285,11 +272,11 @@ function ScaleAlgorithm:Hawk(sprite, focusOnDark)
                 local ixRight = math.min(ix + 1, width - 1)
                 local ixLeft = math.max(ix - 1, 0)
 
-                local b = image:getPixel(ix, iyUp)
-                local d = image:getPixel(ixLeft, iy)
-                local e = image:getPixel(ix, iy)
-                local f = image:getPixel(ixRight, iy)
-                local h = image:getPixel(ix, iyDown)
+                local b = getPixel(image, ix, iyUp)
+                local d = getPixel(image, ixLeft, iy)
+                local e = getPixel(image, ix, iy)
+                local f = getPixel(image, ixRight, iy)
+                local h = getPixel(image, ix, iyDown)
 
                 local xRight = math.min(x + 1, newWidth - 1)
                 local yDown = math.min(y + 1, newHeight - 1)
@@ -299,36 +286,36 @@ function ScaleAlgorithm:Hawk(sprite, focusOnDark)
                 local fIsBetterThanE = isBetter(f, e)
                 local hIsBetterThanE = isBetter(h, e)
 
-                imageResult:putPixel(xRight, y, e)
-                imageResult:putPixel(x, y, e)
-                imageResult:putPixel(x, yDown, e)
-                imageResult:putPixel(xRight, yDown, e)
+                drawPixel(imageResult, xRight, y, e)
+                drawPixel(imageResult, x, y, e)
+                drawPixel(imageResult, x, yDown, e)
+                drawPixel(imageResult, xRight, yDown, e)
 
                 if bIsBetterThanE then
                     if f == b then
-                        imageResult:putPixel(xRight, y, f)
+                        drawPixel(imageResult, xRight, y, f)
                     elseif fIsBetterThanE then
-                        imageResult:putPixel(xRight, y, getBetter(b, f))
+                        drawPixel(imageResult, xRight, y, getBetter(b, f))
                     end
 
                     if b == d then
-                        imageResult:putPixel(x, y, b)
+                        drawPixel(imageResult, x, y, b)
                     elseif dIsBetterThanE then
-                        imageResult:putPixel(x, y, getBetter(b, d))
+                        drawPixel(imageResult, x, y, getBetter(b, d))
                     end
                 end
 
                 if hIsBetterThanE then
                     if d == h then
-                        imageResult:putPixel(x, yDown, d)
+                        drawPixel(imageResult, x, yDown, d)
                     elseif dIsBetterThanE then
-                        imageResult:putPixel(x, yDown, getBetter(d, h))
+                        drawPixel(imageResult, x, yDown, getBetter(d, h))
                     end
 
                     if h == f then
-                        imageResult:putPixel(xRight, yDown, h)
+                        drawPixel(imageResult, xRight, yDown, h)
                     elseif fIsBetterThanE then
-                        imageResult:putPixel(xRight, yDown, getBetter(f, h))
+                        drawPixel(imageResult, xRight, yDown, getBetter(f, h))
                     end
                 end
             end
