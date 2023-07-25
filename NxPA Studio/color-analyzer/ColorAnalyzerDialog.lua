@@ -9,11 +9,14 @@ local ColorAnalyzerDialog = function(title)
     local dialog = Dialog(title)
     local page = 1
 
-    local image = app.activeCel.image
-    local colorEntries = ColorList --
-    :Clear() --
-    :LoadColorsFromImage(image) --
-    :GetColors(sortBy)
+    local GetColorEntries = function()
+        return ColorList --
+        :Clear() --
+        :LoadColorsFromImage(app.activeCel.image) --
+        :GetColors(sortBy)
+    end
+
+    local colorEntries = GetColorEntries()
 
     local Refresh = function()
         local pageSkip = (page - 1) * (PageSize)
@@ -34,17 +37,12 @@ local ColorAnalyzerDialog = function(title)
                 :modify{
                     id = "color-" .. tostring(i),
                     label = string.format("%.2f %%", colorUsagePercent),
-                    color = colorEntry.color,
-                    visible = true,
-                    enabled = false
+                    colors = {colorEntry.color},
+                    visible = true
                 }
             else
                 dialog --
-                :modify{
-                    id = "color-" .. tostring(i),
-                    visible = false,
-                    enabled = false
-                }
+                :modify{id = "color-" .. tostring(i), visible = false}
             end
         end
     end
@@ -105,11 +103,27 @@ local ColorAnalyzerDialog = function(title)
     -- Color List
     for i = 1, PageSize do
         dialog --
-        :color{
+        :shades{
             id = "color-" .. tostring(i),
             label = "",
+            mode = "pick",
             visible = false,
-            enabled = false
+            onclick = function(ev)
+                if ev.button == MouseButton.LEFT then
+                    local color = dialog.data["color-" .. tostring(i)]
+
+                    app.command.ReplaceColor {
+                        ui = true,
+                        from = color,
+                        to = color,
+                        tolerance = 0
+                    }
+
+                    -- Get colors entries again after replacing a color 
+                    colorEntries = GetColorEntries()
+                    Refresh()
+                end
+            end
         }
     end
 

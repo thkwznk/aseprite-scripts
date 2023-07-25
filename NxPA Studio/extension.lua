@@ -32,21 +32,12 @@ function init(plugin)
 
     plugin:newCommand{
         id = "ColorAnalyzer",
-        title = "Analyze Colors",
+        title = "Analyze Colors...",
         group = "sprite_color",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             local dialog = ColorAnalyzerDialog("Analyze Colors")
-
-            dialog:show{wait = false}
-            dialog:close()
-
-            -- Don't display the dialog in the center of the screen, It covers the image
-            local bounds = dialog.bounds
-            bounds.x = bounds.x / 2
-            bounds.width = 250
-
-            dialog:show{bounds = bounds}
+            dialog:show()
         end
     }
 end

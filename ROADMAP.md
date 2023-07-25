@@ -123,11 +123,12 @@ Unreleased:
   - [Improvement] Add an option to scale an image multiple times
 - *Analyze Colors*
   - [Improvement] Improve the speed of color analysis
+  - [Improvement] Reintroduce color replacement
 - [Improvement] Add keyboard shortcuts
 
 Update v?.?.?:
 
-- [Improvement] *Analyze Colors* reintroduce color replacement and color selection on click
+- 
 
 ## Center Image
 
