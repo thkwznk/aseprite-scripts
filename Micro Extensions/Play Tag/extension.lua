@@ -193,8 +193,7 @@ function PlaybackSequencesDialog(options)
     local dialog = Dialog(options.title)
     -- TODO: Keep a cache of tags by their UUID
 
-    local sequenceIds = options.sprite.properties(pluginKey).sequence
-
+    local sequenceIds = options.properties(pluginKey).sequence or {}
     local sequenceNames = {}
 
     for _, sequenceId in ipairs(sequenceIds) do
