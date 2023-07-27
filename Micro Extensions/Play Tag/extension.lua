@@ -46,6 +46,7 @@ function PlayAllFrames()
     local playAll = app.preferences.editor.play_all
     app.preferences.editor.play_all = true
 
+    app.activeFrame = 1
     app.command.PlayAnimation()
 
     app.preferences.editor.play_all = playAll
@@ -302,7 +303,7 @@ function init(plugin)
                 local dialog = Dialog("Playback Shortcuts")
 
                 dialog --
-                :separator{text="Shortcuts:"}
+                :separator{text = "Shortcuts:"}
 
                 local playbackOptions, tagDictionary =
                     GetPlaybackOptions(sprite)
