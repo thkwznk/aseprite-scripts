@@ -3,6 +3,8 @@ local DefaultPlaybackOption = "<Default>"
 local SequencePlaybackOption = "<Sequence>"
 local SequenceIndex = -1
 
+local CustomTagIndicesFallback = {}
+
 function GetUniqueId()
     local randomNumber = math.random(1, 16 ^ 8)
     return string.format("%08x", randomNumber)
@@ -54,7 +56,11 @@ end
 
 function GetCustomTagIndex(sprite, tagIndex)
     -- Custom tags are only available from v1.3-rc1
-    if app.apiVersion < 21 then return tagIndex end
+    if app.apiVersion < 21 then
+        return (CustomTagIndicesFallback[sprite.filename] and
+                   CustomTagIndicesFallback[sprite.filename][tagIndex]) or
+                   tagIndex
+    end
 
     local tagKey = "tag-" .. tostring(tagIndex)
     local tagUniqueId = sprite.properties(pluginKey)[tagKey]
@@ -70,6 +76,28 @@ function GetCustomTagIndex(sprite, tagIndex)
     end
 
     return tagIndex
+end
+
+function SetCustomTagIndex(sprite, tagIndex, customTag)
+    -- Custom tags are only available from v1.3-rc1
+    if app.apiVersion < 21 then
+        for i, tag in ipairs(sprite.tags) do
+            if tag == customTag then
+                if not CustomTagIndicesFallback[sprite.filename] then
+                    CustomTagIndicesFallback[sprite.filename] = {
+                        1, 2, 3, 4, 5, 6, 7, 8, 9
+                    }
+                end
+
+                CustomTagIndicesFallback[sprite.filename][tagIndex] = i
+                break
+            end
+        end
+
+        return
+    end
+
+    sprite.properties(pluginKey)["tag-" .. tagIndex] = GetTagUniqueId(customTag)
 end
 
 function PlayCustomTagByIndex(sprite, tagIndex)
@@ -231,13 +259,13 @@ function PlaybackShortcutsDialog(options)
             for shortcutIndex = 1, 9 do
                 local tagId = "tag-" .. tostring(shortcutIndex)
                 local tagName = dialog.data[tagId]
-                local properties = options.sprite.properties(pluginKey)
 
                 if tagName == SequencePlaybackOption then
-                    properties[tagId] = SequencePlaybackOption
+                    options.sprite.properties(pluginKey)[tagId] =
+                        SequencePlaybackOption
                 else
                     local tag = tagDictionary[tagName]
-                    properties[tagId] = GetTagUniqueId(tag)
+                    SetCustomTagIndex(options.sprite, shortcutIndex, tag)
                 end
             end
 
@@ -347,8 +375,10 @@ function GetPlaybackOptions(sprite)
         table.insert(playbackOptions, tagName)
     end
 
-    -- Add the sequence as the last option
-    table.insert(playbackOptions, SequencePlaybackOption)
+    -- Only add option to play the sequence from v1.3-rc1
+    if app.apiVersion >= 21 then
+        table.insert(playbackOptions, SequencePlaybackOption)
+    end
 
     return playbackOptions, tagDictionary
 end
@@ -392,6 +422,22 @@ function init(plugin)
                 local dialog = PlaybackSequenceDialog {
                     title = "Tag Playback Sequence",
                     sprite = sprite
+                }
+                dialog:show()
+            end
+        }
+    else
+        plugin:newCommand{
+            id = "PlaybackShortcuts",
+            title = "Tag Playback Shortcuts...",
+            group = "cel_animation",
+            onenabled = function()
+                return app.activeSprite ~= nil and #app.activeSprite.tags > 1
+            end,
+            onclick = function()
+                local dialog = PlaybackShortcutsDialog {
+                    title = "Tag Playback Shortcuts",
+                    sprite = app.activeSprite
                 }
                 dialog:show()
             end
