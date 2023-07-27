@@ -186,7 +186,70 @@ function PlaySequence(tagSequence)
     if #frameSequence > 0 then RecursiveTimer(frameSequence, 1) end
 end
 
-function PlaybackSequencesDialog(options)
+function PlaybackShortcutsDialog(sprite)
+    local dialog = Dialog("Playback Shortcuts")
+
+    dialog --
+    :separator{text = "Shortcuts:"}
+
+    local playbackOptions, tagDictionary = GetPlaybackOptions(sprite)
+
+    for i = 1, 9 do
+        local option = playbackOptions[1]
+        local customTagIndex = GetCustomTagIndex(sprite, i)
+
+        if customTagIndex == SequenceIndex then
+            option = SequencePlaybackOption
+        elseif customTagIndex ~= i then
+            option = playbackOptions[customTagIndex + 1]
+        end
+
+        dialog:combobox{
+            id = "tag-" .. tostring(i),
+            label = "Ctrl+" .. tostring(i),
+            options = playbackOptions,
+            option = option
+        }
+    end
+
+    dialog --
+    :button{
+        text = "Reset",
+        onclick = function()
+            for i = 1, 9 do
+                dialog:modify{
+                    id = "tag-" .. tostring(i),
+                    option = DefaultPlaybackOption
+                }
+            end
+        end
+    } --
+    :separator() --
+    :button{
+        text = "&OK",
+        onclick = function()
+            for shortcutIndex = 1, 9 do
+                local tagId = "tag-" .. tostring(shortcutIndex)
+                local tagName = dialog.data[tagId]
+                local properties = sprite.properties(pluginKey)
+
+                if tagName == SequencePlaybackOption then
+                    properties[tagId] = SequencePlaybackOption
+                else
+                    local tag = tagDictionary[tagName]
+                    properties[tagId] = GetTagUniqueId(tag)
+                end
+            end
+
+            dialog:close()
+        end
+    } --
+    :button{text = "&Cancel"} --
+
+    return dialog
+end
+
+function PlaybackSequenceDialog(options)
     local tagNames, tagDictionary = GetTagOptions(options.sprite)
 
     table.insert(tagNames, 1, "")
@@ -292,76 +355,13 @@ end
 function init(plugin)
     -- Custom tags are only available from v1.3-rc1
     if app.apiVersion >= 21 then
-
         plugin:newCommand{
             id = "PlaybackShortcuts",
             title = "Playback Shortcuts...",
             group = "cel_animation",
             onenabled = function() return app.activeSprite ~= nil end,
             onclick = function()
-                local sprite = app.activeSprite
-                local dialog = Dialog("Playback Shortcuts")
-
-                dialog --
-                :separator{text = "Shortcuts:"}
-
-                local playbackOptions, tagDictionary =
-                    GetPlaybackOptions(sprite)
-
-                for i = 1, 9 do
-                    local option = playbackOptions[1]
-                    local customTagIndex = GetCustomTagIndex(sprite, i)
-
-                    if customTagIndex == SequenceIndex then
-                        option = SequencePlaybackOption
-                    elseif customTagIndex ~= i then
-                        option = playbackOptions[customTagIndex + 1]
-                    end
-
-                    dialog:combobox{
-                        id = "tag-" .. tostring(i),
-                        label = "Ctrl+" .. tostring(i),
-                        options = playbackOptions,
-                        option = option
-                    }
-                end
-
-                dialog --
-                :button{
-                    text = "Reset",
-                    onclick = function()
-                        for i = 1, 9 do
-                            dialog:modify{
-                                id = "tag-" .. tostring(i),
-                                option = DefaultPlaybackOption
-                            }
-                        end
-                    end
-                } --
-                :separator() --
-                :button{
-                    text = "&OK",
-                    onclick = function()
-                        for shortcutIndex = 1, 9 do
-                            local tagId = "tag-" .. tostring(shortcutIndex)
-                            local tagName = dialog.data[tagId]
-
-                            if tagName == SequencePlaybackOption then
-                                sprite.properties(pluginKey)[tagId] =
-                                    SequencePlaybackOption
-                            else
-                                local tag = tagDictionary[tagName]
-
-                                sprite.properties(pluginKey)[tagId] =
-                                    GetTagUniqueId(tag)
-                            end
-                        end
-
-                        dialog:close()
-                    end
-                } --
-                :button{text = "&Cancel"} --
-
+                local dialog = PlaybackShortcutsDialog(app.activeSprite)
                 dialog:show()
             end
         }
@@ -375,7 +375,7 @@ function init(plugin)
             end,
             onclick = function()
                 local sprite = app.activeSprite
-                local dialog = PlaybackSequencesDialog {
+                local dialog = PlaybackSequenceDialog {
                     title = "Playback Tag Sequence",
                     properties = sprite.properties(pluginKey),
                     sprite = sprite
