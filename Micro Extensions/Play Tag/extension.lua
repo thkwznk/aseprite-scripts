@@ -186,17 +186,17 @@ function PlaySequence(tagSequence)
     if #frameSequence > 0 then RecursiveTimer(frameSequence, 1) end
 end
 
-function PlaybackShortcutsDialog(sprite)
-    local dialog = Dialog("Playback Shortcuts")
+function PlaybackShortcutsDialog(options)
+    local dialog = Dialog(options.title)
 
     dialog --
     :separator{text = "Shortcuts:"}
 
-    local playbackOptions, tagDictionary = GetPlaybackOptions(sprite)
+    local playbackOptions, tagDictionary = GetPlaybackOptions(options.sprite)
 
     for i = 1, 9 do
         local option = playbackOptions[1]
-        local customTagIndex = GetCustomTagIndex(sprite, i)
+        local customTagIndex = GetCustomTagIndex(options.sprite, i)
 
         if customTagIndex == SequenceIndex then
             option = SequencePlaybackOption
@@ -231,7 +231,7 @@ function PlaybackShortcutsDialog(sprite)
             for shortcutIndex = 1, 9 do
                 local tagId = "tag-" .. tostring(shortcutIndex)
                 local tagName = dialog.data[tagId]
-                local properties = sprite.properties(pluginKey)
+                local properties = options.sprite.properties(pluginKey)
 
                 if tagName == SequencePlaybackOption then
                     properties[tagId] = SequencePlaybackOption
@@ -251,11 +251,12 @@ end
 
 function PlaybackSequenceDialog(options)
     local tagNames, tagDictionary = GetTagOptions(options.sprite)
+    local spriteProperties = options.sprite.properties(pluginKey)
 
     table.insert(tagNames, 1, "")
 
     local dialog = Dialog(options.title)
-    local sequenceIds = options.properties(pluginKey).sequence or {}
+    local sequenceIds = spriteProperties.sequence or {}
     local sequenceNames = {}
 
     for _, sequenceId in ipairs(sequenceIds) do
@@ -311,7 +312,7 @@ function PlaybackSequenceDialog(options)
                 end
             end
 
-            options.sprite.properties(pluginKey).sequence = sequenceIds
+            spriteProperties.sequence = sequenceIds
 
             dialog:close()
         end
@@ -355,29 +356,41 @@ end
 function init(plugin)
     -- Custom tags are only available from v1.3-rc1
     if app.apiVersion >= 21 then
+        plugin:newMenuGroup{
+            id = "tag_playback",
+            title = "Tag Playback",
+            group = "cel_animation"
+        }
+
         plugin:newCommand{
             id = "PlaybackShortcuts",
-            title = "Playback Shortcuts...",
-            group = "cel_animation",
-            onenabled = function() return app.activeSprite ~= nil end,
+            title = "Shortcuts...",
+            group = "tag_playback",
+            onenabled = function()
+                return app.activeSprite ~= nil and #app.activeSprite.tags > 1
+            end,
             onclick = function()
-                local dialog = PlaybackShortcutsDialog(app.activeSprite)
+                local dialog = PlaybackShortcutsDialog {
+                    title = "Tag Playback Shortcuts",
+                    sprite = app.activeSprite
+                }
                 dialog:show()
             end
         }
 
+        plugin:newMenuSeparator{group = "tag_playback"}
+
         plugin:newCommand{
             id = "PlaybackSequences",
-            title = "Playback Tag Sequence...",
-            group = "cel_animation",
+            title = "Sequence...",
+            group = "tag_playback",
             onenabled = function()
                 return app.activeSprite ~= nil and #app.activeSprite.tags > 1
             end,
             onclick = function()
                 local sprite = app.activeSprite
                 local dialog = PlaybackSequenceDialog {
-                    title = "Playback Tag Sequence",
-                    properties = sprite.properties(pluginKey),
+                    title = "Tag Playback Sequence",
                     sprite = sprite
                 }
                 dialog:show()
