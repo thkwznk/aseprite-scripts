@@ -184,25 +184,59 @@ function FindPreviousTagIndex(sprite, frameNumber)
     return closestTagEndIndex
 end
 
-function RecursiveTimer(sequence, currentSequenceIndex)
-    app.activeFrame = sequence[currentSequenceIndex].frameNumber
+function RecursiveTimer(sequence, sequenceIndex, cancellationToken)
+    if app.activeFrame == nil then cancellationToken.onCancel() end
+    app.activeFrame = sequence[sequenceIndex].frameNumber
 
     local timer
-    timer = Timer {
-        interval = sequence[currentSequenceIndex].duration,
-        ontick = function()
-            if currentSequenceIndex < #sequence and app.activeFrame.frameNumber ==
-                sequence[currentSequenceIndex].frameNumber then
-                RecursiveTimer(sequence, currentSequenceIndex + 1)
-            end
 
-            timer:stop()
+    local ontick = function()
+        local isPlaying = sequenceIndex < #sequence
+        local isCorrectFrame =
+            app.activeFrame and app.activeFrame.frameNumber ==
+                sequence[sequenceIndex].frameNumber
+
+        if isPlaying and isCorrectFrame and not cancellationToken.isCancelled then
+            RecursiveTimer(sequence, sequenceIndex + 1, cancellationToken)
+        else
+            cancellationToken.onCancel()
         end
-    }
+
+        timer:stop()
+    end
+
+    timer = Timer {interval = sequence[sequenceIndex].duration, ontick = ontick}
     timer:start()
 end
 
 function PlaySequence(tagSequence)
+    local sprite = app.activeSprite
+    local layer = app.activeLayer
+
+    local cancellationToken = {isCancelled = false}
+
+    local onChangeListener
+    onChangeListener = sprite.events:on('change', function()
+        cancellationToken.isCancelled = true
+        cancellationToken.frame = app.activeFrame
+    end)
+
+    local onSiteChange
+    onSiteChange = app.events:on('sitechange', function()
+        if sprite ~= app.activeSprite or layer ~= app.activeLayer then
+            cancellationToken.isCancelled = true
+        end
+    end)
+
+    cancellationToken.onCancel = function()
+        if sprite then sprite.events:off(onChangeListener) end
+        app.events:off(onSiteChange)
+
+        if cancellationToken.frame then
+            app.activeFrame = cancellationToken.frame
+        end
+    end
+
     local frameSequence = {}
 
     for _, tag in ipairs(tagSequence) do
@@ -211,7 +245,9 @@ function PlaySequence(tagSequence)
         end
     end
 
-    if #frameSequence > 0 then RecursiveTimer(frameSequence, 1) end
+    if #frameSequence > 0 then
+        RecursiveTimer(frameSequence, 1, cancellationToken)
+    end
 end
 
 function PlaybackShortcutsDialog(options)
