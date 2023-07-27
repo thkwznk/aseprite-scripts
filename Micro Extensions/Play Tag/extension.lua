@@ -203,11 +203,14 @@ function PlaybackSequencesDialog(options)
         end
     end
 
+    dialog --
+    :separator{text = "Sequence:"}
+
     for i = 1, 9 do
         dialog --
         :combobox{
             id = "sequence-tag-" .. tostring(i),
-            label = "Step " .. tostring(i),
+            label = "Tag #" .. tostring(i),
             options = tagNames,
             option = sequenceNames[i],
             visible = i == 1 or sequenceNames[i - 1] ~= nil,
@@ -229,6 +232,7 @@ function PlaybackSequencesDialog(options)
     end
 
     dialog --
+    :separator() --
     :button{
         text = "OK",
         onclick = function()
@@ -297,6 +301,9 @@ function init(plugin)
                 local sprite = app.activeSprite
                 local dialog = Dialog("Playback Shortcuts")
 
+                dialog --
+                :separator{text="Shortcuts:"}
+
                 local playbackOptions, tagDictionary =
                     GetPlaybackOptions(sprite)
 
@@ -319,7 +326,6 @@ function init(plugin)
                 end
 
                 dialog --
-                :separator() --
                 :button{
                     text = "Reset",
                     onclick = function()
@@ -361,7 +367,7 @@ function init(plugin)
 
         plugin:newCommand{
             id = "PlaybackSequences",
-            title = "Playback Sequences...",
+            title = "Playback Tag Sequence...",
             group = "cel_animation",
             onenabled = function()
                 return app.activeSprite ~= nil and #app.activeSprite.tags > 1
@@ -369,7 +375,7 @@ function init(plugin)
             onclick = function()
                 local sprite = app.activeSprite
                 local dialog = PlaybackSequencesDialog {
-                    title = "Playback Sequences",
+                    title = "Playback Tag Sequence",
                     properties = sprite.properties(pluginKey),
                     sprite = sprite
                 }
