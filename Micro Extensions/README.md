@@ -27,6 +27,10 @@ Provides an option to speed up or slow down multiple frames at the same time to 
 
 Provides an option to follow the movement of cels from another layer.
 
+## Playback Shortcuts
+
+Provides customizable keyboard shortcuts for playing tagged animations, and a new option to play a sequence of tags one after another.
+
 ## Run Script
 
 *In progress...*

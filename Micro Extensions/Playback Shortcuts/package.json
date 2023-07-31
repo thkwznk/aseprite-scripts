@@ -1,7 +1,7 @@
 {
   "name": "play-tag",
-  "displayName": "Play Tag",
-  "description": "",
+  "displayName": "Playback Shortcuts",
+  "description": "Provides customizable keyboard shortcuts for playing tagged animations, and a new option to play a sequence of tags one after another.",
   "version": "1.0.0",
   "author": {
     "name": "Kacper Woźniak",
