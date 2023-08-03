@@ -2,7 +2,7 @@ NewSpriteAnalyzerDialog = dofile("./NewSpriteAnalyzerDialog.lua")
 NewPreviewSpriteDrawer = dofile("./NewPreviewSpriteDrawer.lua")
 PresetProvider = dofile("./PresetProvider.lua")
 
-local GetSpriteImage = function(sprite, frame)
+function GetImage(sprite, frame)
     local image = Image(sprite.width, sprite.height, sprite.colorMode)
     image:drawSprite(sprite, frame, 0, 0)
     return image
@@ -42,12 +42,14 @@ function SpriteAnalyzer:IsSpriteOpen(sprite)
 end
 
 function SpriteAnalyzer:Do(plugin)
-    local activeSprite = app.activeSprite
-    local bounds = Rectangle(0, 0, activeSprite.width, activeSprite.height)
+    local analyzedSprite = app.activeSprite
+    if analyzedSprite == nil then return end
 
-    if activeSprite == nil then return end
+    local dialog
 
-    local NewSpriteAnalyzerDialog = NewSpriteAnalyzerDialog:New()
+    local previewImage
+    local previewImageProvider = {}
+    function previewImageProvider:GetImage() return previewImage end
 
     -- Start analysis
     local onSpriteChange = nil
@@ -59,36 +61,31 @@ function SpriteAnalyzer:Do(plugin)
         --     return
         -- end
 
-        local mode = NewSpriteAnalyzerDialog:GetAnalysisMode()
+        local sourceImage = GetImage(analyzedSprite, app.activeFrame)
+        previewImage = NewPreviewSpriteDrawer:Update(sourceImage,
+                                                     dialog.data.analysisMode,
+                                                     {}, {})
 
-        if not mode then return end
-
-        local sourceImage = GetSpriteImage(activeSprite, app.activeFrame)
-
-        local image = NewPreviewSpriteDrawer:Update(sourceImage, bounds, mode,
-                                                    NewSpriteAnalyzerDialog:GetConfiguration())
-
-        -- TODO: Fix correctly repainting on mode change
-        NewSpriteAnalyzerDialog:Repaint(image)
+        dialog:repaint()
     end
 
     -- Initial drawing of the preview image
-    onChange()
+    -- onChange()
 
-    onSpriteChange = activeSprite.events:on('change', onChange)
+    onSpriteChange = analyzedSprite.events:on('change', onChange)
 
-    local presetProvider = PresetProvider:New{plugin = plugin}
+    -- local presetProvider = PresetProvider:New{plugin = plugin}
 
-    NewSpriteAnalyzerDialog:Create{
+    dialog = NewSpriteAnalyzerDialog {
         title = "Sprite Analysis",
-        presetProvider = presetProvider,
-        imageProvider = imageProvider, -- Might need to bring back the Image Provider
-        spriteBounds = bounds,
-        dialogBounds = plugin.preferences.dialogBounds,
+        -- presetProvider = presetProvider,
+        imageProvider = previewImageProvider, -- Might need to bring back the Image Provider
+        -- spriteBounds = bounds,
+        -- dialogBounds = plugin.preferences.dialogBounds,
         onclose = function(lastDialogBounds)
             -- TODO: Do I even need this?
-            if self:IsSpriteOpen(activeSprite) then
-                activeSprite.events:off(onSpriteChange)
+            if self:IsSpriteOpen(analyzedSprite) then
+                analyzedSprite.events:off(onSpriteChange)
             end
 
             plugin.preferences.dialogBounds = lastDialogBounds or
@@ -97,7 +94,9 @@ function SpriteAnalyzer:Do(plugin)
         end,
         onchange = onChange
     }
-    NewSpriteAnalyzerDialog:Show()
+    dialog:show{wait = false}
+
+    onChange()
 end
 
 return SpriteAnalyzer

@@ -179,17 +179,17 @@ end
 
 local PreviewSpriteDrawer = {}
 
-function PreviewSpriteDrawer:Update(image, bounds, mode, configuration)
+function PreviewSpriteDrawer:Update(image, mode, outlineColors, flatColors)
     -- TODO: DO ALL OF THIS IN A SINGLE LOOP OVER "IMAGE:PIXELS()" AND WRITE DIRECTLY TO THE PREVIEW IMAGE, IT WILL BE A LOT OF MATH BUT SO MUCH FASTER
-    local padding = configuration.preview and configuration.preview.padding or
-                        math.min(bounds.width, bounds.height) / 4
+    -- local padding = configuration.preview and configuration.preview.padding or
+    --                     math.min(bounds.width, bounds.height) / 4
 
-    PreviewPositionCalculator:Init{
-        direction = configuration.preview and configuration.preview.direction or
-            PreviewDirection.Horizontal,
-        bounds = bounds,
-        padding = padding
-    }
+    -- PreviewPositionCalculator:Init{
+    --     direction = configuration.preview and configuration.preview.direction or
+    --         PreviewDirection.Horizontal,
+    --     bounds = bounds,
+    --     padding = padding
+    -- }
 
     -- Prepare a list of all images
     local imagesToDraw = {}
@@ -203,16 +203,12 @@ function PreviewSpriteDrawer:Update(image, bounds, mode, configuration)
 
     if mode == AnalysisMode.Silhouette then
         imagesToDraw = {Silhouette(image)}
-    elseif mode == AnalysisMode.Outline and
-        self:HasOutlineColors(configuration.outlineColors) then
-        imagesToDraw = {
-            SilhouetteWithoutOutline(image, configuration.outlineColors)
-        }
+    elseif mode == AnalysisMode.Outline and self:HasOutlineColors(outlineColors) then
+        imagesToDraw = {SilhouetteWithoutOutline(image, outlineColors)}
     elseif mode == AnalysisMode.Values then
         imagesToDraw = {Desaturate(image)}
-    elseif mode == AnalysisMode.ColorBlocks and
-        self:HasFlatColors(configuration.flatColors) then
-        imagesToDraw = {FlattenColors(image, configuration.flatColors)}
+    elseif mode == AnalysisMode.ColorBlocks and self:HasFlatColors(flatColors) then
+        imagesToDraw = {FlattenColors(image, flatColors)}
     end
 
     -- if self:HasFlatColors(configuration.flatColors) then
