@@ -11,30 +11,43 @@ local function Flip(image)
 end
 
 local function Desaturate(image)
-    local desaturatedImage = Image(image.spec)
+    local getPixel, drawPixel = image.getPixel, image.drawPixel
 
-    for pixel in image:pixels() do
-        local color = Color(pixel())
-        desaturatedImage:drawPixel(pixel.x, pixel.y, Color {
-            gray = 0.299 * color.red + 0.114 * color.blue + 0.587 * color.green,
-            alpha = color.alpha
-        })
+    for x = 0, image.width - 1 do
+        for y = 0, image.height - 1 do
+            local value = getPixel(image, x, y)
+
+            if value > 0 then
+                local r = app.pixelColor.rgbaR(value)
+                local g = app.pixelColor.rgbaG(value)
+                local b = app.pixelColor.rgbaB(value)
+
+                drawPixel(image, x, y, Color {
+                    gray = 0.299 * r + 0.114 * b + 0.587 * g,
+                    alpha = app.pixelColor.rgbaA(value)
+                })
+            end
+        end
     end
 
-    return desaturatedImage
+    return image
 end
 
 local function Silhouette(image)
-    local silhouetteImage = Image(image.spec)
+    local getPixel, drawPixel = image.getPixel, image.drawPixel
 
-    for pixel in image:pixels() do
-        silhouetteImage:drawPixel(pixel.x, pixel.y, Color {
-            gray = 0,
-            alpha = Color(pixel()).alpha
-        })
+    for x = 0, image.width - 1 do
+        for y = 0, image.height - 1 do
+            local value = getPixel(image, x, y)
+
+            drawPixel(image, x, y, Color {
+                gray = app.pixelColor.rgbaA(value),
+                alpha = app.pixelColor.rgbaA(value)
+            })
+        end
     end
 
-    return silhouetteImage
+    return image
 end
 
 local function OnlyOutline(image, outlineColors)
@@ -166,21 +179,7 @@ end
 
 local PreviewSpriteDrawer = {}
 
-function PreviewSpriteDrawer:Update(imageProvider, previewSprite, bounds,
-                                    configuration)
-    if app.apiVersion >= 21 and not self.previewDialog then
-        self.previewDialog = Dialog("Sprite Breakdown")
-        self.previewDialog:canvas{
-            width = 100,
-            height = 100,
-            onpaint = function(ev)
-                local gc = ev.context
-
-                gc:drawImage(self.previewImage, 0, 0)
-            end
-        }
-    end
-
+function PreviewSpriteDrawer:Update(image, bounds, mode, configuration)
     -- TODO: DO ALL OF THIS IN A SINGLE LOOP OVER "IMAGE:PIXELS()" AND WRITE DIRECTLY TO THE PREVIEW IMAGE, IT WILL BE A LOT OF MATH BUT SO MUCH FASTER
     local padding = configuration.preview and configuration.preview.padding or
                         math.min(bounds.width, bounds.height) / 4
@@ -192,68 +191,86 @@ function PreviewSpriteDrawer:Update(imageProvider, previewSprite, bounds,
         padding = padding
     }
 
-    -- Get the image of the selection from active sprite
-    local image = imageProvider:GetImage()
-
     -- Prepare a list of all images
-    local imagesToDraw = {Desaturate(image), image}
+    local imagesToDraw = {}
 
-    if self:HasFlatColors(configuration.flatColors) then
-        table.insert(imagesToDraw,
-                     FlattenColors(image, configuration.flatColors))
+    local AnalysisMode = {
+        Silhouette = "Silhouette",
+        Outline = "Outline",
+        Values = "Values",
+        ColorBlocks = "Color Blocks"
+    }
+
+    if mode == AnalysisMode.Silhouette then
+        imagesToDraw = {Silhouette(image)}
+    elseif mode == AnalysisMode.Outline and
+        self:HasOutlineColors(configuration.outlineColors) then
+        imagesToDraw = {
+            SilhouetteWithoutOutline(image, configuration.outlineColors)
+        }
+    elseif mode == AnalysisMode.Values then
+        imagesToDraw = {Desaturate(image)}
+    elseif mode == AnalysisMode.ColorBlocks and
+        self:HasFlatColors(configuration.flatColors) then
+        imagesToDraw = {FlattenColors(image, configuration.flatColors)}
     end
 
-    if self:HasOutlineColors(configuration.outlineColors) then
-        table.insert(imagesToDraw,
-                     OnlyOutline(image, configuration.outlineColors))
-        -- table.insert(imagesToDraw, SilhouetteWithoutOutline(image,
-        --                                                     configuration.outlineColors))
-    end
+    -- if self:HasFlatColors(configuration.flatColors) then
+    --     table.insert(imagesToDraw,
+    --                  FlattenColors(image, configuration.flatColors))
+    -- end
 
-    table.insert(imagesToDraw, Silhouette(image))
+    -- if self:HasOutlineColors(configuration.outlineColors) then
+    --     table.insert(imagesToDraw,
+    --                  OnlyOutline(image, configuration.outlineColors))
+    --     -- table.insert(imagesToDraw, SilhouetteWithoutOutline(image,
+    --     --                                                     configuration.outlineColors))
+    -- end
 
-    -- Collect all of the positions for the images
-    local positionsToDraw = {}
-    for i = 1, #imagesToDraw do
-        local position = PreviewPositionCalculator:NextPosition()
-        table.insert(positionsToDraw, i, position)
-    end
+    -- table.insert(imagesToDraw, Silhouette(image))
 
-    -- Move to the next line
-    if configuration.preview and not configuration.preview.singleLine then
-        PreviewPositionCalculator:GoToNextLine()
-    end
+    -- -- Collect all of the positions for the images
+    -- local positionsToDraw = {}
+    -- for i = 1, #imagesToDraw do
+    --     local position = PreviewPositionCalculator:NextPosition()
+    --     table.insert(positionsToDraw, i, position)
+    -- end
 
-    -- Collect all of the positions for the flipped images
-    for i = 1, #imagesToDraw do
-        local position = PreviewPositionCalculator:NextPosition()
-        table.insert(positionsToDraw, i, position)
-    end
+    -- -- Move to the next line
+    -- if configuration.preview and not configuration.preview.singleLine then
+    --     PreviewPositionCalculator:GoToNextLine()
+    -- end
+
+    -- -- Collect all of the positions for the flipped images
+    -- for i = 1, #imagesToDraw do
+    --     local position = PreviewPositionCalculator:NextPosition()
+    --     table.insert(positionsToDraw, i, position)
+    -- end
 
     -- One last step to correctly return the size of the sprite
-    PreviewPositionCalculator:GoToNextLine()
+    -- PreviewPositionCalculator:GoToNextLine()
 
     -- Calculating the number of images that are going to be there and resizing the sprite first, before drawing to avoid clipping the preview image
-    local previewSpriteSize = PreviewPositionCalculator:CalculateSpriteSize()
+    -- local previewSpriteSize = PreviewPositionCalculator:CalculateSpriteSize()
 
-    -- Create a new preview image
-    local previewImage = Image(previewSpriteSize.x, previewSpriteSize.y,
-                               ColorMode.RGB)
+    return imagesToDraw[1]
 
-    -- Draw all images
-    for i = 1, #imagesToDraw * 2 do
-        local imageToDraw = imagesToDraw[i]
-        if i > #imagesToDraw then
-            local originalIndex = i - #imagesToDraw
-            imageToDraw = Flip(imagesToDraw[originalIndex])
-        end
+    -- -- Create a new preview image
+    -- local previewImage = Image(previewSpriteSize.x, previewSpriteSize.y,
+    --                            ColorMode.RGB)
 
-        previewImage:drawImage(imageToDraw, positionsToDraw[i])
-    end
+    -- -- Draw all images
+    -- for i = 1, #imagesToDraw do
+    --     local imageToDraw = imagesToDraw[i]
+    --     -- if i > #imagesToDraw then
+    --     --     local originalIndex = i - #imagesToDraw
+    --     --     imageToDraw = Flip(imagesToDraw[originalIndex])
+    --     -- end
 
-    self.previewImage = previewImage
-    self.previewDialog:repaint()
-    self.previewDialog:show{wait = false}
+    --     previewImage:drawImage(imageToDraw, positionsToDraw[i])
+    -- end
+
+    -- return previewImage
 end
 
 function PreviewSpriteDrawer:HasOutlineColors(outlineColors)

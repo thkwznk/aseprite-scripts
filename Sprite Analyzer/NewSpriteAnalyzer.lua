@@ -1,29 +1,10 @@
-SpriteAnalyzerDialog = dofile("./SpriteAnalyzerDialog.lua")
+NewSpriteAnalyzerDialog = dofile("./NewSpriteAnalyzerDialog.lua")
 NewPreviewSpriteDrawer = dofile("./NewPreviewSpriteDrawer.lua")
 PresetProvider = dofile("./PresetProvider.lua")
 
-local ImageProvider = {sprite = nil}
-
-function ImageProvider:New(options)
-    options = options or {}
-    setmetatable(options, self)
-    self.__index = self
-    return options
-end
-
-function ImageProvider:Init(options)
-    self.sprite = options and options.sprite
-    self.bounds = options and options.bounds
-end
-
-function ImageProvider:GetImage()
-    -- TODO: ColorMode from sprite
-    local image = Image(self.bounds.width, self.bounds.height, ColorMode.RGB)
-
-    -- TODO: Optimise
-    image:drawSprite(self.sprite, app.activeFrame, -self.bounds.x,
-                     -self.bounds.y)
-
+local GetSpriteImage = function(sprite, frame)
+    local image = Image(sprite.width, sprite.height, sprite.colorMode)
+    image:drawSprite(sprite, frame, 0, 0)
     return image
 end
 
@@ -62,14 +43,11 @@ end
 
 function SpriteAnalyzer:Do(plugin)
     local activeSprite = app.activeSprite
-    local bounds = activeSprite.selection.bounds
+    local bounds = Rectangle(0, 0, activeSprite.width, activeSprite.height)
 
     if activeSprite == nil then return end
 
-    local spriteAnalyzerDialog = SpriteAnalyzerDialog:New()
-
-    local imageProvider = ImageProvider:New()
-    imageProvider:Init{sprite = activeSprite, bounds = bounds}
+    local NewSpriteAnalyzerDialog = NewSpriteAnalyzerDialog:New()
 
     -- Start analysis
     local onSpriteChange = nil
@@ -81,8 +59,17 @@ function SpriteAnalyzer:Do(plugin)
         --     return
         -- end
 
-        NewPreviewSpriteDrawer:Update(imageProvider, nil, bounds,
-                                      spriteAnalyzerDialog:GetConfiguration())
+        local mode = NewSpriteAnalyzerDialog:GetAnalysisMode()
+
+        if not mode then return end
+
+        local sourceImage = GetSpriteImage(activeSprite, app.activeFrame)
+
+        local image = NewPreviewSpriteDrawer:Update(sourceImage, bounds, mode,
+                                                    NewSpriteAnalyzerDialog:GetConfiguration())
+
+        -- TODO: Fix correctly repainting on mode change
+        NewSpriteAnalyzerDialog:Repaint(image)
     end
 
     -- Initial drawing of the preview image
@@ -92,10 +79,10 @@ function SpriteAnalyzer:Do(plugin)
 
     local presetProvider = PresetProvider:New{plugin = plugin}
 
-    spriteAnalyzerDialog:Create{
+    NewSpriteAnalyzerDialog:Create{
         title = "Sprite Analysis",
         presetProvider = presetProvider,
-        imageProvider = imageProvider,
+        imageProvider = imageProvider, -- Might need to bring back the Image Provider
         spriteBounds = bounds,
         dialogBounds = plugin.preferences.dialogBounds,
         onclose = function(lastDialogBounds)
@@ -110,7 +97,7 @@ function SpriteAnalyzer:Do(plugin)
         end,
         onchange = onChange
     }
-    spriteAnalyzerDialog:Show()
+    NewSpriteAnalyzerDialog:Show()
 end
 
 return SpriteAnalyzer
