@@ -1,6 +1,12 @@
 PreviewDirection = dofile("./PreviewDirection.lua")
 
 local function Flip(image)
+    if app.apiVersion >= 24 then
+        image:flip(FlipType.HORIZONTAL)
+        return image
+    end
+
+    -- TODO: Rewrite this for better performance
     local flippedImage = Image(image.spec)
 
     for pixel in image:pixels() do
@@ -51,8 +57,9 @@ local function Silhouette(image)
 end
 
 local function OnlyOutline(image, outlineColors)
+    if outlineColors == nil or #outlineColors == 0 then return image end
+
     local outlineImage = Image(image.spec)
-    if outlineColors == nil then return outlineImage end
 
     for pixel in image:pixels() do
         local pixelColor = Color(pixel())
@@ -98,8 +105,9 @@ local function SilhouetteWithoutOutline(image, outlineColors)
 end
 
 local function FlattenColors(image, flatColorEntries)
+    if flatColorEntries == nil or #flatColorEntries == 0 then return image end
+
     local flattedImage = Image(image.spec)
-    if flatColorEntries == nil then return flattedImage end
 
     for pixel in image:pixels() do
         local pixelColor = Color(pixel())
@@ -122,78 +130,9 @@ local function FlattenColors(image, flatColorEntries)
     return flattedImage
 end
 
-local PreviewPositionCalculator = {}
-
-function PreviewPositionCalculator:Init(options)
-    self.direction = options and options.direction
-    self.bounds = options and options.bounds
-    self.padding = options and options.padding
-
-    self.imagesPerRow = 0
-    self.imagesPerColumn = 0
-
-    self.currentImageInRow = 0
-    self.currentImageInColumn = 0
-end
-
-function PreviewPositionCalculator:NextPosition()
-    local x = self.padding + (self.padding + self.bounds.width) *
-                  self.currentImageInRow
-    local y = self.padding + (self.padding + self.bounds.height) *
-                  self.currentImageInColumn
-
-    if self.direction == PreviewDirection.Horizontal then
-        self.currentImageInRow = self.currentImageInRow + 1
-    else
-        self.currentImageInColumn = self.currentImageInColumn + 1
-    end
-
-    self.imagesPerRow = math.max(self.imagesPerRow, self.currentImageInRow)
-    self.imagesPerColumn = math.max(self.imagesPerColumn,
-                                    self.currentImageInColumn)
-
-    return Point(x, y)
-end
-
-function PreviewPositionCalculator:GoToNextLine()
-    if self.direction == PreviewDirection.Horizontal then
-        self.currentImageInRow = 0
-        self.currentImageInColumn = self.currentImageInColumn + 1
-    else
-        self.currentImageInRow = self.currentImageInRow + 1
-        self.currentImageInColumn = 0
-    end
-
-    self.imagesPerRow = math.max(self.imagesPerRow, self.currentImageInRow)
-    self.imagesPerColumn = math.max(self.imagesPerColumn,
-                                    self.currentImageInColumn)
-end
-
-function PreviewPositionCalculator:CalculateSpriteSize()
-    local width = self.padding + (self.bounds.width + self.padding) *
-                      self.imagesPerRow
-    local height = self.padding + (self.bounds.height + self.padding) *
-                       self.imagesPerColumn
-    return Point(width, height)
-end
-
 local PreviewSpriteDrawer = {}
 
-function PreviewSpriteDrawer:Update(image, mode, outlineColors, flatColors)
-    -- TODO: DO ALL OF THIS IN A SINGLE LOOP OVER "IMAGE:PIXELS()" AND WRITE DIRECTLY TO THE PREVIEW IMAGE, IT WILL BE A LOT OF MATH BUT SO MUCH FASTER
-    -- local padding = configuration.preview and configuration.preview.padding or
-    --                     math.min(bounds.width, bounds.height) / 4
-
-    -- PreviewPositionCalculator:Init{
-    --     direction = configuration.preview and configuration.preview.direction or
-    --         PreviewDirection.Horizontal,
-    --     bounds = bounds,
-    --     padding = padding
-    -- }
-
-    -- Prepare a list of all images
-    local imagesToDraw = {}
-
+function PreviewSpriteDrawer:Update(image, mode, flip, outlineColors, flatColors)
     local AnalysisMode = {
         Silhouette = "Silhouette",
         Outline = "Outline",
@@ -201,72 +140,22 @@ function PreviewSpriteDrawer:Update(image, mode, outlineColors, flatColors)
         ColorBlocks = "Color Blocks"
     }
 
+    -- Prepare a list of all images
+    local previewImage = {}
+
     if mode == AnalysisMode.Silhouette then
-        imagesToDraw = {Silhouette(image)}
+        previewImage = Silhouette(image)
     elseif mode == AnalysisMode.Outline and self:HasOutlineColors(outlineColors) then
-        imagesToDraw = {SilhouetteWithoutOutline(image, outlineColors)}
+        previewImage = OnlyOutline(image, outlineColors)
     elseif mode == AnalysisMode.Values then
-        imagesToDraw = {Desaturate(image)}
+        previewImage = Desaturate(image)
     elseif mode == AnalysisMode.ColorBlocks and self:HasFlatColors(flatColors) then
-        imagesToDraw = {FlattenColors(image, flatColors)}
+        previewImage = FlattenColors(image, flatColors)
     end
 
-    -- if self:HasFlatColors(configuration.flatColors) then
-    --     table.insert(imagesToDraw,
-    --                  FlattenColors(image, configuration.flatColors))
-    -- end
+    if flip then previewImage = Flip(previewImage) end
 
-    -- if self:HasOutlineColors(configuration.outlineColors) then
-    --     table.insert(imagesToDraw,
-    --                  OnlyOutline(image, configuration.outlineColors))
-    --     -- table.insert(imagesToDraw, SilhouetteWithoutOutline(image,
-    --     --                                                     configuration.outlineColors))
-    -- end
-
-    -- table.insert(imagesToDraw, Silhouette(image))
-
-    -- -- Collect all of the positions for the images
-    -- local positionsToDraw = {}
-    -- for i = 1, #imagesToDraw do
-    --     local position = PreviewPositionCalculator:NextPosition()
-    --     table.insert(positionsToDraw, i, position)
-    -- end
-
-    -- -- Move to the next line
-    -- if configuration.preview and not configuration.preview.singleLine then
-    --     PreviewPositionCalculator:GoToNextLine()
-    -- end
-
-    -- -- Collect all of the positions for the flipped images
-    -- for i = 1, #imagesToDraw do
-    --     local position = PreviewPositionCalculator:NextPosition()
-    --     table.insert(positionsToDraw, i, position)
-    -- end
-
-    -- One last step to correctly return the size of the sprite
-    -- PreviewPositionCalculator:GoToNextLine()
-
-    -- Calculating the number of images that are going to be there and resizing the sprite first, before drawing to avoid clipping the preview image
-    -- local previewSpriteSize = PreviewPositionCalculator:CalculateSpriteSize()
-
-    return imagesToDraw[1]
-
-    -- -- Create a new preview image
-    -- local previewImage = Image(previewSpriteSize.x, previewSpriteSize.y,
-    --                            ColorMode.RGB)
-
-    -- -- Draw all images
-    -- for i = 1, #imagesToDraw do
-    --     local imageToDraw = imagesToDraw[i]
-    --     -- if i > #imagesToDraw then
-    --     --     local originalIndex = i - #imagesToDraw
-    --     --     imageToDraw = Flip(imagesToDraw[originalIndex])
-    --     -- end
-
-    --     previewImage:drawImage(imageToDraw, positionsToDraw[i])
-    -- end
-
-    -- return previewImage
+    return previewImage
 end
 
 function PreviewSpriteDrawer:HasOutlineColors(outlineColors)

@@ -22,6 +22,7 @@ local SpriteAnalyzerDialog = function(options)
     } --
     :combobox{
         id = "analysisMode",
+        label = "Mode:",
         option = AnalysisMode.Silhouette,
         options = {
             AnalysisMode.Silhouette, AnalysisMode.Outline, AnalysisMode.Values,
@@ -29,10 +30,11 @@ local SpriteAnalyzerDialog = function(options)
         },
         onchange = function() options.onchange() end
     } --
-
-    dialog --
-    :separator() --
-    :button{text = "Cancel"}
+    :check{
+        id = "flip",
+        label = "Flip:",
+        onclick = function() options.onchange() end
+    } --
 
     return dialog
 end

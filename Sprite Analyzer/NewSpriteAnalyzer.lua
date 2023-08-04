@@ -64,7 +64,7 @@ function SpriteAnalyzer:Do(plugin)
         local sourceImage = GetImage(analyzedSprite, app.activeFrame)
         previewImage = NewPreviewSpriteDrawer:Update(sourceImage,
                                                      dialog.data.analysisMode,
-                                                     {}, {})
+                                                     dialog.data.flip, {}, {})
 
         dialog:repaint()
     end
