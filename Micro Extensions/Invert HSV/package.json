@@ -1,0 +1,25 @@
+{
+  "name": "invert-hsv",
+  "displayName": "Invert HSV",
+  "description": "",
+  "version": "1.0.0",
+  "author": {
+    "name": "Kacper Woźniak",
+    "email": "kac.wozniak@gmail.com",
+    "url": "https://thkaspar.itch.io/"
+  },
+  "contributors": [],
+  "publisher": "thkwznk",
+  "license": "CC-BY-4.0",
+  "categories": [
+    "Scripts",
+    "Keys"
+  ],
+  "contributes": {
+    "scripts": [
+      {
+        "path": "./extension.lua"
+      }
+    ]
+  }
+}
