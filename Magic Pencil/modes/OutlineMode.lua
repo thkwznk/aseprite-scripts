@@ -6,8 +6,10 @@ function OutlineMode:Process(change, sprite, cel, parameters)
 
     if not sprite.selection.isEmpty then
         local b = sprite.selection.bounds
-        selection = Rectangle(b.x - cel.bounds.x, b.y - cel.bounds.y, b.width,
-                              b.height)
+        local localSelectionBounds = Rectangle(b.x - cel.bounds.x,
+                                               b.y - cel.bounds.y, b.width,
+                                               b.height)
+        selection = Selection(localSelectionBounds)
     end
 
     local outlinePixels = self:_Outline(selection, cel.image,
@@ -54,9 +56,7 @@ end
 function OutlineMode:_RecursiveOutline(selection, image, x, y, outlinePixels,
                                        visited)
     -- Out of selection
-    if selection then
-        if not RectangleContains(selection, x, y) then return end
-    end
+    if selection then if not selection:Contains(x, y) then return end end
 
     -- Out of bounds
     if x < 0 or x > image.width - 1 or y < 0 or y > image.height - 1 then

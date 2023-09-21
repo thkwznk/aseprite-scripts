@@ -1,22 +1,21 @@
 local CutMode = {useMaskColor = true, deleteOnEmptyCel = true}
 
 function CutMode:Process(change, sprite, cel, parameters)
-    local intersection = Rectangle(cel.bounds):intersect(change.bounds)
-    local image = Image(intersection.width, intersection.height)
-    local color = nil
+    local newImage = Image(change.bounds.width, change.bounds.height)
 
     local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
+    local ox, oy = change.bounds.x, change.bounds.y
+
+    local x, y, color = nil, nil, nil
 
     for _, pixel in ipairs(change.pixels) do
-        if RectangleContains(intersection, pixel.x, pixel.y) then
-            color = getPixel(cel.image, pixel.x - cel.position.x,
-                             pixel.y - cel.position.y)
-            drawPixel(cel.image, pixel.x - cel.position.x,
-                      pixel.y - cel.position.y, 0)
+        x = pixel.x - cel.position.x
+        y = pixel.y - cel.position.y
 
-            drawPixel(image, pixel.x - intersection.x, pixel.y - intersection.y,
-                      color)
-        end
+        color = getPixel(cel.image, x, y)
+
+        drawPixel(cel.image, x, y, 0)
+        drawPixel(newImage, pixel.x - ox, pixel.y - oy, color)
     end
 
     app.activeCel.image = cel.image
@@ -27,6 +26,7 @@ function CutMode:Process(change, sprite, cel, parameters)
 
     local newLayer = sprite:newLayer()
     newLayer.parent = activeLayerParent
+
     if change.leftPressed then
         newLayer.stackIndex = activeLayerIndex + 1
     else
@@ -34,9 +34,7 @@ function CutMode:Process(change, sprite, cel, parameters)
     end
 
     newLayer.name = "Lifted Content"
-
-    sprite:newCel(app.activeLayer, app.activeFrame.frameNumber, image,
-                  Point(intersection.x, intersection.y))
+    sprite:newCel(newLayer, app.activeFrame.frameNumber, newImage, Point(ox, oy))
 end
 
 return CutMode

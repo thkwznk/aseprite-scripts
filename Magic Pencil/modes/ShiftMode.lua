@@ -24,8 +24,8 @@ function ShiftModeBase:New(id)
 end
 
 function ShiftModeBase:Process(change, sprite, cel, parameters)
-    local shift = parameters.shiftPercentage / 100 *
-                      If(change.leftPressed, 1, -1)
+    local direction = change.leftPressed and 1 or -1
+    local shift = parameters.shiftPercentage / 100 * direction
     local x, y, c
 
     local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel

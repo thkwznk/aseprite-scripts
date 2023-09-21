@@ -2,7 +2,7 @@ local ColorizeMode = {deleteOnEmptyCel = true}
 
 function ColorizeMode:Process(change, sprite, cel, parameters)
     local x, y, c
-    local hue = If(change.leftPressed, app.fgColor.hsvHue, app.bgColor.hsvHue)
+    local hue = change.leftPressed and app.fgColor.hsvHue or app.bgColor.hsvHue
 
     local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
 
