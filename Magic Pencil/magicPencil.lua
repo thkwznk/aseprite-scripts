@@ -80,14 +80,6 @@ local ToRgbMap = {
     [Modes.ShiftHslLightness] = Modes.ShiftRgbBlue
 }
 
-function If(condition, trueValue, falseValue)
-    if condition then
-        return trueValue
-    else
-        return falseValue
-    end
-end
-
 function Contains(collection, expectedValue)
     for _, value in ipairs(collection) do
         if value == expectedValue then return true end
@@ -464,11 +456,17 @@ function MagicPencil:Execute(options)
 
                 local useMaskColor =
                     ModeFactory:Create(selectedMode).useMaskColor
-                app.fgColor = If(useMaskColor, MagicPink, lastFgColor)
-                app.bgColor = If(useMaskColor, MagicTeal, lastBgColor)
-
                 local pencilPreferences = app.preferences.tool("pencil")
-                pencilPreferences.ink = If(useMaskColor, "simple", lastInk)
+
+                if useMaskColor then
+                    app.fgColor = MagicPink
+                    app.bgColor = MagicTeal
+                    pencilPreferences.ink = "simple"
+                else
+                    app.fgColor = lastFgColor
+                    app.bgColor = lastBgColor
+                    pencilPreferences.ink = lastInk
+                end
 
                 self.dialog --
                 :modify{
