@@ -1,8 +1,8 @@
 {
-  "name": "invert-hsv",
-  "displayName": "Invert HSV",
+  "name": "more-color-adjustments",
+  "displayName": "More Color Adjustments",
   "description": "",
-  "version": "1.0.0",
+  "version": "0.0.1",
   "author": {
     "name": "Kacper Woźniak",
     "email": "kac.wozniak@gmail.com",
@@ -12,8 +12,7 @@
   "publisher": "thkwznk",
   "license": "CC-BY-4.0",
   "categories": [
-    "Scripts",
-    "Keys"
+    "Scripts"
   ],
   "contributes": {
     "scripts": [
