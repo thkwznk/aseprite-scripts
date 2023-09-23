@@ -1,5 +1,6 @@
 local PreviewCanvas = dofile('./PreviewCanvas.lua')
 local ColorConverter = dofile('./ColorConverter.lua')
+local GetPixels = dofile('./ImagePixels.lua')
 
 local DesaturateMode = {
     Grayscale = "Grayscale",
@@ -67,19 +68,17 @@ end
 
 local DesaturateColors = function(mode)
     app.transaction(function()
-        local selection = app.activeSprite.selection
+        local bounds = app.activeSprite.selection.bounds
 
         for _, cel in ipairs(app.range.cels) do
-            -- Invert colors only for the editable cels
+            -- Desaturate colors only for the editable cels
             if cel.layer.isEditable then
-                local localSelection = Selection(selection.bounds)
-                localSelection.bounds.x =
-                    localSelection.bounds.x + cel.position.x
-                localSelection.bounds.y =
-                    localSelection.bounds.y + cel.position.y
+                local selection = Selection(
+                                      Rectangle(bounds.x - cel.position.x,
+                                                bounds.y - cel.position.y,
+                                                bounds.width, bounds.height))
 
-                local image = DesaturateCelColors(cel.image, localSelection,
-                                                  mode)
+                local image = DesaturateCelColors(cel.image, selection, mode)
 
                 -- Update only the image to preserve cel properties
                 cel.image = image
@@ -90,17 +89,33 @@ local DesaturateColors = function(mode)
     app.refresh()
 end
 
+local DesaturatePixels = function(image, pixels, mode)
+    local cache = {}
+    local drawPixel = image.drawPixel
+
+    for _, pixel in ipairs(pixels) do
+        if pixel.isEditable then
+            if not cache[pixel.value] then
+                cache[pixel.value] = DesaturateColor(pixel.value, mode)
+            end
+
+            drawPixel(image, pixel.x, pixel.y, cache[pixel.value])
+        else
+            drawPixel(image, pixel.x, pixel.y, pixel.color)
+        end
+    end
+
+    return image
+end
+
 local DesaturateColorsDialog = function()
+    local image, pixels = GetPixels()
+    local desaturatedImage = DesaturatePixels(image, pixels,
+                                              DesaturateMode.Grayscale)
+
     local dialog = Dialog("Desaturate Colors")
-
-    -- TODO: Get the full/partial image just like when adjusting the colors
-    local desaturatedImage = DesaturateCelColors(app.activeCel.image,
-                                                 app.activeSprite.selection,
-                                                 DesaturateMode.Grayscale)
-
-    -- TODO: Fix so it updates the image in the preview correctly, right now it only shows the initial image because it's passed as a reference and edits create a new image
-    -- Probably this needs a function/provider... somewhere
-    PreviewCanvas(dialog, 100, 100, app.activeSprite, desaturatedImage)
+    local RepaintImage = PreviewCanvas(dialog, 100, 100, app.activeSprite,
+                                       desaturatedImage)
 
     dialog --
     :combobox{
@@ -112,10 +127,9 @@ local DesaturateColorsDialog = function()
             DesaturateMode.OKHSV, DesaturateMode.OKHSL
         },
         onchange = function()
-            desaturatedImage = DesaturateCelColors(app.activeCel.image,
-                                                   app.activeSprite.selection,
-                                                   dialog.data.mode)
-            dialog:repaint()
+            desaturatedImage = DesaturatePixels(image, pixels, dialog.data.mode)
+
+            RepaintImage(desaturatedImage)
         end
     } --
     :separator() --

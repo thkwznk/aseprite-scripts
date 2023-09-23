@@ -40,6 +40,11 @@ local PreviewCanvas = function(dialog, width, height, sprite, image)
     local imagePositionDelta = Point(0, 0)
     local scale = 1
 
+    local RepaintImage = function(newImage)
+        image = newImage
+        dialog:repaint()
+    end
+
     dialog --
     :canvas{
         label = "Preview:",
@@ -112,6 +117,7 @@ local PreviewCanvas = function(dialog, width, height, sprite, image)
         end
     } --
 
+    return RepaintImage
 end
 
 return PreviewCanvas
