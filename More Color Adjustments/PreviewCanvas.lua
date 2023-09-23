@@ -31,6 +31,11 @@ local DrawGrid = function(graphicsContext, sprite)
     end
 end
 
+local AdjustScale = function(scale)
+    if scale < 0 then return 1 / (math.abs(scale) + 1) end
+    return scale
+end
+
 local PreviewCanvas = function(dialog, width, height, sprite, image)
     local border = 3
     local padding = 8
@@ -71,13 +76,14 @@ local PreviewCanvas = function(dialog, width, height, sprite, image)
 
             DrawGrid(gc, sprite)
 
+            local adjustedScale = AdjustScale(scale)
             local destinationBounds = Rectangle(
                                           imagePositionDelta.x +
                                               (gc.width - image.width) / 2,
                                           imagePositionDelta.y +
                                               (gc.height - image.height) / 2,
-                                          image.width * scale,
-                                          image.height * scale)
+                                          image.width * adjustedScale,
+                                          image.height * adjustedScale)
 
             gc:drawImage(image, image.bounds, destinationBounds)
         end,
@@ -100,12 +106,22 @@ local PreviewCanvas = function(dialog, width, height, sprite, image)
             isMouseDown = not (ev.button == MouseButton.LEFT)
         end,
         onwheel = function(ev)
-            local newScale = math.max(scale - ev.deltaY, 1)
+            local newScale = scale - ev.deltaY
+            if newScale == 0 then
+                if scale == 1 then
+                    newScale = -1
+                else
+                    newScale = 1
+                end
+            end
 
-            local oldWidth = image.width * scale
-            local newWidth = image.width * newScale
-            local oldHeight = image.height * scale
-            local newHeight = image.height * newScale
+            local oldAdjustedScale = AdjustScale(scale)
+            local newAdjustedScale = AdjustScale(newScale)
+
+            local oldWidth = image.width * oldAdjustedScale
+            local newWidth = image.width * newAdjustedScale
+            local oldHeight = image.height * oldAdjustedScale
+            local newHeight = image.height * newAdjustedScale
 
             imagePositionDelta.x =
                 imagePositionDelta.x - (newWidth - oldWidth) / 2
@@ -121,5 +137,3 @@ local PreviewCanvas = function(dialog, width, height, sprite, image)
 end
 
 return PreviewCanvas
-
--- TODO: Add zooming out
