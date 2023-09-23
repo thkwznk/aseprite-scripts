@@ -3,7 +3,7 @@ local InvertColorsDialog = dofile('./InvertColorsDialog.lua')
 local DesaturateColorsDialog = dofile('./DesaturateColorsDialog.lua')
 
 function init(plugin)
-    -- TODO: Add comment
+    -- API v22 is required for the new menu options (new group and separator) 
     if app.apiVersion < 22 then return end
 
     plugin:newMenuSeparator{group = "edit_new"}
@@ -13,8 +13,6 @@ function init(plugin)
         title = "Colors",
         group = "edit_new"
     }
-
-    -- "Adjust...", "Invert..." (Color/Value, with different options), "To Alpha", "Desaturate..." (with different options) - previews for all of them
 
     plugin:newCommand{
         id = "AdjustColorsOklab",
@@ -51,6 +49,8 @@ function init(plugin)
         end
     }
 
+    plugin:newMenuSeparator{group = "more_color_adjustments"}
+
     plugin:newCommand{
         id = "ColorToAlpha",
         title = "To Alpha",
@@ -65,5 +65,3 @@ end
 function exit(plugin)
     -- You don't really need to do anything specific here
 end
-
--- TODO: Add a common implementation for the preview canvas
