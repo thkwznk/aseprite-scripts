@@ -39,8 +39,7 @@ local GetJoinedImageBounds = function(layers, frame)
     return joinedBounds
 end
 
-local GetPixels = function() -- image)
-    local sprite = app.activeSprite
+local GetPixels = function(sprite)
     local layers = GetLayersArray(sprite.layers)
     local frame = app.activeFrame
 

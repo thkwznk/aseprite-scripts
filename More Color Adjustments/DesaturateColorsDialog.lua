@@ -108,8 +108,8 @@ local DesaturatePixels = function(image, pixels, mode)
     return image
 end
 
-local DesaturateColorsDialog = function()
-    local image, pixels = GetPixels()
+local DesaturateColorsDialog = function(sprite)
+    local image, pixels = GetPixels(sprite)
     local desaturatedImage = DesaturatePixels(image, pixels,
                                               DesaturateMode.Grayscale)
 

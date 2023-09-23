@@ -22,7 +22,8 @@ function init(plugin)
         group = "more_color_adjustments",
         onenabled = function() return app.activeCel ~= nil end,
         onclick = function()
-            local dialog = AdjustColorsDialog()
+            local sprite = app.activeSprite
+            local dialog = AdjustColorsDialog(sprite)
             dialog:show()
         end
     }
@@ -44,7 +45,8 @@ function init(plugin)
         group = "more_color_adjustments",
         onenabled = function() return app.activeCel ~= nil end,
         onclick = function()
-            local dialog = DesaturateColorsDialog()
+            local sprite = app.activeSprite
+            local dialog = DesaturateColorsDialog(sprite)
             dialog:show()
         end
     }

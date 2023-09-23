@@ -121,3 +121,5 @@ local PreviewCanvas = function(dialog, width, height, sprite, image)
 end
 
 return PreviewCanvas
+
+-- TODO: Add zooming out
