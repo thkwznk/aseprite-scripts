@@ -1,3 +1,5 @@
+dofile("./ok_color.lua")
+local ColorConverter = dofile('./ColorConverter.lua')
 local GetPixels = dofile('./ImagePixels.lua')
 local PreviewCanvas = dofile('./PreviewCanvas.lua')
 
@@ -29,7 +31,41 @@ local ColorDistance = {
 
         return (dh ^ 2 + ds ^ 2 + dv ^ 2)
     end,
-    Max = {RGB = (255 ^ 2) * 3, HSV = 2 ^ 2 + 1 + 1, HSL = 2 ^ 2 + 1 + 1}
+    OKHSV = function(a, b)
+        a = ColorConverter:ColorToOkhsv(a)
+        b = ColorConverter:ColorToOkhsv(b)
+
+        local h0, h1 = a.h, b.h
+        local s0, s1 = a.s, b.s
+        local v0, v1 = a.v, b.v
+
+        local dh = math.min(math.abs(h1 - h0), 360 - math.abs(h1 - h0)) / 180.0
+        local ds = math.abs(s1 - s0)
+        local dv = math.abs(v1 - v0)
+
+        return (dh ^ 2 + ds ^ 2 + dv ^ 2)
+    end,
+    OKHSL = function(a, b)
+        a = ColorConverter:ColorToOkhsl(a)
+        b = ColorConverter:ColorToOkhsl(b)
+
+        local h0, h1 = a.h, b.h
+        local s0, s1 = a.s, b.s
+        local v0, v1 = a.l, b.l
+
+        local dh = math.min(math.abs(h1 - h0), 360 - math.abs(h1 - h0)) / 180.0
+        local ds = math.abs(s1 - s0)
+        local dv = math.abs(v1 - v0)
+
+        return (dh ^ 2 + ds ^ 2 + dv ^ 2)
+    end,
+    Max = {
+        RGB = (255 ^ 2) * 3,
+        HSV = 2 ^ 2 + 1 + 1,
+        HSL = 2 ^ 2 + 1 + 1,
+        OKHSV = 2 ^ 2 + 1 + 1,
+        OKHSL = 2 ^ 2 + 1 + 1
+    }
 }
 
 local UpdatePixelDistance = function(pixels, mode, color)
@@ -49,13 +85,53 @@ end
 local AdjustColor = function(color, parameters)
     local adjustedColor = Color(color)
 
-    adjustedColor.hue = (adjustedColor.hue + parameters.hueShift) % 360
-    if adjustedColor.saturation > 0 then
-        adjustedColor.saturation = adjustedColor.saturation +
-                                       parameters.saturationShift / 100
-    end
+    if parameters.mode == "RGB" then
+        adjustedColor.red = math.min(math.max(
+                                         adjustedColor.red +
+                                             parameters.componentA, 0), 255)
+        adjustedColor.green = math.min(math.max(
+                                           adjustedColor.green +
+                                               parameters.componentB, 0), 255)
+        adjustedColor.blue = math.min(math.max(
+                                          adjustedColor.blue +
+                                              parameters.componentC, 0), 255)
+    elseif parameters.mode == "HSV" then
+        adjustedColor.hsvHue = (adjustedColor.hsvHue + parameters.componentA) %
+                                   360
+        if adjustedColor.hsvSaturation > 0 then
+            adjustedColor.hsvSaturation =
+                adjustedColor.hsvSaturation + parameters.componentB / 100
+        end
 
-    adjustedColor.value = adjustedColor.value + parameters.valueShift / 100
+        adjustedColor.hsvValue =
+            adjustedColor.hsvValue + parameters.componentC / 100
+    elseif parameters.mode == "HSL" then
+        adjustedColor.hslHue = (adjustedColor.hslHue + parameters.componentA) %
+                                   360
+        if adjustedColor.hslSaturation > 0 then
+            adjustedColor.hslSaturation =
+                adjustedColor.hslSaturation + parameters.componentB / 100
+        end
+
+        adjustedColor.hslLightness = adjustedColor.hslLightness +
+                                         parameters.componentC / 100
+    elseif parameters.mode == "OKHSV" then
+        local okhsv = ColorConverter:ColorToOkhsv(adjustedColor)
+
+        okhsv.h = (okhsv.h + parameters.componentA) % 360
+        okhsv.s = okhsv.s + parameters.componentB / 100
+        okhsv.v = okhsv.v + parameters.componentC / 100
+
+        adjustedColor = ColorConverter:OkhsvToColor(okhsv)
+    elseif parameters.mode == "OKHSL" then
+        local okhsl = ColorConverter:ColorToOkhsl(adjustedColor)
+
+        okhsl.h = (okhsl.h + parameters.componentA) % 360
+        okhsl.s = okhsl.s + parameters.componentB / 100
+        okhsl.l = okhsl.l + parameters.componentC / 100
+
+        adjustedColor = ColorConverter:OkhslToColor(okhsl)
+    end
 
     return adjustedColor
 end
@@ -140,11 +216,11 @@ local AdjustColorsDialog = function(sprite)
     local adjustedImage = Image(image.width, image.height, ColorMode.RGB)
 
     UpdateTargetColor(adjustedImage, pixels, {
-        mode = "HSV",
+        mode = "OKHSV",
         tolerance = 0,
-        hueShift = 0,
-        saturationShift = 0,
-        valueShift = 0
+        componentA = 0,
+        componentB = 0,
+        componentC = 0
     })
 
     UpdatePixelDistance(pixels, "HSV", app.fgColor)
@@ -152,6 +228,40 @@ local AdjustColorsDialog = function(sprite)
     local dialog = Dialog("Adjust Color")
     local RepaintImage = PreviewCanvas(dialog, 100, 100, app.activeSprite,
                                        adjustedImage)
+
+    local UpdateComponents = function(mode)
+        if mode == "RGB" then
+            dialog --
+            :modify{id = "componentA", label = "Red", min = -255, max = 255} --
+            :modify{id = "componentB", label = "Green", min = -255, max = 255} --
+            :modify{id = "componentC", label = "Blue", min = -255, max = 255} --
+        elseif mode == "HSV" or mode == "OKHSV" then
+            dialog --
+            :modify{id = "componentA", label = "Hue", min = -180, max = 180} --
+            :modify{
+                id = "componentB",
+                label = "Saturation",
+                min = -100,
+                max = 100
+            } --
+            :modify{id = "componentC", label = "Value", min = -100, max = 100} --
+        elseif mode == "HSL" or mode == "OKHSL" then
+            dialog --
+            :modify{id = "componentA", label = "Hue", min = -180, max = 180} --
+            :modify{
+                id = "componentB",
+                label = "Saturation",
+                min = -100,
+                max = 100
+            } --
+            :modify{
+                id = "componentC",
+                label = "Lightness",
+                min = -100,
+                max = 100
+            } --
+        end
+    end
 
     dialog --
     :color{
@@ -169,12 +279,13 @@ local AdjustColorsDialog = function(sprite)
     :combobox{
         id = "mode",
         label = "Mode:",
-        option = "HSV",
-        options = {"RGB", "HSV", "HSL"},
+        option = "OKHSV",
+        options = {"RGB", "HSV", "HSL", "OKHSV", "OKHSL"},
         onchange = function()
             local data = dialog.data
             UpdatePixelDistance(pixels, data.mode, data.sourceColor)
             UpdateTargetColor(adjustedImage, pixels, data)
+            UpdateComponents(data.mode)
             RepaintImage(adjustedImage)
         end
     } --
@@ -192,7 +303,7 @@ local AdjustColorsDialog = function(sprite)
     } --
     :separator{text = "Adjustments:"} --
     :slider{
-        id = "hueShift",
+        id = "componentA",
         label = "Hue:",
         min = 0,
         max = 360,
@@ -205,7 +316,7 @@ local AdjustColorsDialog = function(sprite)
     } --
     :newrow() --
     :slider{
-        id = "saturationShift",
+        id = "componentB",
         label = "Saturation:",
         min = -100,
         max = 100,
@@ -218,7 +329,7 @@ local AdjustColorsDialog = function(sprite)
     } --
     :newrow() --
     :slider{
-        id = "valueShift",
+        id = "componentC",
         label = "Value:",
         min = -100,
         max = 100,
@@ -258,5 +369,3 @@ local AdjustColorsDialog = function(sprite)
 end
 
 return AdjustColorsDialog
-
--- TODO: Support all colord modes - RGB, HSV, HSL, OKHSV (Default), OKHSL
