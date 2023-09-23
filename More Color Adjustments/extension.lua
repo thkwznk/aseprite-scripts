@@ -32,7 +32,8 @@ function init(plugin)
         group = "more_color_adjustments",
         onenabled = function() return app.activeCel ~= nil end,
         onclick = function()
-            local dialog = InvertColorsDialog()
+            local sprite = app.activeSprite
+            local dialog = InvertColorsDialog(sprite)
             dialog:show()
         end
     }

@@ -1,81 +1,23 @@
 dofile("./ok_color.lua")
 local ColorConverter = dofile('./ColorConverter.lua')
+local GetPixels = dofile('./ImagePixels.lua')
+local PreviewCanvas = dofile('./PreviewCanvas.lua')
 
+local InvertColorSpace = {HSV = "HSV/HSL", OKHSV = "OKHSV/OKHSL"}
 local InvertMode = {Hue = "Hue", Saturation = "Saturation", Value = "Value"}
-
-function HueDifference(a, b)
-    local smallerValue = math.min(a, b)
-    local biggerValue = math.max(a, b)
-
-    return
-        math.min(biggerValue - smallerValue, 360 + smallerValue - biggerValue)
-end
 
 function LerpColor(a, b, tt)
     return Color {
         hue = a.hue * (1 - tt) + b.hue * tt,
         saturation = a.saturation * (1 - tt) + b.saturation * tt,
         value = a.value * (1 - tt) + b.value * tt,
-        -- hue = a.hslHue * (1 - tt) + b.hslHue * tt,
-        -- saturation = a.hslSaturation * (1 - tt) + b.hslSaturation * tt,
-        -- lightness = a.hslLightness * (1 - tt) + b.hslLightness * tt,
-        -- red = a.red * (1 - tt) + b.red * tt,
-        -- green = a.green * (1 - tt) + b.green * tt,
-        -- blue = a.blue * (1 - tt) + b.blue * tt,
         alpha = 255
     }
-    -- a * (1 - t) + b * t
 end
-
--- local srgb = {
---     r = pixelColor.red / 255.0,
---     g = pixelColor.green / 255.0,
---     b = pixelColor.blue / 255.0
--- }
--- local oklab = ok_color.srgb_to_oklab(srgb)
--- -- local okhsx = ok_color.oklab_to_okhsv(oklab)
-
--- -- local okhsvNew = {
--- --     h = okhsx.h + 0.5,
--- --     s = okhsx.s,
--- --     v = okhsx.v
--- -- }
--- -- local oklabNew = ok_color.okhsv_to_oklab(okhsvNew)
-
--- -- local srgbNew = ok_color.oklab_to_srgb(oklabNew)
-
--- -- print(oklab.a, oklab.b)
-
--- local t = oklab.a
--- oklab.a = oklab.b
--- oklab.b = t
-
--- local srgbNew = ok_color.oklab_to_srgb(oklab)
--- local b255n = math.floor(math.min(
---                              math.max(srgbNew.b, 0.0),
---                              1.0) * 255 + 0.5)
--- local g255n = math.floor(math.min(
---                              math.max(srgbNew.g, 0.0),
---                              1.0) * 255 + 0.5)
--- local r255n = math.floor(math.min(
---                              math.max(srgbNew.r, 0.0),
---                              1.0) * 255 + 0.5)
-
--- pixelColor.red = r255n
--- pixelColor.green = g255n
--- pixelColor.blue = b255n
-
--- 81 162 16 = 121.64
--- 37 74  7  = 55.53
-
--- 55.53 / 121.64 = 0.4565
--- 
 
 function GetLight(pixelColor)
     return pixelColor.red * 0.3 + pixelColor.green * 0.59 + pixelColor.blue *
                0.11
-    -- return pixelColor.red * 0.35 + pixelColor.green * 0.5 + pixelColor.blue *
-    --            0.15
 end
 
 function DarkenColor(c, v)
@@ -100,16 +42,7 @@ function DarkenColor(c, v)
 
     end
 
-    -- nc.hslLightness = c.hslLightness - ((l - v) / 255)
-
     return nc
-
-    -- return Color {
-    --     red = c.red * d,
-    --     green = c.green * d,
-    --     blue = c.blue * d,
-    --     alpha = c.alpha
-    -- }
 end
 
 local InvertCelHSV = function(cel, mode)
@@ -165,76 +98,9 @@ local InvertCelHSV = function(cel, mode)
                                     LerpColor(minColor, maxColor, -- o / 255)
                                     (o - minLum) / (maxLum - minLum))
 
-                                -- local ooklab =
-                                --     ok_color.srgb_to_oklab({
-                                --         r = pixelColor.red / 255.0,
-                                --         g = pixelColor.green / 255.0,
-                                --         b = pixelColor.blue / 255.0
-                                --     })
-
-                                -- pixelColor.hslHue =
-                                --     (pixelColor.hslHue + 180) % 360
-
-                                -- local noklab =
-                                --     ok_color.srgb_to_oklab({
-                                --         r = pixelColor.red / 255.0,
-                                --         g = pixelColor.green / 255.0,
-                                --         b = pixelColor.blue / 255.0
-                                --     })
-
-                                -- noklab.L = ooklab.L
-
-                                -- local srgbNew = ok_color.oklab_to_srgb(noklab)
-
-                                -- local b255n =
-                                --     math.floor(math.min(math.max(srgbNew.b, 0.0),
-                                --                         1.0) * 255 + 0.5)
-                                -- local g255n =
-                                --     math.floor(math.min(math.max(srgbNew.g, 0.0),
-                                --                         1.0) * 255 + 0.5)
-                                -- local r255n =
-                                --     math.floor(math.min(math.max(srgbNew.r, 0.0),
-                                --                         1.0) * 255 + 0.5)
-
-                                -- pixelColor.red = r255n
-                                -- pixelColor.green = g255n
-                                -- pixelColor.blue = b255n
-
-                                -- local o = GetLight(pixelColor)
-
-                                -- pixelColor.hslHue =
-                                --     (pixelColor.hslHue + 180) % 360
-
-                                -- pixelColor = DarkenColor(pixelColor, o)
                                 cache[key] = Color(pixelColor)
                             end
-
-                            -- local n = GetLight(pixelColor)
-
-                            -- local d = ((n - o) / 255)
-
-                            -- pixelColor.hslLightness =
-                            --     pixelColor.hslLightness - d
                         end
-
-                        -- local ol = pixelColor.red * 0.3 + pixelColor.green *
-                        --                0.59 + pixelColor.blue * 0.11 -- 30/59/11
-
-                        -- local og = pixelColor.green
-
-                        -- pixelColor.hslHue = (pixelColor.hslHue + 180) % 360
-
-                        -- local nl = pixelColor.red * 0.3 + pixelColor.green *
-                        --                0.59 + pixelColor.blue * 0.11 -- 30/59/11
-
-                        -- local ng = pixelColor.green
-
-                        -- -- local dl = (nl - ol) / 255
-                        -- -- pixelColor.hslLightness = pixelColor.hslLightness - dl
-
-                        -- -- local dl = ol / nl
-                        -- local dl = 1 + ((ol - nl) / 255)
-                        -- pixelColor.hslLightness = pixelColor.hslLightness * dl
                     elseif mode == InvertMode.Saturation then
                         -- Ignore pixels in grayscale, they always have hue=0 so they would always end up red
                         if pixelColor.saturation > 0 then
@@ -255,25 +121,15 @@ local InvertCelHSV = function(cel, mode)
     cel.image = resultImage
 end
 
-local InvertHSV = function(mode)
-    app.transaction(function()
-        for _, cel in ipairs(app.range.cels) do InvertCelHSV(cel, mode) end
-    end)
-
-    app.refresh()
-end
-
 local InvertColor = function(pixelValue, colorSpace)
     local color = Color(pixelValue)
 
-    if colorSpace == "OKHSV" then
+    if colorSpace == InvertColorSpace.HSV then
+        color.hue = (color.hue + 180) % 360
+    elseif colorSpace == InvertColorSpace.OKHSV then
         local okhsv = ColorConverter:ColorToOkhsv(color)
         okhsv.h = (okhsv.h + 180) % 360
         color = ColorConverter:OkhsvToColor(okhsv)
-    elseif colorSpace == "OKHSL" then
-        local okhsl = ColorConverter:ColorToOkhsl(color)
-        okhsl.h = (okhsl.h + 180) % 360
-        color = ColorConverter:OkhslToColor(okhsl)
     end
 
     return color
@@ -329,20 +185,46 @@ local InvertColors = function(colorSpace)
     app.refresh()
 end
 
-local InvertColorsDialog = function()
-    local dialog = Dialog("Invert Colors")
+local InvertPixels = function(image, pixels, parameters)
+    local cache = {}
+    local drawPixel = image.drawPixel
 
-    -- TODO: Implement the preview, perhaps create a common code for it?
-    -- TODO: Probably I should group HSV+HSL and OKHSV+OKHSL as they produce identical results
-    -- TODO: Cleanup this file
+    for _, pixel in ipairs(pixels) do
+        if pixel.isEditable then
+            if not cache[pixel.value] then
+                cache[pixel.value] = InvertColor(pixel.value,
+                                                 parameters.colorSpace)
+            end
+
+            drawPixel(image, pixel.x, pixel.y, cache[pixel.value])
+        else
+            drawPixel(image, pixel.x, pixel.y, pixel.color)
+        end
+    end
+
+    return image
+end
+
+local InvertColorsDialog = function(sprite)
+    local image, pixels = GetPixels(sprite)
+    local invertedImage = Image(image)
+    invertedImage = InvertPixels(invertedImage, pixels,
+                                 {colorSpace = InvertColorSpace.OKHSV})
+
+    local dialog = Dialog("Invert Colors")
+    local RepaintImage = PreviewCanvas(dialog, 100, 100, app.activeSprite,
+                                       invertedImage)
 
     dialog --
-    :canvas{label = "Preview:", width = 100, height = 100} --
     :combobox{
         id = "colorSpace",
         label = "Color Space:",
-        option = "OKHSV",
-        options = {"HSV", "HSL", "OKHSV", "OKHSL"}
+        option = InvertColorSpace.OKHSV,
+        options = {InvertColorSpace.HSV, InvertColorSpace.OKHSV},
+        onchange = function()
+            invertedImage = InvertPixels(invertedImage, pixels, dialog.data)
+            RepaintImage(invertedImage)
+        end
     } --
     :separator() --
     :button{
@@ -358,3 +240,6 @@ local InvertColorsDialog = function()
 end
 
 return InvertColorsDialog
+
+-- TODO: Add options for inverting multiple components
+-- TODO: Add RGB
