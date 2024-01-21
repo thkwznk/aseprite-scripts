@@ -13,6 +13,8 @@ function RoundDuration(duration) return math.floor(((duration * 1000)) + 0.5) en
 
 function FormatDuration(duration) return tostring(RoundDuration(duration)) end
 
+function FormatSpeed(speed) return string.format("%.2f", speed) end
+
 function init(plugin)
     plugin:newCommand{
         id = "ModifyFrameRate",
@@ -41,7 +43,7 @@ function init(plugin)
 
             local dialog = Dialog(title)
 
-            local UpdateDialog = function(modifier)
+            local UpdateDialog = function(modifier, updateTotal, updateSpeed)
                 if not modifier then modifier = 1 end
 
                 dialog --
@@ -50,12 +52,20 @@ function init(plugin)
                 :modify{
                     id = "average",
                     text = FormatDuration(average * modifier)
-                }
+                } --
 
-                if modifier == 1 then
-                    dialog --
-                    :modify{id = "total", text = FormatDuration(total)} --
+                if updateTotal then
+                    dialog:modify{
+                        id = "total",
+                        text = FormatDuration(total * modifier)
+                    } --
                 end
+
+                if updateSpeed then
+                    dialog:modify{id = "speed", text = FormatSpeed(modifier)}
+                end
+
+                dialog:modify{id = "okButton", enabled = modifier >= 0.001}
             end
 
             dialog --
@@ -85,12 +95,44 @@ function init(plugin)
                 text = FormatDuration(total),
                 decimals = 0,
                 onchange = function()
-                    local modifier = (dialog.data.total / 1000) / total
-                    UpdateDialog(modifier)
+                    local newTotal = dialog.data.total
+
+                    if newTotal < 0 then
+                        dialog:modify{
+                            id = "total",
+                            text = FormatDuration(math.abs(newTotal) / 1000)
+                        }
+                        return
+                    end
+
+                    local modifier = (newTotal / 1000) / total
+                    UpdateDialog(modifier, false, true)
+                end
+            } --
+            :separator() --
+            :number{
+                id = "speed",
+                label = "Speed:",
+                text = FormatSpeed(total / (dialog.data.total / 1000)) .. "x",
+                decimals = 2,
+                onchange = function()
+                    local newSpeed = dialog.data.speed
+
+                    if newSpeed < 0 then
+                        dialog:modify{
+                            id = "speed",
+                            text = FormatSpeed(math.abs(newSpeed))
+                        }
+                        return
+                    end
+
+                    local modifier = 1 / newSpeed
+                    UpdateDialog(modifier, true, false)
                 end
             } --
             :separator() --
             :button{
+                id = "okButton",
                 text = "&OK",
                 onclick = function()
                     local modifier = (dialog.data.total / 1000) / total
@@ -106,9 +148,10 @@ function init(plugin)
                     dialog:close()
                 end
             } --
-            :button{text = "&Reset", onclick = function()
-                UpdateDialog()
-            end} --
+            :button{
+                text = "&Reset",
+                onclick = function() UpdateDialog(1, true, true) end
+            } --
             :button{text = "&Cancel"}
 
             dialog:show()
