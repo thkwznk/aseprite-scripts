@@ -14,12 +14,14 @@ function FormatDuration(duration) return tostring(RoundDuration(duration)) end
 function FormatSpeed(speed) return string.format("%.2f", speed) end
 
 function ModifyFrameRate(frames, modifier)
-    for _, frame in ipairs(frames) do
-        local newDuration = RoundDuration(frame.duration * modifier) / 1000
+    app.transaction(function()
+        for _, frame in ipairs(frames) do
+            local newDuration = RoundDuration(frame.duration * modifier) / 1000
 
-        -- Fix for the open issue #1504
-        frame.duration = math.max(newDuration, 0.02)
-    end
+            -- Fix for the open issue #1504
+            frame.duration = math.max(newDuration, 0.02)
+        end
+    end)
 end
 
 function ModifyFrameRateDialog()
