@@ -13,6 +13,22 @@ function FormatDuration(duration) return tostring(RoundDuration(duration)) end
 
 function FormatSpeed(speed) return string.format("%.2f", speed) end
 
+function GetFramesStatistics(frames)
+    local min = nil
+    local max = nil
+    local total = 0
+
+    for _, frame in ipairs(frames) do
+        local duration = frame.duration
+        if not min or duration < min then min = duration end
+        if not max or duration > max then max = duration end
+
+        total = total + duration
+    end
+
+    return {min = min, max = max, avg = total / #frames, total = total}
+end
+
 function ModifyFrameRate(frames, modifier)
     app.transaction(function()
         for _, frame in ipairs(frames) do
@@ -27,22 +43,11 @@ end
 function ModifyFrameRateDialog()
     local frames = app.range.frames
 
-    -- Range contains only a single frame if none, or only one is selected - in both cases default to modifying all frames
+    -- A frames range is never empty, it at least contains the active frame
+    -- It's treated an empty range and consider all frames are considered
     if #frames == 1 then frames = app.activeSprite.frames end
 
-    local min = nil
-    local max = nil
-    local total = 0
-
-    for _, frame in ipairs(frames) do
-        local duration = frame.duration
-        if not min or duration < min then min = duration end
-        if not max or duration > max then max = duration end
-
-        total = total + duration
-    end
-
-    local average = total / #frames
+    local stats = GetFramesStatistics(frames)
 
     local dialog = Dialog("Modify Frame Rate")
 
@@ -50,19 +55,25 @@ function ModifyFrameRateDialog()
         if not modifier then modifier = 1 end
 
         dialog --
-        :modify{id = "min", text = FormatDuration(min * modifier)} --
-        :modify{id = "max", text = FormatDuration(max * modifier)} --
-        :modify{id = "average", text = FormatDuration(average * modifier)} --
+        :modify{id = "min", text = FormatDuration(stats.min * modifier)} --
+        :modify{id = "max", text = FormatDuration(stats.max * modifier)} --
+        :modify{id = "average", text = FormatDuration(stats.avg * modifier)} --
 
         if updateTotal then
-            dialog:modify{id = "total", text = FormatDuration(total * modifier)} --
+            dialog:modify{
+                id = "total",
+                text = FormatDuration(stats.total * modifier)
+            } --
         end
 
         if updateSpeed then
-            dialog:modify{id = "speed", text = FormatSpeed(modifier)}
+            dialog:modify{id = "speed", text = FormatSpeed(1 / modifier)}
         end
 
-        dialog:modify{id = "okButton", enabled = modifier >= 0.001}
+        dialog:modify{
+            id = "okButton",
+            enabled = modifier > 0 and modifier ~= math.huge
+        }
     end
 
     dialog --
@@ -71,35 +82,25 @@ function ModifyFrameRateDialog()
     :label{
         id = "min",
         label = "Min (milliseconds):",
-        text = FormatDuration(min)
+        text = FormatDuration(stats.min)
     } --
     :label{
         id = "max",
         label = "Max (milliseconds):",
-        text = FormatDuration(max)
+        text = FormatDuration(stats.max)
     } --
     :label{
         id = "average",
         label = "Average (milliseconds):",
-        text = FormatDuration(average)
+        text = FormatDuration(stats.avg)
     } --
     :number{
         id = "total",
         label = "Total (milliseconds):",
-        text = FormatDuration(total),
+        text = FormatDuration(stats.total),
         decimals = 0,
         onchange = function()
-            local newTotal = dialog.data.total
-
-            if newTotal < 0 then
-                dialog:modify{
-                    id = "total",
-                    text = FormatDuration(math.abs(newTotal) / 1000)
-                }
-                return
-            end
-
-            local modifier = (newTotal / 1000) / total
+            local modifier = (dialog.data.total / 1000) / stats.total
             UpdateDialog(modifier, false, true)
         end
     } --
@@ -107,20 +108,10 @@ function ModifyFrameRateDialog()
     :number{
         id = "speed",
         label = "Speed:",
-        text = FormatSpeed(total / (dialog.data.total / 1000)) .. "x",
+        text = FormatSpeed(stats.total / (dialog.data.total / 1000)) .. "x",
         decimals = 2,
         onchange = function()
-            local newSpeed = dialog.data.speed
-
-            if newSpeed < 0 then
-                dialog:modify{
-                    id = "speed",
-                    text = FormatSpeed(math.abs(newSpeed))
-                }
-                return
-            end
-
-            local modifier = 1 / newSpeed
+            local modifier = 1 / dialog.data.speed
             UpdateDialog(modifier, true, false)
         end
     } --
@@ -129,7 +120,7 @@ function ModifyFrameRateDialog()
         id = "okButton",
         text = "&OK",
         onclick = function()
-            local modifier = (dialog.data.total / 1000) / total
+            local modifier = (dialog.data.total / 1000) / stats.total
             ModifyFrameRate(frames, modifier)
 
             dialog:close()
