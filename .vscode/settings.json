@@ -15,6 +15,10 @@
         "Palette",
         "SelectionMode",
         "MouseButton",
-        "Timer"
+        "Timer",
+        "FlipType",
+        "Align",
+        "init",
+        "exit"
     ]
 }
