@@ -123,7 +123,7 @@ Update v3.0.0:
 
 Unreleased:
 
-- ...
+- [Improvement] Minor performance improvements
 
 ## Brush Transformations
 

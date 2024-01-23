@@ -29,8 +29,7 @@ end
 function CenterSelection(cel, options, sprite)
     local selection = sprite.selection.bounds
 
-    local outerImage, centeredImage, centertedImageBounds = CutImagePart(cel,
-                                                                         selection)
+    local centeredImage, centertedImageBounds = CutImagePart(cel, selection)
     local imageCenter = GetImageCenter(centeredImage, options)
 
     local x = centertedImageBounds.x
@@ -51,15 +50,23 @@ function CenterSelection(cel, options, sprite)
     local newImage = Image(newImageBounds.width, newImageBounds.height,
                            sprite.colorMode)
 
-    newImage:drawImage(outerImage, Point(cel.position.x - newImageBounds.x,
-                                         cel.position.y - newImageBounds.y))
+    newImage:drawImage(cel.image, Point(cel.position.x - newImageBounds.x,
+                                        cel.position.y - newImageBounds.y))
     newImage:drawImage(centeredImage,
                        Point(x - newImageBounds.x, y - newImageBounds.y))
 
-    local trimmedImage, trimmedPosition =
-        TrimImage(newImage, Point(newImageBounds.x, newImageBounds.y))
+    local newPosition = Point(newImageBounds.x, newImageBounds.y)
+    local trimmedBounds = GetTrimmedImageBounds(newImage)
 
-    sprite:newCel(cel.layer, cel.frameNumber, trimmedImage, trimmedPosition)
+    -- Only trim image if necessary
+    if trimmedBounds.width ~= newImage.width or trimmedBounds.height ~=
+        newImage.height then
+        newPosition = Point(newPosition.x + trimmedBounds.x,
+                            newPosition.y + trimmedBounds.y)
+        newImage = Image(newImage, trimmedBounds)
+    end
+
+    sprite:newCel(cel.layer, cel.frameNumber, newImage, newPosition)
 end
 
 function CenterCel(cel, options, sprite)
@@ -175,32 +182,30 @@ function GetContentBounds(cel, selection)
     return Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1)
 end
 
-function CutImagePart(cel, selection)
-    local contentBounds = GetContentBounds(cel, selection)
-
-    local oldImage = Image(cel.image)
-    local imagePart = Image(cel.image, contentBounds)
-
-    -- Draw an empty image to erase the part
-    oldImage:drawImage(Image(contentBounds.width, contentBounds.height),
-                       Point(contentBounds.x, contentBounds.y), 255,
-                       BlendMode.SRC)
-
-    return oldImage, imagePart,
-           Rectangle(cel.bounds.x + contentBounds.x,
-                     cel.bounds.y + contentBounds.y, contentBounds.width,
-                     contentBounds.height)
+function ClearImage(image, bounds)
+    if app.apiVersion >= 23 then
+        image:clear(bounds)
+    else
+        -- Draw an empty image to erase the part
+        image:drawImage(Image(bounds.width, bounds.height),
+                        Point(bounds.x, bounds.y), 255, BlendMode.SRC)
+    end
 end
 
-function TrimImage(image, position)
-    -- From API v21, we can use Image:shrinkBounds() for this
-    if app.apiVersion >= 21 then
-        local trimmedBounds = image:shrinkBounds()
-        local trimmedImage = Image(image, trimmedBounds)
+function CutImagePart(cel, selection)
+    local partBounds = GetContentBounds(cel, selection)
+    local imagePart = Image(cel.image, partBounds)
 
-        return trimmedImage, Point(position.x + trimmedBounds.x,
-                                   position.y + trimmedBounds.y)
-    end
+    ClearImage(cel.image, partBounds)
+
+    return imagePart,
+           Rectangle(cel.bounds.x + partBounds.x, cel.bounds.y + partBounds.y,
+                     partBounds.width, partBounds.height)
+end
+
+function GetTrimmedImageBounds(image)
+    -- From API v21, we can use Image:shrinkBounds() for this
+    if app.apiVersion >= 21 then return image:shrinkBounds() end
 
     local found, left, top, right, bottom
 
@@ -264,13 +269,7 @@ function TrimImage(image, position)
         if found then break end
     end
 
-    -- Trim image
-    local trimmedBounds = Rectangle(left, top, right - left + 1,
-                                    bottom - top + 1)
-    local trimmedImage = Image(image, trimmedBounds)
-
-    return trimmedImage,
-           Point(position.x + trimmedBounds.x, position.y + trimmedBounds.y)
+    return Rectangle(left, top, right - left + 1, bottom - top + 1)
 end
 
 function init(plugin)
