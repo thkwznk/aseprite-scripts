@@ -150,14 +150,13 @@ function init(plugin)
         }
 
         local quickSpeedRates = {
-            {id = "020", title = "1/5x", modifier = 5},
-            {id = "025", title = "1/4x", modifier = 4},
-            {id = "033", title = "1/3x", modifier = 3},
-            {id = "050", title = "1/2x", modifier = 2},
-            {id = "200", title = "2x", modifier = 0.5},
-            {id = "300", title = "3x", modifier = 0.33},
-            {id = "400", title = "4x", modifier = 0.25},
-            {id = "500", title = "5x", modifier = 0.2}
+            {id = "025", title = "0.25x", modifier = 1 / 0.25},
+            {id = "050", title = "0.50x", modifier = 1 / 0.5},
+            {id = "075", title = "0.75x", modifier = 1 / 0.75},
+            {id = "125", title = "1.25x", modifier = 1 / 1.25},
+            {id = "150", title = "1.50x", modifier = 1 / 1.5},
+            {id = "175", title = "1.75x", modifier = 1 / 1.75},
+            {id = "200", title = "2.00x", modifier = 1 / 2}
         }
 
         for _, rate in ipairs(quickSpeedRates) do
