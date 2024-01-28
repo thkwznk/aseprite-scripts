@@ -4,7 +4,7 @@ local FontsProvider = dofile("./FontsProvider.lua")
 local ThemePreferencesDialog = dofile("./ThemePreferencesDialog.lua")
 
 local THEME_ID = "custom"
-local DIALOG_WIDTH = 240
+local DialogSize = Size(240, 412)
 
 local ExtensionsDirectory = app.fs.joinPath(app.fs.userConfigPath, "extensions")
 local ThemePreferencesDirectory = app.fs.joinPath(ExtensionsDirectory,
@@ -43,16 +43,10 @@ function RefreshTheme(theme)
     local template = Template()
     -- Prepare color lookup
     local map = {}
+    local template = Template()
 
     for id, templateColor in pairs(template.colors) do
-        -- Map the template color to the theme color
-        local r = templateColor.red
-        local g = templateColor.green
-        local b = templateColor.blue
-
-        if not map[r] then map[r] = {} end
-        if not map[r][g] then map[r][g] = {} end
-        map[r][g][b] = theme.colors[id]
+        map[templateColor.rgbaPixel] = theme.colors[id]
     end
 
     -- Prepare sheet.png
@@ -60,33 +54,22 @@ function RefreshTheme(theme)
 
     -- Save references to function to improve performance
     local getPixel, drawPixel = image.getPixel, image.drawPixel
+    local rgbaA = app.pixelColor.rgbaA
+    local pixelValue, themeColor
 
     for x = 0, image.width - 1 do
         for y = 0, image.height - 1 do
-            local pixelValue = getPixel(image, x, y)
+            pixelValue = getPixel(image, x, y)
+            themeColor = map[pixelValue]
 
-            if pixelValue > 0 then
-                local r = app.pixelColor.rgbaR(pixelValue)
-
-                if map[r] then
-                    local g = app.pixelColor.rgbaG(pixelValue)
-
-                    if map[r][g] then
-                        local b = app.pixelColor.rgbaB(pixelValue)
-
-                        if map[r][g][b] then
-                            local themeColor = map[r][g][b]
-
-                            drawPixel(image, x, y, Color {
-                                red = themeColor.red,
-                                green = themeColor.green,
-                                blue = themeColor.blue,
-                                -- Restore the original alpha value
-                                alpha = app.pixelColor.rgbaA(pixelValue)
-                            })
-                        end
-                    end
-                end
+            if themeColor then
+                drawPixel(image, x, y, Color {
+                    red = themeColor.red,
+                    green = themeColor.green,
+                    blue = themeColor.blue,
+                    -- Restore the original alpha value
+                    alpha = rgbaA(pixelValue)
+                })
             end
         end
     end
@@ -156,6 +139,17 @@ function CopyToTheme(colors, parameters)
     end
 
     IsModified = parameters.isModified
+end
+
+function GetWindowSize()
+    if app.apiVersion >= 25 then return app.window end
+
+    local dialog = Dialog()
+    dialog:show{wait = false}
+    dialog:close()
+
+    return Size(dialog.bounds.x * 2 + dialog.bounds.width,
+                dialog.bounds.y * 2 + dialog.bounds.height)
 end
 
 function init(plugin)
@@ -237,7 +231,16 @@ function init(plugin)
                     onok = onok
                 }
 
-                newDialog:show{wait = false}
+                local window = GetWindowSize()
+                local bounds = Rectangle((window.width - DialogSize.width) / 2,
+                                         (window.height - DialogSize.height) / 2,
+                                         DialogSize.width, DialogSize.height)
+
+                newDialog:show{
+                    wait = false,
+                    bounds = bounds,
+                    autoscrollbars = true
+                }
                 return newDialog
             end
 
