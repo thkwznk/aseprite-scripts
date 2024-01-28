@@ -13,6 +13,7 @@ return function(options)
 
     local isModified = options.isModified
     local colors = options.colors
+    local parameters = options.parameters
 
     local dialog = Dialog {
         title = isModified and titleModified or title,
@@ -124,13 +125,13 @@ return function(options)
         id = "mode-simple",
         label = "Mode",
         text = "Simple",
-        selected = true,
+        selected = not parameters.isAdvanced,
         onclick = function() ChangeMode() end
     } --
     :radio{
         id = "mode-advanced",
         text = "Advanced",
-        selected = false,
+        selected = parameters.isAdvanced,
         onclick = function() ChangeMode() end
     }
 
@@ -395,12 +396,21 @@ return function(options)
     :button{
         text = "OK",
         onclick = function()
-            options.onok(dialog.data)
+            options.onok(dialog.data,
+                         {isAdvanced = dialog.data["mode-advanced"]})
             dialog:close()
         end
     } --
-    :button{text = "Apply", onclick = function() options.onok(dialog.data) end} -- 
+    :button{
+        text = "Apply",
+        onclick = function()
+            options.onok(dialog.data,
+                         {isAdvanced = dialog.data["mode-advanced"]})
+        end
+    } -- 
     :button{text = "Cancel", onclick = function() dialog:close() end} --
+
+    if parameters.isAdvanced then ChangeMode {force = true} end
 
     return dialog
 end

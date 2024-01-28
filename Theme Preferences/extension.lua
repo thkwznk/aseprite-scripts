@@ -716,6 +716,8 @@ function init(plugin)
             local newDialog = ThemePreferencesDialog {
                 name = Theme.name,
                 colors = Theme.colors,
+                parameters = Theme.parameters,
+                isModified = isModified,
                 onclose = function() print("Close") end,
                 onsave = function() print("Save") end,
                 onload = function() print("Load") end,
@@ -723,14 +725,20 @@ function init(plugin)
                 onok = function(colors, parameters)
                     print("Ok")
 
-                    -- Copy new colors to the theme
+                    -- Copy new colors
                     for key, _ in pairs(Theme.colors) do
                         if colors[key] then
                             Theme.colors[key] = colors[key]
                         end
                     end
 
-                    -- TODO: Save new parameters
+                    -- Copy new parameters
+                    for key, _ in pairs(Theme.parameters) do
+                        if parameters[key] ~= nil then
+                            print(key, parameters[key])
+                            Theme.parameters[key] = parameters[key]
+                        end
+                    end
 
                     Refresh()
                 end
