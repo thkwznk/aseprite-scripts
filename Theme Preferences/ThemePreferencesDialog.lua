@@ -45,6 +45,80 @@ return function(options)
         }
     end
 
+    function ChangeCursorColors()
+        local color = dialog.data["editor_cursor"]
+        local outlinecolor = dialog.data["editor_cursor_outline"]
+
+        dialog:modify{
+            id = "editor_cursor_shadow",
+            color = Color {
+                red = (color.red + outlinecolor.red) / 2,
+                green = (color.green + outlinecolor.green) / 2,
+                blue = (color.blue + outlinecolor.blue) / 2,
+                alpha = color.alpha
+            }
+        }
+
+        MarkThemeAsModified()
+    end
+
+    function ChangeMode(options)
+        -- Set default options
+        options = options or {}
+        options.force = options.force ~= nil and options.force or false
+
+        local isSimple = dialog.data["mode-simple"]
+
+        if isSimple then
+            if not options.force then
+                local confirmation = app.alert {
+                    title = "Warning",
+                    text = "Switching to Simple Mode will modify your theme, do you want to continue?",
+                    buttons = {"Yes", "No"}
+                }
+
+                if confirmation == 2 then
+                    dialog:modify{id = "mode-simple", selected = false}
+                    dialog:modify{id = "mode-advanced", selected = true}
+                    return
+                end
+            end
+
+            -- Set new simple values when switching to Simple Mode
+            dialog --
+            :modify{id = "simple-link", color = dialog.data["text_link"]} --
+            :modify{
+                id = "simple-button",
+                color = dialog.data["button_background"]
+            } --
+            :modify{id = "simple-tab", color = dialog.data["tab_background"]} --
+            :modify{
+                id = "simple-window",
+                color = dialog.data["window_background"]
+            } --
+            :modify{id = "editor_icons", color = dialog.data["text_regular"]}
+        end
+
+        dialog --
+        :modify{id = "simple-link", visible = isSimple} --
+        :modify{id = "simple-button", visible = isSimple} --
+        :modify{id = "simple-tab", visible = isSimple} --
+        :modify{id = "simple-window", visible = isSimple}
+
+        local advancedWidgetIds = {
+            "button_highlight", "button_background", "button_shadow",
+            "tab_corner_highlight", "tab_highlight", "tab_background",
+            "tab_shadow", "window_highlight", "window_background",
+            "window_shadow", "text_link", "text_separator", "editor_icons"
+        }
+
+        for _, id in ipairs(advancedWidgetIds) do
+            dialog:modify{id = id, visible = dialog.data["mode-advanced"]}
+        end
+
+        MarkThemeAsModified()
+    end
+
     dialog --
     :radio{
         id = "mode-simple",
@@ -168,6 +242,8 @@ return function(options)
         onchange = function() ChangeCursorColors() end
     }
 
+    ThemeColor {id = "editor_cursor_shadow", visible = false}
+
     dialog:separator{text = "Button"}
 
     ThemeColor {id = "button_highlight", visible = false}
@@ -248,6 +324,7 @@ return function(options)
     }
 
     ThemeColor {id = "window_background", visible = false}
+    ThemeColor {id = "window_corner_shadow", visible = false}
 
     ThemeColor {
         id = "window_shadow",
