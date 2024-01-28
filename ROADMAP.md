@@ -134,10 +134,3 @@ Unreleased:
 Update v2.0.0:
 
 - [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Brush Transformations options
-
-## Modify Frame Rate
-
-Unreleased:
-
-- [Improvement] Change dialog window to provide more information about the frame range being edited - min, max, average and total frame duration
-- [Improvement] Add shortcuts to speed up/slow down frames from the Frame context menu

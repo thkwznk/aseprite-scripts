@@ -1,6 +1,4 @@
 function CreateFrameNumberLabel(frames)
-    if #frames == 1 then return frames[1].frameNumber end
-
     local first = frames[1].frameNumber
     local last = frames[#frames].frameNumber
 
