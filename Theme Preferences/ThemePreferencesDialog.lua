@@ -1,3 +1,12 @@
+function ShiftColor(color, redModifier, greenModifer, blueModifier)
+    return Color {
+        red = ShiftRGB(color.red, redModifier),
+        green = ShiftRGB(color.green, greenModifer),
+        blue = ShiftRGB(color.blue, blueModifier),
+        alpha = color.alpha
+    }
+end
+
 return function(options)
     local title = "Theme Preferences: " .. options.name
     local titleModified = title .. " (modified)"
@@ -26,10 +35,8 @@ return function(options)
             color = colors[widgetOptions.id],
             visible = widgetOptions.visible,
             onchange = function()
-                local color = dialog.data[widgetOptions.id]
-                colors[widgetOptions.id] = color
-
                 if widgetOptions.onchange then
+                    local color = dialog.data[widgetOptions.id]
                     widgetOptions.onchange(color)
                 end
 
@@ -61,7 +68,7 @@ return function(options)
         visible = true,
         onchange = function(color)
             if dialog.data["mode-simple"] then
-                SetThemeColor("editor_icons", color)
+                dialog:modify{id = "editor_icons", color = color}
             end
         end
     }
@@ -75,8 +82,8 @@ return function(options)
         onchange = function()
             local color = dialog.data["simple-link"]
 
-            SetThemeColor("text_link", color)
-            SetThemeColor("text_separator", color)
+            dialog:modify{id = "text_link", color = color}
+            dialog:modify{id = "text_separator", color = color}
 
             MarkThemeAsModified()
         end
@@ -120,10 +127,16 @@ return function(options)
         label = "Background",
         id = "editor_background",
         onchange = function(color)
-            local shadowColor = ShiftColor(color, -36, -20, -53)
-            colors["editor_background_shadow"] = shadowColor
+            dialog:modify{
+                id = "editor_background_shadow",
+                color = ShiftColor(color, -36, -20, -53)
+            }
         end
     }
+
+    ThemeColor {id = "editor_tooltip_shadow", visible = false}
+    ThemeColor {id = "editor_tooltip_corner_shadow", visible = false}
+    ThemeColor {id = "editor_background_shadow", visible = false}
 
     ThemeColor {label = "Icons", id = "editor_icons", visible = false}
 
@@ -131,11 +144,14 @@ return function(options)
         label = "Tooltip",
         id = "editor_tooltip",
         onchange = function(color)
-            local shadowColor = ShiftColor(color, -100, -90, -32)
-            local cornerShadowColor = ShiftColor(color, -125, -152, -94)
-
-            colors["editor_tooltip_shadow"] = shadowColor
-            colors["editor_tooltip_corner_shadow"] = cornerShadowColor
+            dialog:modify{
+                id = "editor_tooltip_shadow",
+                color = ShiftColor(color, -100, -90, -32)
+            }
+            dialog:modify{
+                id = "editor_tooltip_corner_shadow",
+                color = ShiftColor(color, -125, -152, -94)
+            }
         end
     }
 
@@ -163,12 +179,16 @@ return function(options)
         color = colors["button_background"],
         onchange = function()
             local color = dialog.data["simple-button"]
-            local highlightColor = ShiftColor(color, 57, 57, 57)
-            local shadowColor = ShiftColor(color, -74, -74, -74)
 
-            SetThemeColor("button_highlight", highlightColor)
-            SetThemeColor("button_background", color)
-            SetThemeColor("button_shadow", shadowColor)
+            dialog:modify{
+                id = "button_highlight",
+                color = ShiftColor(color, 57, 57, 57)
+            }
+            dialog:modify{id = "button_background", color = color}
+            dialog:modify{
+                id = "button_shadow",
+                color = ShiftColor(color, -74, -74, -74)
+            }
 
             MarkThemeAsModified()
         end
@@ -188,14 +208,20 @@ return function(options)
         color = colors["tab_background"],
         onchange = function()
             local color = dialog.data["simple-tab"]
-            local cornerHighlightColor = ShiftColor(color, 131, 110, 98)
-            local highlightColor = ShiftColor(color, 49, 57, 65)
-            local shadowColor = ShiftColor(color, -24, -61, -61)
 
-            SetThemeColor("tab_corner_highlight", cornerHighlightColor)
-            SetThemeColor("tab_highlight", highlightColor)
-            SetThemeColor("tab_background", color)
-            SetThemeColor("tab_shadow", shadowColor)
+            dialog:modify{
+                id = "tab_corner_highlight",
+                color = ShiftColor(color, 131, 110, 98)
+            }
+            dialog:modify{
+                id = "tab_highlight",
+                color = ShiftColor(color, 49, 57, 65)
+            }
+            dialog:modify{id = "tab_background", color = color}
+            dialog:modify{
+                id = "tab_shadow",
+                color = ShiftColor(color, -24, -61, -61)
+            }
 
             MarkThemeAsModified()
         end
@@ -207,16 +233,17 @@ return function(options)
         id = "window_highlight",
         visible = false,
         onchange = function(color)
-            colors["window_highlight"] = color
-
             -- FUTURE: Remove this when setting a separate value for the "field_background" is possible
 
             local fieldShadowColor = ShiftColor(color, -57, -57, -57)
             local filedCornerShadowColor = ShiftColor(color, -74, -74, -74)
 
-            colors["field_background"] = color
-            colors["field_shadow"] = fieldShadowColor
-            colors["field_corner_shadow"] = filedCornerShadowColor
+            dialog:modify{id = "field_background", color = color}
+            dialog:modify{id = "field_shadow", color = fieldShadowColor}
+            dialog:modify{
+                id = "field_corner_shadow",
+                color = filedCornerShadowColor
+            }
         end
     }
 
@@ -226,10 +253,16 @@ return function(options)
         id = "window_shadow",
         visible = false,
         onchange = function(color)
-            local cornerShadowColor = ShiftColor(color, -49, -44, -20)
-            SetThemeColor("window_corner_shadow", cornerShadowColor)
+            dialog:modify{
+                id = "window_corner_shadow",
+                color = ShiftColor(color, -49, -44, -20)
+            }
         end
     }
+
+    ThemeColor {id = "field_background", visible = false}
+    ThemeColor {id = "field_shadow", visible = false}
+    ThemeColor {id = "field_corner_shadow", visible = false}
 
     dialog:color{
         id = "simple-window",
@@ -237,13 +270,17 @@ return function(options)
         onchange = function()
             local color = dialog.data["simple-window"]
             local highlightColor = ShiftColor(color, 45, 54, 66)
-            local shadowColor = ShiftColor(color, -61, -73, -73)
-            local cornerShadowColor = ShiftColor(color, -110, -117, -93)
 
-            SetThemeColor("window_highlight", highlightColor)
-            SetThemeColor("window_background", color)
-            SetThemeColor("window_shadow", shadowColor)
-            SetThemeColor("window_corner_shadow", cornerShadowColor)
+            dialog:modify{id = "window_highlight", color = highlightColor}
+            dialog:modify{id = "window_background", color = color}
+            dialog:modify{
+                id = "window_shadow",
+                color = ShiftColor(color, -61, -73, -73)
+            }
+            dialog:modify{
+                id = "window_corner_shadow",
+                color = ShiftColor(color, -110, -117, -93)
+            }
 
             -- FUTURE: Remove this when setting a separate value for the "field_background" is possible
 
@@ -251,9 +288,12 @@ return function(options)
             local filedCornerShadowColor =
                 ShiftColor(highlightColor, -74, -74, -74)
 
-            colors["field_background"] = highlightColor
-            colors["field_shadow"] = fieldShadowColor
-            colors["field_corner_shadow"] = filedCornerShadowColor
+            dialog:modify{id = "field_background", color = highlightColor}
+            dialog:modify{id = "field_shadow", color = fieldShadowColor}
+            dialog:modify{
+                id = "field_corner_shadow",
+                color = filedCornerShadowColor
+            }
 
             MarkThemeAsModified()
         end
@@ -268,7 +308,6 @@ return function(options)
         label = "Configuration",
         text = "Save",
         enabled = isModified, -- Only allows saving of a modified theme
-        -- TODO: Add SaveAs option
         onclick = function() options.onsave() end
     } --
     :button{text = "Load", onclick = function() options.onload() end} --
@@ -288,3 +327,6 @@ return function(options)
 
     return dialog
 end
+
+-- TODO: Add SaveAs button
+-- TODO: Add Reset button
