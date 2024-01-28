@@ -15,7 +15,7 @@ Update v1.0.3.
 
 Unreleased:
 
-- ...
+- [Improvement] Minor performance improvement when saving or applying themes
 
 Update v2.0.0:
 

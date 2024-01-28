@@ -35,24 +35,6 @@ function ColorToHex(color)
     return string.format("#%02x%02x%02x", color.red, color.green, color.blue)
 end
 
-function RgbaPixelToColor(rgbaPixel)
-    return Color {
-        red = app.pixelColor.rgbaR(rgbaPixel),
-        green = app.pixelColor.rgbaG(rgbaPixel),
-        blue = app.pixelColor.rgbaB(rgbaPixel),
-        alpha = app.pixelColor.rgbaA(rgbaPixel)
-    }
-end
-
-function CopyColor(originalColor)
-    return Color {
-        red = originalColor.red,
-        green = originalColor.green,
-        blue = originalColor.blue,
-        alpha = originalColor.alpha
-    }
-end
-
 -- Start from the template
 local Theme = Template()
 local IsDialogOpen = false
@@ -64,45 +46,46 @@ function RefreshTheme(theme)
 
     for id, templateColor in pairs(template.colors) do
         -- Map the template color to the theme color
-        map[ColorToHex(templateColor)] = theme.colors[id]
+        local r = templateColor.red
+        local g = templateColor.green
+        local b = templateColor.blue
+
+        if not map[r] then map[r] = {} end
+        if not map[r][g] then map[r][g] = {} end
+        map[r][g][b] = theme.colors[id]
     end
 
     -- Prepare sheet.png
     local image = Image {fromFile = SheetTemplatePath}
-    local pixelValue, newColor, pixelData, pixelColor, pixelValueKey,
-          resultColor
 
     -- Save references to function to improve performance
     local getPixel, drawPixel = image.getPixel, image.drawPixel
 
-    local cache = {}
-
     for x = 0, image.width - 1 do
         for y = 0, image.height - 1 do
-            pixelValue = getPixel(image, x, y)
+            local pixelValue = getPixel(image, x, y)
 
             if pixelValue > 0 then
-                pixelValueKey = tostring(pixelValue)
-                pixelData = cache[pixelValueKey]
+                local r = app.pixelColor.rgbaR(pixelValue)
 
-                if not pixelData then
-                    pixelColor = RgbaPixelToColor(pixelValue)
+                if map[r] then
+                    local g = app.pixelColor.rgbaG(pixelValue)
 
-                    cache[pixelValueKey] = {
-                        id = ColorToHex(pixelColor),
-                        color = pixelColor
-                    }
+                    if map[r][g] then
+                        local b = app.pixelColor.rgbaB(pixelValue)
 
-                    pixelData = cache[pixelValueKey]
-                end
+                        if map[r][g][b] then
+                            local themeColor = map[r][g][b]
 
-                resultColor = map[pixelData.id]
-
-                if resultColor ~= nil then
-                    newColor = CopyColor(resultColor)
-                    newColor.alpha = pixelData.color.alpha -- Restore the original alpha value
-
-                    drawPixel(image, x, y, newColor)
+                            drawPixel(image, x, y, Color {
+                                red = themeColor.red,
+                                green = themeColor.green,
+                                blue = themeColor.blue,
+                                -- Restore the original alpha value
+                                alpha = app.pixelColor.rgbaA(pixelValue)
+                            })
+                        end
+                    end
                 end
             end
         end
@@ -213,7 +196,7 @@ function init(plugin)
 
             local onload = function()
                 local onload = function(theme) LoadTheme(theme) end
-                local onreset = function() LoadTheme(Template) end
+                local onreset = function() LoadTheme(Template()) end
 
                 -- Hide the Theme Preferences dialog
                 dialog:close()
