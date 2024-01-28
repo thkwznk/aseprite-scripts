@@ -92,11 +92,11 @@ end
 
 function RefreshTheme(template, theme)
     -- Prepare color lookup
-    local Map = {}
+    local map = {}
 
     for id, templateColor in pairs(template.colors) do
         -- Map the template color to the theme color
-        Map[ColorToHex(templateColor)] = theme.colors[id]
+        map[ColorToHex(templateColor)] = theme.colors[id]
     end
 
     -- Prepare sheet.png
@@ -128,7 +128,7 @@ function RefreshTheme(template, theme)
                     pixelData = cache[pixelValueKey]
                 end
 
-                resultColor = Map[pixelData.id]
+                resultColor = map[pixelData.id]
 
                 if resultColor ~= nil then
                     newColor = CopyColor(resultColor)
@@ -720,9 +720,22 @@ function init(plugin)
                 onsave = function() print("Save") end,
                 onload = function() print("Load") end,
                 onfont = function() print("Font") end,
-                onok = function() print("Ok") end
+                onok = function(colors, parameters)
+                    print("Ok")
+
+                    -- Copy new colors to the theme
+                    for key, _ in pairs(Theme.colors) do
+                        if colors[key] then
+                            Theme.colors[key] = colors[key]
+                        end
+                    end
+
+                    -- TODO: Save new parameters
+
+                    Refresh()
+                end
             }
-            newDialog:show{}
+            newDialog:show{wait = false}
         end
     }
 end

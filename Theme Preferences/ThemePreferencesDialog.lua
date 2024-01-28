@@ -318,11 +318,11 @@ return function(options)
     :button{
         text = "OK",
         onclick = function()
-            options.onok()
+            options.onok(dialog.data)
             dialog:close()
         end
     } --
-    :button{text = "Apply", onclick = function() options.onok() end} -- 
+    :button{text = "Apply", onclick = function() options.onok(dialog.data) end} -- 
     :button{text = "Cancel", onclick = function() dialog:close() end} --
 
     return dialog
