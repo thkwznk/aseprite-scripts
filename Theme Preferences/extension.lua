@@ -1,6 +1,7 @@
 local Template = dofile("./Template.lua")
 local ThemeManager = dofile("./ThemeManager.lua")
 local FontsProvider = dofile("./FontsProvider.lua")
+local ThemePreferencesDialog = dofile("./ThemePreferencesDialog.lua")
 
 local THEME_ID = "custom"
 local DIALOG_WIDTH = 240
@@ -66,33 +67,30 @@ for id, parameter in pairs(Template.parameters) do
 end
 
 -- Dialog
-local ThemePreferencesDialog = {
-    isModified = false,
-    lastRefreshState = false,
-    isDialogOpen = false,
-    onClose = nil,
-    dialog = nil
-}
+local isModified = false
+local lastRefreshState = false
+local isDialogOpen = false
+local onClose = nil
 
-ThemePreferencesDialog.dialog = Dialog {
+local dialog = Dialog {
     title = DIALOG_TITLE,
-    onclose = function() ThemePreferencesDialog:onClose() end
+    onclose = function() if onClose then onClose() end end
 }
 
-function ThemePreferencesDialog:SetInitialWidth()
-    self.dialog:show{wait = false}
-    self.dialog:close()
+function SetInitialWidth()
+    dialog:show{wait = false}
+    dialog:close()
 
     local uiScale = app.preferences.general["ui_scale"]
 
-    local bounds = self.dialog.bounds
+    local bounds = dialog.bounds
     bounds.x = bounds.x - (DIALOG_WIDTH - bounds.width) / 2
     bounds.width = DIALOG_WIDTH * uiScale
 
-    self.dialog.bounds = bounds
+    dialog.bounds = bounds
 end
 
-function ThemePreferencesDialog:RefreshTheme(template, theme)
+function RefreshTheme(template, theme)
     -- Prepare color lookup
     local Map = {}
 
@@ -145,12 +143,12 @@ function ThemePreferencesDialog:RefreshTheme(template, theme)
     image:saveAs(SheetPath)
 
     -- Update the XML theme file
-    ThemePreferencesDialog:UpdateThemeXml(theme)
+    UpdateThemeXml(theme)
 
     app.command.Refresh()
 end
 
-function ThemePreferencesDialog:UpdateThemeXml(theme)
+function UpdateThemeXml(theme)
     -- Prepare theme.xml
     local xmlContent = ReadAll(ThemeXmlTemplatePath)
 
@@ -176,10 +174,10 @@ function ThemePreferencesDialog:UpdateThemeXml(theme)
     WriteAll(ThemeXmlPath, xmlContent)
 end
 
-function ThemePreferencesDialog:Refresh()
-    self.lastRefreshState = self.isModified
+function Refresh()
+    lastRefreshState = isModified
 
-    self:RefreshTheme(Template, Theme)
+    RefreshTheme(Template, Theme)
     ThemeManager:SetCurrentTheme(Theme)
 
     -- Switch Aseprite to the custom theme
@@ -201,25 +199,25 @@ function ShiftColor(color, redModifier, greenModifer, blueModifier)
     }
 end
 
-function ThemePreferencesDialog:MarkThemeAsModified()
-    self.isModified = true
+function MarkThemeAsModified()
+    isModified = true
 
-    self.dialog --
+    dialog --
     :modify{id = "save-configuration", enabled = true} --
     :modify{title = DIALOG_TITLE .. ": " .. Theme.name .. " (modified)"}
 end
 
-function ThemePreferencesDialog:SetThemeColor(id, color)
+function SetThemeColor(id, color)
     Theme.colors[id] = color
-    if self.dialog.data[id] then self.dialog:modify{id = id, color = color} end
+    if dialog.data[id] then dialog:modify{id = id, color = color} end
 end
 
-function ThemePreferencesDialog:ChangeMode(options)
+function ChangeMode(options)
     -- Set default options
     options = options or {}
     options.force = options.force ~= nil and options.force or false
 
-    local isSimple = self.dialog.data["mode-simple"]
+    local isSimple = dialog.data["mode-simple"]
 
     if isSimple then
         if not options.force then
@@ -230,14 +228,14 @@ function ThemePreferencesDialog:ChangeMode(options)
             }
 
             if confirmation == 2 then
-                self.dialog:modify{id = "mode-simple", selected = false}
-                self.dialog:modify{id = "mode-advanced", selected = true}
+                dialog:modify{id = "mode-simple", selected = false}
+                dialog:modify{id = "mode-advanced", selected = true}
                 return
             end
         end
 
         -- Set new simple values when switching to Simple Mode
-        self.dialog --
+        dialog --
         :modify{id = "simple-link", color = Theme.colors["text_link"]} --
         :modify{id = "simple-button", color = Theme.colors["button_background"]} --
         :modify{id = "simple-tab", color = Theme.colors["tab_background"]} --
@@ -245,7 +243,7 @@ function ThemePreferencesDialog:ChangeMode(options)
         :modify{id = "editor_icons", color = Theme.colors["text_regular"]}
     end
 
-    self.dialog --
+    dialog --
     :modify{id = "simple-link", visible = isSimple} --
     :modify{id = "simple-button", visible = isSimple} --
     :modify{id = "simple-tab", visible = isSimple} --
@@ -259,24 +257,24 @@ function ThemePreferencesDialog:ChangeMode(options)
     }
 
     for _, id in ipairs(advancedWidgetIds) do
-        self.dialog:modify{id = id, visible = self.dialog.data["mode-advanced"]}
+        dialog:modify{id = id, visible = dialog.data["mode-advanced"]}
     end
 
-    Theme.parameters.isAdvanced = self.dialog.data["mode-advanced"]
-    self:MarkThemeAsModified()
+    Theme.parameters.isAdvanced = dialog.data["mode-advanced"]
+    MarkThemeAsModified()
 end
 
-function ThemePreferencesDialog:LoadTheme(theme)
+function LoadTheme(theme)
     -- Copy theme to the current theme
     Theme.name = theme.name
     Theme.parameters = theme.parameters
 
     -- Chanage mode
-    self.dialog --
+    dialog --
     :modify{id = "mode-simple", selected = not theme.parameters.isAdvanced} --
     :modify{id = "mode-advanced", selected = theme.parameters.isAdvanced}
 
-    self:ChangeMode{force = true}
+    ChangeMode {force = true}
 
     -- Load simple versions first to then overwrite advanced colors
     local simpleButtons = {
@@ -288,41 +286,41 @@ function ThemePreferencesDialog:LoadTheme(theme)
     }
 
     for id, color in pairs(simpleButtons) do
-        self.dialog:modify{id = id, color = color}
+        dialog:modify{id = id, color = color}
     end
 
     -- Finally, copy colors
     for id, color in pairs(theme.colors) do
         -- Copy color just in case
-        self:SetThemeColor(id, CopyColor(color))
+        SetThemeColor(id, CopyColor(color))
     end
 
-    self.dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name} --
-    self.dialog:modify{id = "save-configuration", enabled = false}
+    dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name} --
+    dialog:modify{id = "save-configuration", enabled = false}
 
-    self.isModified = false
+    isModified = false
 end
 
-function ThemePreferencesDialog:ThemeColor(options)
-    self.dialog:color{
+function ThemeColor(options)
+    dialog:color{
         id = options.id,
         label = options.label,
         color = Theme.colors[options.id],
         visible = options.visible,
         onchange = function()
-            local color = self.dialog.data[options.id]
+            local color = dialog.data[options.id]
             Theme.colors[options.id] = color
 
             if options.onchange then options.onchange(color) end
 
-            self:MarkThemeAsModified()
+            MarkThemeAsModified()
         end
     }
 end
 
-function ThemePreferencesDialog:ChangeCursorColors()
-    local color = self.dialog.data["editor_cursor"]
-    local outlinecolor = self.dialog.data["editor_cursor_outline"]
+function ChangeCursorColors()
+    local color = dialog.data["editor_cursor"]
+    local outlinecolor = dialog.data["editor_cursor_outline"]
 
     local shadowColor = Color {
         red = (color.red + outlinecolor.red) / 2,
@@ -335,15 +333,15 @@ function ThemePreferencesDialog:ChangeCursorColors()
     Theme.colors["editor_cursor_shadow"] = shadowColor
     Theme.colors["editor_cursor_outline"] = outlinecolor
 
-    self:MarkThemeAsModified()
+    MarkThemeAsModified()
 end
 
-function ThemePreferencesDialog:LoadCurrentTheme()
+function LoadCurrentTheme()
     local currentTheme = ThemeManager:GetCurrentTheme()
-    if currentTheme then self:LoadTheme(currentTheme) end
+    if currentTheme then LoadTheme(currentTheme) end
 end
 
-function ThemePreferencesDialog:Init()
+function Init()
     -- Colors = Tint, Highlight, Tooltip (label as Hover)
 
     -- Link/Separator = Tint Color
@@ -352,7 +350,7 @@ function ThemePreferencesDialog:Init()
     -- Tooltip = Tooltip
     -- Hover = 50/50 Tooltip/Window Background Color
 
-    self.dialog --
+    dialog --
     -- :radio{
     --     id = "mode-tint",
     --     label = "Mode",
@@ -365,51 +363,47 @@ function ThemePreferencesDialog:Init()
         label = "Mode",
         text = "Simple",
         selected = true,
-        onclick = function() self:ChangeMode() end
+        onclick = function() ChangeMode() end
     } --
     :radio{
         id = "mode-advanced",
         text = "Advanced",
         selected = false,
-        onclick = function() self:ChangeMode() end
+        onclick = function() ChangeMode() end
     }
 
-    self.dialog:separator{text = "Text"}
+    dialog:separator{text = "Text"}
 
-    self:ThemeColor{
-        label = "Active/Regular",
-        id = "text_active",
-        visible = true
-    }
-    self:ThemeColor{
+    ThemeColor {label = "Active/Regular", id = "text_active", visible = true}
+    ThemeColor {
         id = "text_regular",
         visible = true,
         onchange = function(color)
-            if self.dialog.data["mode-simple"] then
-                self:SetThemeColor("editor_icons", color)
+            if dialog.data["mode-simple"] then
+                SetThemeColor("editor_icons", color)
             end
         end
     }
-    self:ThemeColor{label = "Link/Separator", id = "text_link", visible = false}
-    self:ThemeColor{id = "text_separator", visible = false}
+    ThemeColor {label = "Link/Separator", id = "text_link", visible = false}
+    ThemeColor {id = "text_separator", visible = false}
 
-    self.dialog:color{
+    dialog:color{
         id = "simple-link",
         label = "Link/Separator",
         color = Theme.colors["text_link"],
         onchange = function()
-            local color = self.dialog.data["simple-link"]
+            local color = dialog.data["simple-link"]
 
-            self:SetThemeColor("text_link", color)
-            self:SetThemeColor("text_separator", color)
+            SetThemeColor("text_link", color)
+            SetThemeColor("text_separator", color)
 
-            self:MarkThemeAsModified()
+            MarkThemeAsModified()
         end
     }
 
-    self.dialog:separator{text = "Input Fields"}
+    dialog:separator{text = "Input Fields"}
 
-    self:ThemeColor{label = "Highlight", id = "field_highlight", visible = true}
+    ThemeColor {label = "Highlight", id = "field_highlight", visible = true}
 
     -- FUTURE: Allow for separate chaning of the "field_background"
     -- dialog:color{
@@ -439,9 +433,9 @@ function ThemePreferencesDialog:Init()
     --     end
     -- }
 
-    self.dialog:separator{text = "Editor"}
+    dialog:separator{text = "Editor"}
 
-    self:ThemeColor{
+    ThemeColor {
         label = "Background",
         id = "editor_background",
         onchange = function(color)
@@ -450,9 +444,9 @@ function ThemePreferencesDialog:Init()
         end
     }
 
-    self:ThemeColor{label = "Icons", id = "editor_icons", visible = false}
+    ThemeColor {label = "Icons", id = "editor_icons", visible = false}
 
-    self:ThemeColor{
+    ThemeColor {
         label = "Tooltip",
         id = "editor_tooltip",
         onchange = function(color)
@@ -464,71 +458,71 @@ function ThemePreferencesDialog:Init()
         end
     }
 
-    self.dialog --
+    dialog --
     :color{
         id = "editor_cursor",
         label = "Cursor",
         color = Theme.colors["editor_cursor"],
-        onchange = function() self:ChangeCursorColors() end
+        onchange = function() ChangeCursorColors() end
     } --
     :color{
         id = "editor_cursor_outline",
         color = Theme.colors["editor_cursor_outline"],
-        onchange = function() self:ChangeCursorColors() end
+        onchange = function() ChangeCursorColors() end
     }
 
-    self.dialog:separator{text = "Button"}
+    dialog:separator{text = "Button"}
 
-    self:ThemeColor{id = "button_highlight", visible = false}
-    self:ThemeColor{id = "button_background", visible = false}
-    self:ThemeColor{id = "button_shadow", visible = false}
+    ThemeColor {id = "button_highlight", visible = false}
+    ThemeColor {id = "button_background", visible = false}
+    ThemeColor {id = "button_shadow", visible = false}
 
-    self.dialog:color{
+    dialog:color{
         id = "simple-button",
         color = Theme.colors["button_background"],
         onchange = function()
-            local color = self.dialog.data["simple-button"]
+            local color = dialog.data["simple-button"]
             local highlightColor = ShiftColor(color, 57, 57, 57)
             local shadowColor = ShiftColor(color, -74, -74, -74)
 
-            self:SetThemeColor("button_highlight", highlightColor)
-            self:SetThemeColor("button_background", color)
-            self:SetThemeColor("button_shadow", shadowColor)
+            SetThemeColor("button_highlight", highlightColor)
+            SetThemeColor("button_background", color)
+            SetThemeColor("button_shadow", shadowColor)
 
-            self:MarkThemeAsModified()
+            MarkThemeAsModified()
         end
     }
 
-    self:ThemeColor{label = "Selected", id = "button_selected", visible = true}
+    ThemeColor {label = "Selected", id = "button_selected", visible = true}
 
-    self.dialog:separator{text = "Tab"}
+    dialog:separator{text = "Tab"}
 
-    self:ThemeColor{id = "tab_corner_highlight", visible = false}
-    self:ThemeColor{id = "tab_highlight", visible = false}
-    self:ThemeColor{id = "tab_background", visible = false}
-    self:ThemeColor{id = "tab_shadow", visible = false}
+    ThemeColor {id = "tab_corner_highlight", visible = false}
+    ThemeColor {id = "tab_highlight", visible = false}
+    ThemeColor {id = "tab_background", visible = false}
+    ThemeColor {id = "tab_shadow", visible = false}
 
-    self.dialog:color{
+    dialog:color{
         id = "simple-tab",
         color = Theme.colors["tab_background"],
         onchange = function()
-            local color = self.dialog.data["simple-tab"]
+            local color = dialog.data["simple-tab"]
             local cornerHighlightColor = ShiftColor(color, 131, 110, 98)
             local highlightColor = ShiftColor(color, 49, 57, 65)
             local shadowColor = ShiftColor(color, -24, -61, -61)
 
-            self:SetThemeColor("tab_corner_highlight", cornerHighlightColor)
-            self:SetThemeColor("tab_highlight", highlightColor)
-            self:SetThemeColor("tab_background", color)
-            self:SetThemeColor("tab_shadow", shadowColor)
+            SetThemeColor("tab_corner_highlight", cornerHighlightColor)
+            SetThemeColor("tab_highlight", highlightColor)
+            SetThemeColor("tab_background", color)
+            SetThemeColor("tab_shadow", shadowColor)
 
-            self:MarkThemeAsModified()
+            MarkThemeAsModified()
         end
     }
 
-    self.dialog:separator{text = "Window"}
+    dialog:separator{text = "Window"}
 
-    self:ThemeColor{
+    ThemeColor {
         id = "window_highlight",
         visible = false,
         onchange = function(color)
@@ -545,30 +539,30 @@ function ThemePreferencesDialog:Init()
         end
     }
 
-    self:ThemeColor{id = "window_background", visible = false}
+    ThemeColor {id = "window_background", visible = false}
 
-    self:ThemeColor{
+    ThemeColor {
         id = "window_shadow",
         visible = false,
         onchange = function(color)
             local cornerShadowColor = ShiftColor(color, -49, -44, -20)
-            self:SetThemeColor("window_corner_shadow", cornerShadowColor)
+            SetThemeColor("window_corner_shadow", cornerShadowColor)
         end
     }
 
-    self.dialog:color{
+    dialog:color{
         id = "simple-window",
         color = Theme.colors["window_background"],
         onchange = function()
-            local color = self.dialog.data["simple-window"]
+            local color = dialog.data["simple-window"]
             local highlightColor = ShiftColor(color, 45, 54, 66)
             local shadowColor = ShiftColor(color, -61, -73, -73)
             local cornerShadowColor = ShiftColor(color, -110, -117, -93)
 
-            self:SetThemeColor("window_highlight", highlightColor)
-            self:SetThemeColor("window_background", color)
-            self:SetThemeColor("window_shadow", shadowColor)
-            self:SetThemeColor("window_corner_shadow", cornerShadowColor)
+            SetThemeColor("window_highlight", highlightColor)
+            SetThemeColor("window_background", color)
+            SetThemeColor("window_shadow", shadowColor)
+            SetThemeColor("window_corner_shadow", cornerShadowColor)
 
             -- FUTURE: Remove this when setting a separate value for the "field_background" is possible
 
@@ -580,13 +574,13 @@ function ThemePreferencesDialog:Init()
             Theme.colors["field_shadow"] = fieldShadowColor
             Theme.colors["field_corner_shadow"] = filedCornerShadowColor
 
-            self:MarkThemeAsModified()
+            MarkThemeAsModified()
         end
     } --
 
-    self:ThemeColor{label = "Hover", id = "window_hover", visible = true}
+    ThemeColor {label = "Hover", id = "window_hover", visible = true}
 
-    self.dialog --
+    dialog --
     :separator() --
     :button{
         id = "save-configuration",
@@ -595,11 +589,11 @@ function ThemePreferencesDialog:Init()
         enabled = false,
         onclick = function()
             local onsave = function(theme)
-                self.dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name}
-                self.dialog:modify{id = "save-configuration", enabled = false}
+                dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name}
+                dialog:modify{id = "save-configuration", enabled = false}
 
-                self.isModified = false
-                self.lastRefreshState = false
+                isModified = false
+                lastRefreshState = false
             end
 
             ThemeManager:Save(Theme, onsave)
@@ -609,50 +603,50 @@ function ThemePreferencesDialog:Init()
         text = "Load",
         onclick = function()
             local onload = function(theme)
-                self:LoadTheme(theme)
-                self:Refresh()
+                LoadTheme(theme)
+                Refresh()
             end
 
             local onreset = function()
-                self:LoadTheme(Template)
-                self:Refresh()
+                LoadTheme(Template)
+                Refresh()
             end
 
             -- Hide the Theme Preferences dialog
-            ThemePreferencesDialog.dialog:close()
+            dialog:close()
 
             ThemeManager:Load(onload, onreset)
 
             -- Reopen the dialog
-            ThemePreferencesDialog.dialog:show{wait = false}
+            dialog:show{wait = false}
         end
     } --
     :button{
         text = "Font",
         onclick = function()
-            local onconfirm = function() self:Refresh() end
+            local onconfirm = function() Refresh() end
 
             -- Hide the Theme Preferences dialog
-            ThemePreferencesDialog.dialog:close()
+            dialog:close()
 
             FontsProvider:OpenDialog(onconfirm)
 
             -- Reopen the dialog
-            ThemePreferencesDialog.dialog:show{wait = false}
+            dialog:show{wait = false}
         end
     }
 
-    self.dialog --
+    dialog --
     :separator() --
     :button{
         text = "OK",
         onclick = function()
-            self:Refresh()
-            self.dialog:close()
+            Refresh()
+            dialog:close()
         end
     } --
-    :button{text = "Apply", onclick = function() self:Refresh() end} -- 
-    :button{text = "Cancel", onclick = function() self.dialog:close() end} --
+    :button{text = "Apply", onclick = function() Refresh() end} -- 
+    :button{text = "Cancel", onclick = function() dialog:close() end} --
 end
 
 function init(plugin)
@@ -668,64 +662,71 @@ function init(plugin)
     FontsProvider:Init{storage = storage}
 
     -- Initialize the diaog
-    ThemePreferencesDialog:Init()
+    Init()
 
     -- Initialize data from plugin preferences
-    ThemePreferencesDialog:LoadCurrentTheme()
-    ThemePreferencesDialog.isModified = plugin.preferences.themePreferences
-                                            .isThemeModified
-    if ThemePreferencesDialog.isModified then
-        ThemePreferencesDialog:MarkThemeAsModified()
-    end
+    LoadCurrentTheme()
+    isModified = plugin.preferences.themePreferences.isThemeModified
+    if isModified then MarkThemeAsModified() end
 
     -- Treat the "Modified" state as the last known refresh state 
-    ThemePreferencesDialog.lastRefreshState = ThemePreferencesDialog.isModified
+    lastRefreshState = isModified
 
     -- Setup function to be called on close
-    ThemePreferencesDialog.onClose = function()
-        ThemePreferencesDialog:LoadCurrentTheme()
+    onClose = function()
+        LoadCurrentTheme()
 
-        ThemePreferencesDialog.isModified =
-            ThemePreferencesDialog.lastRefreshState
-        if ThemePreferencesDialog.isModified then
-            ThemePreferencesDialog:MarkThemeAsModified()
-        end
+        isModified = lastRefreshState
+        if isModified then MarkThemeAsModified() end
 
-        ThemePreferencesDialog.isDialogOpen = false
+        isDialogOpen = false
     end
 
     -- Set the initial width of the dialog
-    ThemePreferencesDialog:SetInitialWidth()
+    SetInitialWidth()
 
     plugin:newCommand{
         id = "ThemePreferences",
         title = DIALOG_TITLE .. "...",
         group = "view_screen",
-        onenabled = function()
-            return not ThemePreferencesDialog.isDialogOpen
-        end,
+        onenabled = function() return not isDialogOpen end,
         onclick = function()
             -- Refreshing the UI on open to fix the issue where the dialog would keep parts of the old theme
             app.command.Refresh()
 
             -- Show Theme Preferences dialog
-            ThemePreferencesDialog.dialog:show{wait = false}
+            dialog:show{wait = false}
 
             -- Treat the "Modified" state as the last known refresh state 
-            ThemePreferencesDialog.lastRefreshState =
-                ThemePreferencesDialog.isModified
+            lastRefreshState = isModified
 
             -- Update the dialog if the theme is modified
-            if ThemePreferencesDialog.isModified then
-                ThemePreferencesDialog:MarkThemeAsModified()
-            end
+            if isModified then MarkThemeAsModified() end
 
-            ThemePreferencesDialog.isDialogOpen = true
+            isDialogOpen = true
+        end
+    }
+
+    plugin:newCommand{
+        id = "ThemePreferencesNew",
+        title = DIALOG_TITLE .. " (New)...",
+        group = "view_screen",
+        onenabled = function() return not isDialogOpen end,
+        onclick = function()
+            local newDialog = ThemePreferencesDialog {
+                name = Theme.name,
+                colors = Theme.colors,
+                onclose = function() print("Close") end,
+                onsave = function() print("Save") end,
+                onload = function() print("Load") end,
+                onfont = function() print("Font") end,
+                onok = function() print("Ok") end
+            }
+            newDialog:show{}
         end
     }
 end
 
 function exit(plugin)
-    plugin.preferences.themePreferences.isThemeModified =
-        ThemePreferencesDialog.isModified
+    plugin.preferences.themePreferences.isThemeModified = isModified
 end
