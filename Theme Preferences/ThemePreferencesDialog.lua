@@ -1,3 +1,7 @@
+function ShiftRGB(value, modifier)
+    return math.max(math.min(value + modifier, 255), 0)
+end
+
 function ShiftColor(color, redModifier, greenModifer, blueModifier)
     return Color {
         red = ShiftRGB(color.red, redModifier),
@@ -8,8 +12,15 @@ function ShiftColor(color, redModifier, greenModifer, blueModifier)
 end
 
 return function(options)
-    local title = "Theme Preferences: " .. options.name
+    local title = "Theme Preferences"
     local titleModified = title .. " (modified)"
+
+    function UpdateTitle(name)
+        title = "Theme Preferences: " .. name
+        titleModified = title .. " (modified)"
+    end
+
+    UpdateTitle(options.name)
 
     local isModified = options.isModified
     local colors = options.colors
@@ -20,13 +31,21 @@ return function(options)
         onclose = options.onclose
     }
 
-    function MarkThemeAsModified()
-        if isModified then return end
-        isModified = true
+    function GetParameters()
+        return {
+            isAdvanced = dialog.data["mode-advanced"],
+            isModified = isModified
+        }
+    end
+
+    function MarkAsModified(value)
+        if isModified == value then return end
+
+        isModified = value
 
         dialog --
-        :modify{id = "save-configuration", enabled = true} --
-        :modify{title = title .. " (modified)"}
+        :modify{id = "save-configuration", enabled = value} --
+        :modify{title = title .. (value and " (modified)" or "")}
     end
 
     function ThemeColor(widgetOptions)
@@ -41,7 +60,7 @@ return function(options)
                     widgetOptions.onchange(color)
                 end
 
-                MarkThemeAsModified()
+                MarkAsModified(true)
             end
         }
     end
@@ -60,7 +79,7 @@ return function(options)
             }
         }
 
-        MarkThemeAsModified()
+        MarkAsModified(true)
     end
 
     function ChangeMode(options)
@@ -117,7 +136,7 @@ return function(options)
             dialog:modify{id = id, visible = dialog.data["mode-advanced"]}
         end
 
-        MarkThemeAsModified()
+        if not options.force then MarkAsModified(true) end
     end
 
     dialog --
@@ -160,7 +179,7 @@ return function(options)
             dialog:modify{id = "text_link", color = color}
             dialog:modify{id = "text_separator", color = color}
 
-            MarkThemeAsModified()
+            MarkAsModified(true)
         end
     }
 
@@ -267,7 +286,7 @@ return function(options)
                 color = ShiftColor(color, -74, -74, -74)
             }
 
-            MarkThemeAsModified()
+            MarkAsModified(true)
         end
     }
 
@@ -300,7 +319,7 @@ return function(options)
                 color = ShiftColor(color, -24, -61, -61)
             }
 
-            MarkThemeAsModified()
+            MarkAsModified(true)
         end
     }
 
@@ -373,7 +392,7 @@ return function(options)
                 color = filedCornerShadowColor
             }
 
-            MarkThemeAsModified()
+            MarkAsModified(true)
         end
     } --
 
@@ -386,7 +405,14 @@ return function(options)
         label = "Configuration",
         text = "Save",
         enabled = isModified, -- Only allows saving of a modified theme
-        onclick = function() options.onsave() end
+        onclick = function()
+            local onsuccess = function(theme)
+                UpdateTitle(theme.name)
+                MarkAsModified(false)
+            end
+
+            options.onsave(dialog.data, GetParameters(), onsuccess)
+        end
     } --
     :button{text = "Load", onclick = function() options.onload() end} --
     :button{text = "Font", onclick = function() options.onfont() end}
@@ -396,17 +422,13 @@ return function(options)
     :button{
         text = "OK",
         onclick = function()
-            options.onok(dialog.data,
-                         {isAdvanced = dialog.data["mode-advanced"]})
+            options.onok(dialog.data, GetParameters())
             dialog:close()
         end
     } --
     :button{
         text = "Apply",
-        onclick = function()
-            options.onok(dialog.data,
-                         {isAdvanced = dialog.data["mode-advanced"]})
-        end
+        onclick = function() options.onok(dialog.data, GetParameters()) end
     } -- 
     :button{text = "Cancel", onclick = function() dialog:close() end} --
 
