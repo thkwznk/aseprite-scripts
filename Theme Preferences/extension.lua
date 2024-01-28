@@ -53,21 +53,12 @@ function CopyColor(originalColor)
     }
 end
 
--- Color Definitions
-local Theme = {name = "", colors = {}, parameters = {}}
-
--- Copy template to theme
-Theme.name = Template.name
-
-for id, color in pairs(Template.colors) do Theme.colors[id] = CopyColor(color) end
-
-for id, parameter in pairs(Template.parameters) do
-    Theme.parameters[id] = parameter
-end
-
+-- Start from the template
+local Theme = Template()
 local IsDialogOpen = false
 
-function RefreshTheme(template, theme)
+function RefreshTheme(theme)
+    local template = Template()
     -- Prepare color lookup
     local map = {}
 
@@ -152,9 +143,7 @@ function UpdateThemeXml(theme)
 end
 
 function Refresh()
-    -- lastRefreshState = IsModified
-
-    RefreshTheme(Template, Theme)
+    RefreshTheme(Theme)
     ThemeManager:SetCurrentTheme(Theme)
 
     -- Switch Aseprite to the custom theme
@@ -170,6 +159,22 @@ function LoadTheme(theme, stopRefresh)
     if not stopRefresh then Refresh() end
 end
 
+function CopyToTheme(colors, parameters)
+    -- Copy new colors
+    for key, _ in pairs(Theme.colors) do
+        if colors[key] then Theme.colors[key] = colors[key] end
+    end
+
+    -- Copy new parameters
+    for key, _ in pairs(Theme.parameters) do
+        if parameters[key] ~= nil then
+            Theme.parameters[key] = parameters[key]
+        end
+    end
+
+    IsModified = parameters.isModified
+end
+
 function init(plugin)
     -- Do nothing when UI is not available
     if not app.isUIAvailable then return end
@@ -179,30 +184,12 @@ function init(plugin)
         plugin.preferences.themePreferences or {}
     local storage = plugin.preferences.themePreferences
 
-    ThemeManager:Init{storage = storage}
-    FontsProvider:Init{storage = storage}
-
     -- Initialize data from plugin preferences
-    local currentTheme = ThemeManager:GetCurrentTheme()
-    if currentTheme then LoadTheme(currentTheme, true) end
+    ThemeManager:Init{storage = storage}
+    Theme = ThemeManager:GetCurrentTheme() or Theme
 
-    IsModified = plugin.preferences.themePreferences.isThemeModified
-
-    local CopyToTheme = function(colors, parameters)
-        -- Copy new colors
-        for key, _ in pairs(Theme.colors) do
-            if colors[key] then Theme.colors[key] = colors[key] end
-        end
-
-        -- Copy new parameters
-        for key, _ in pairs(Theme.parameters) do
-            if parameters[key] ~= nil then
-                Theme.parameters[key] = parameters[key]
-            end
-        end
-
-        IsModified = parameters.isModified
-    end
+    FontsProvider:Init{storage = storage}
+    IsModified = storage.isThemeModified
 
     plugin:newCommand{
         id = "ThemePreferencesNew",
