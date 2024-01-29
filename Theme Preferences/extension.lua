@@ -39,8 +39,7 @@ end
 local Theme = Template()
 local IsDialogOpen = false
 
-function RefreshTheme(theme)
-    local template = Template()
+function UpdateThemeSheet(theme)
     -- Prepare color lookup
     local map = {}
     local template = Template()
@@ -75,11 +74,6 @@ function RefreshTheme(theme)
     end
 
     image:saveAs(SheetPath)
-
-    -- Update the XML theme file
-    UpdateThemeXml(theme)
-
-    app.command.Refresh()
 end
 
 function UpdateThemeXml(theme)
@@ -108,21 +102,24 @@ function UpdateThemeXml(theme)
     WriteAll(ThemeXmlPath, xmlContent)
 end
 
-function Refresh()
-    RefreshTheme(Theme)
-    ThemeManager:SetCurrentTheme(Theme)
+function RefreshTheme()
+    UpdateThemeSheet(Theme)
+    UpdateThemeXml(Theme)
 
     -- Switch Aseprite to the custom theme
-    if app.preferences.theme.selected ~= THEME_ID then
-        app.preferences.theme.selected = THEME_ID
-    end
+    app.preferences.theme.selected = THEME_ID
+
+    -- Force refresh of the Aseprite UI to reload the theme
+    app.command.Refresh()
+
+    ThemeManager:SetCurrentTheme(Theme)
 end
 
 function LoadTheme(theme, stopRefresh)
     Theme = theme
     IsModified = false
 
-    if not stopRefresh then Refresh() end
+    if not stopRefresh then RefreshTheme() end
 end
 
 function CopyToTheme(colors, parameters)
@@ -202,7 +199,7 @@ function init(plugin)
             end
 
             local onfont = function()
-                local onconfirm = function() Refresh() end
+                local onconfirm = function() RefreshTheme() end
 
                 -- Hide the Theme Preferences dialog
                 dialog:close()
@@ -215,7 +212,7 @@ function init(plugin)
 
             local onok = function(colors, parameters)
                 CopyToTheme(colors, parameters)
-                Refresh()
+                RefreshTheme()
             end
 
             CreateDialog = function()
@@ -253,3 +250,5 @@ end
 function exit(plugin)
     plugin.preferences.themePreferences.isThemeModified = IsModified
 end
+
+-- TODO: Move all of the Refresh/Update theme logic to a separate file
