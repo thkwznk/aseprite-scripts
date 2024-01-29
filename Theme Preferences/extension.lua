@@ -2,6 +2,7 @@ local Template = dofile("./Template.lua")
 local ThemeManager = dofile("./ThemeManager.lua")
 local FontsProvider = dofile("./FontsProvider.lua")
 local ThemePreferencesDialog = dofile("./ThemePreferencesDialog.lua")
+local GetWindowSize = dofile("./GetWindowSize.lua") -- TODO: This would be a good place to use "require"
 
 local THEME_ID = "custom"
 local DialogSize = Size(240, 412)
@@ -138,17 +139,6 @@ function CopyToTheme(colors, parameters)
     IsModified = parameters.isModified
 end
 
-function GetWindowSize()
-    if app.apiVersion >= 25 then return app.window end
-
-    local dialog = Dialog()
-    dialog:show{wait = false}
-    dialog:close()
-
-    return Size(dialog.bounds.x * 2 + dialog.bounds.width,
-                dialog.bounds.y * 2 + dialog.bounds.height)
-end
-
 function init(plugin)
     -- Do nothing when UI is not available
     if not app.isUIAvailable then return end
@@ -186,13 +176,14 @@ function init(plugin)
             end
 
             local onload = function()
-                local onload = function(theme) LoadTheme(theme) end
-                local onreset = function() LoadTheme(Template()) end
+                local onload = function(theme)
+                    LoadTheme(theme or Template())
+                end
 
                 -- Hide the Theme Preferences dialog
                 dialog:close()
 
-                ThemeManager:Load(onload, onreset)
+                ThemeManager:Load(onload)
 
                 -- Reopen the dialog
                 dialog = CreateDialog()

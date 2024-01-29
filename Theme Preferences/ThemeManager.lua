@@ -1,8 +1,12 @@
-local EXPORT_DIALOG_WIDTH = 540
-
 local ThemeEncoder = dofile("./Base64Encoder.lua")
+local LoadConfigurationDialog = dofile("./LoadConfigurationDialog.lua")
+local ImportConfigurationDialog = dofile("./ImportConfigurationDialog.lua")
+local SaveConfigurationDialog = dofile("./SaveConfigurationDialog.lua")
 
 local ThemeManager = {storage = nil}
+
+local DefaultThemeEncoded =
+    "<Default:1:A:////xsbGfHx8eGBQ////rsvffZKeZVVh/+u2////0sq9lYF0ZFVgAgIC/f39LEyRLEyR/1dX////xsbGtbW1ZVVhQUEs//99m6Vdgmcf/v//e3x8AQAAAQEB>"
 
 function ThemeManager:Init(options)
     self.storage = options.storage
@@ -23,8 +27,7 @@ function ThemeManager:Init(options)
         "<Game Boy Light:1:B:7//qrtnISLGWSLGW7//qrtnISLGWCQkIrtnI7//q7//qSLGWF4WCCQkI7//qrtnISLGWSLGW7//qtsaxpbWgrtnIisWTrtnISn+oMUFq7//qfIR5CQkICQkI>"
     }
 
-    self.storage.savedThemes = self.storage.savedThemes or
-                                   "<Default:1:A:////xsbGfHx8eGBQ////rsvffZKeZVVh/+u2////0sq9lYF0ZFVgAgIC/f39LEyRLEyR/1dX////xsbGtbW1ZVVhQUEs//99m6Vdgmcf/v//e3x8AQAAAQEB>"
+    self.storage.savedThemes = self.storage.savedThemes or DefaultThemeEncoded
 end
 
 function ThemeManager:SetCurrentTheme(theme)
@@ -40,31 +43,24 @@ function ThemeManager:GetCurrentTheme()
     end
 end
 
-function ThemeManager:Find(name)
-    for i, savedthemeCode in ipairs(self.storage.savedThemes) do
-        if ThemeEncoder:DecodeName(savedthemeCode) == name then return i end
-    end
-end
-
 function ThemeManager:Save(theme, onsave, isImport)
-    local title = "Save Configuration"
-    local okButtonText = "OK"
+    local dialog = nil
 
-    if isImport then
-        title = "Import Configuration"
-        okButtonText = "Save"
+    local getThemeIndex = function(name)
+        for i, encodedTheme in ipairs(self.storage.savedThemes) do
+            if ThemeEncoder:DecodeName(encodedTheme) == name then
+                return i
+            end
+        end
     end
 
-    local saveDialog = Dialog(title)
+    local onConfirm = function(name, applyImmediately)
+        local themeIndex = getThemeIndex(name)
 
-    local save = function(options)
-        local applyImmediately = options and options.apply
-        local isNameUsed = self:Find(saveDialog.data.name)
-
-        if isNameUsed then
+        if themeIndex then
             local overwriteConfirmation = app.alert {
                 title = "Configuration overwrite",
-                text = "Configuration with a name " .. saveDialog.data.name ..
+                text = "Configuration with a name " .. name ..
                     " already exists, do you want to overwrite it?",
                 buttons = {"Yes", "No"}
             }
@@ -72,7 +68,7 @@ function ThemeManager:Save(theme, onsave, isImport)
             if overwriteConfirmation ~= 1 then return end
         end
 
-        theme.name = saveDialog.data.name
+        theme.name = name
 
         if not isImport or (isImport and applyImmediately) then
             onsave(theme)
@@ -81,270 +77,65 @@ function ThemeManager:Save(theme, onsave, isImport)
         local code = ThemeEncoder:EncodeSigned(theme.name, theme.parameters,
                                                theme.colors)
 
-        if isNameUsed then
-            self.storage.savedThemes[isNameUsed] = code
+        if themeIndex then
+            self.storage.savedThemes[themeIndex] = code
         else
             table.insert(self.storage.savedThemes, code)
         end
 
-        saveDialog:close()
+        dialog:close()
     end
 
-    saveDialog --
-    :entry{
-        id = "name",
-        label = "Name",
-        text = theme.name,
-        onchange = function()
-            saveDialog:modify{id = "ok", enabled = #saveDialog.data.name > 0} --
-        end
-    } --
-    :separator() --
-    :button{
-        id = "ok",
-        text = okButtonText,
-        enabled = #theme.name > 0,
-        onclick = function() save() end
-    } --
-
-    if isImport then
-        saveDialog:button{
-            text = "Save and Apply",
-            enabled = #theme.name > 0,
-            onclick = function() save {apply = true} end
-        }
-    end
-
-    saveDialog --
-    :button{text = "Cancel"} --
-    :show()
-
+    dialog = SaveConfigurationDialog(theme, isImport, onConfirm)
+    dialog:show()
 end
 
-function ThemeManager:ShowExportDialog(name, code, onclose)
-    local isFirstOpen = true
-
-    local exportDialog = Dialog {
-        title = "Export " .. name,
-        onclose = function() if not isFirstOpen then onclose() end end
+function ThemeManager:GetDecodedThemes()
+    local encodedThemes = {
+        DefaultThemeEncoded, table.unpack(self.storage.savedThemes)
     }
+    local themes = {}
 
-    exportDialog --
-    :entry{label = "Code", text = code} --
-    :separator() --
-    :button{text = "Close"} --
+    for _, encodedTheme in ipairs(encodedThemes) do
+        local theme = ThemeEncoder:DecodeSigned(encodedTheme)
+        theme.code = encodedTheme
 
-    -- Open and close to initialize bounds
-    exportDialog:show{wait = false}
-    exportDialog:close()
+        table.insert(themes, theme)
+    end
 
-    isFirstOpen = false
-
-    local bounds = exportDialog.bounds
-    bounds.x = bounds.x - (EXPORT_DIALOG_WIDTH - bounds.width) / 2
-    bounds.width = EXPORT_DIALOG_WIDTH
-    exportDialog.bounds = bounds
-
-    exportDialog:show()
+    return themes
 end
 
-local CurrentPage = 1
-local ConfigurationsPerPage = 10
-local LoadButtonIdPrefix = "saved-theme-load-"
-local ExportButtonIdPrefix = "saved-theme-export-"
-local DeleteButtonIdPrefix = "saved-theme-delete-"
+function ThemeManager:Load(onload)
+    local themes = self:GetDecodedThemes()
 
-function ThemeManager:Load(onload, onreset)
-    local pages = math.ceil(#self.storage.savedThemes / ConfigurationsPerPage)
+    local dialog = nil
+    local onDelete = nil
+    local onImport = nil
 
-    CurrentPage = math.min(CurrentPage, pages)
-
-    local skip = (CurrentPage - 1) * ConfigurationsPerPage
-
-    local browseDialog = Dialog("Load Configuration")
-
-    local updateBrowseDialog = function()
-        browseDialog --
-        :modify{id = "button-previous", enabled = CurrentPage > 1} --
-        :modify{id = "button-next", enabled = CurrentPage < pages}
-
-        skip = (CurrentPage - 1) * ConfigurationsPerPage
-
-        for index = 1, ConfigurationsPerPage do
-            local savedthemeCode = self.storage.savedThemes[skip + index]
-            local loadButtonId = LoadButtonIdPrefix .. tostring(index)
-            local exportButtonId = ExportButtonIdPrefix .. tostring(index)
-            local deleteButtonId = DeleteButtonIdPrefix .. tostring(index)
-
-            if savedthemeCode then
-                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
-
-                browseDialog --
-                :modify{id = loadButtonId, visible = true, label = theme.name} --
-                :modify{id = exportButtonId, visible = true} --
-                :modify{id = deleteButtonId, visible = true}
-            else
-                browseDialog --
-                :modify{id = loadButtonId, visible = false} --
-                :modify{id = exportButtonId, visible = false} --
-                :modify{id = deleteButtonId, visible = false}
-            end
-        end
+    local CreateDialog = function()
+        dialog = LoadConfigurationDialog(themes, onload, onDelete, onImport)
+        dialog:show()
     end
 
-    browseDialog --
-    :button{
-        id = "button-previous",
-        text = "Previous",
-        enabled = false,
-        onclick = function()
-            CurrentPage = CurrentPage - 1
-            updateBrowseDialog()
-        end
-    } --
-    :button{text = "", enabled = false} --
-    :button{
-        id = "button-next",
-        text = "Next",
-        enabled = pages > 1,
-        onclick = function()
-            CurrentPage = CurrentPage + 1
-            updateBrowseDialog()
-        end
-    } --
-    :separator()
-
-    for index = 1, ConfigurationsPerPage do
-        browseDialog --
-        :button{
-            id = LoadButtonIdPrefix .. tostring(index),
-            label = "", -- Set empty label, without it it's impossible to update it later
-            text = "Load",
-            onclick = function()
-                local savedthemeCode = self.storage.savedThemes[skip + index]
-                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
-
-                local confirmation = app.alert {
-                    title = "Loading theme " .. theme.name,
-                    text = "Unsaved changes will be lost, do you want to continue?",
-                    buttons = {"Yes", "No"}
-                }
-
-                if confirmation == 1 then
-                    browseDialog:close()
-                    onload(theme)
-                end
-            end
-        } --
-        :button{
-            id = ExportButtonIdPrefix .. tostring(index),
-            text = "Export",
-            onclick = function()
-                local savedthemeCode = self.storage.savedThemes[skip + index]
-                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
-
-                browseDialog:close()
-                local onExportDialogClose = function()
-                    browseDialog:show()
-                end
-
-                self:ShowExportDialog(theme.name, savedthemeCode,
-                                      onExportDialogClose)
-            end
-        } --
-        :button{
-            id = DeleteButtonIdPrefix .. tostring(index),
-            text = "Delete",
-            onclick = function()
-                local savedthemeCode = self.storage.savedThemes[skip + index]
-                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
-
-                local confirmation = app.alert {
-                    title = "Delete " .. theme.name,
-                    text = "Are you sure?",
-                    buttons = {"Yes", "No"}
-                }
-
-                if confirmation == 1 then
-                    table.remove(self.storage.savedThemes, skip + index)
-
-                    browseDialog:close()
-                    self:Load(onload, onreset)
-                end
-            end
-        }
+    onDelete = function(index)
+        table.remove(self.storage.savedThemes, index)
+        themes = self:GetDecodedThemes()
+        CreateDialog()
     end
 
-    if #self.storage.savedThemes > 0 then
-        browseDialog:separator{id = "separator"}
+    onImport = function()
+        local decode = function(code)
+            return ThemeEncoder:DecodeSigned(code)
+        end
+
+        local onConfirm = function(theme) self:Save(theme, onload, true) end
+
+        local importDialog = ImportConfigurationDialog(decode, onConfirm)
+        importDialog:show()
     end
 
-    -- Initialize
-    updateBrowseDialog()
-
-    browseDialog --
-    :button{
-        text = "Import",
-        onclick = function()
-            browseDialog:close()
-            local importDialog = Dialog("Import")
-
-            importDialog --
-            :entry{id = "code", label = "Code"} --
-            :separator{id = "separator"} --
-            :button{
-                text = "Import",
-                onclick = function()
-                    local code = importDialog.data.code
-                    local theme = ThemeEncoder:DecodeSigned(code)
-
-                    if not theme then
-                        importDialog:modify{
-                            id = "separator",
-                            text = "Incorrect code"
-                        }
-                        return
-                    end
-
-                    importDialog:close()
-
-                    self:Save(theme, onload, true)
-                end
-            } --
-            :button{text = "Cancel"} --
-
-            -- Open and close to initialize bounds
-            importDialog:show{wait = false}
-            importDialog:close()
-
-            local bounds = importDialog.bounds
-            bounds.x = bounds.x - (EXPORT_DIALOG_WIDTH - bounds.width) / 2
-            bounds.width = EXPORT_DIALOG_WIDTH
-            importDialog.bounds = bounds
-
-            importDialog:show()
-        end
-    } --
-    :button{
-        text = "Reset to Default",
-        onclick = function()
-            local confirmation = app.alert {
-                title = "Resetting theme",
-                text = "Unsaved changes will be lost, do you want to continue?",
-                buttons = {"Yes", "No"}
-            }
-
-            if confirmation == 1 then
-                browseDialog:close()
-                onreset()
-            end
-        end
-    }
-
-    browseDialog --
-    :separator() --
-    :button{text = "Close"} --
-    :show()
+    CreateDialog()
 end
 
 return ThemeManager
