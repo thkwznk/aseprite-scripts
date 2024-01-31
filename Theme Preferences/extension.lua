@@ -37,14 +37,15 @@ function init(plugin)
             local dialog = nil
             local CreateDialog = function() end
 
-            local onSave = function(refreshTitle)
+            local onSave = function(colors, parameters, refreshTitle)
                 local onsuccess = function(theme)
                     refreshTitle(theme.name)
 
-                    currentTheme = theme
+                    currentTheme.colors = colors
+                    currentTheme.parameters = parameters
+                    IsModified = false
 
                     ThemeManager:SetCurrentTheme(theme)
-                    IsModified = false
                 end
 
                 ThemeManager:Save(currentTheme, onsuccess)

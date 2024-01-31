@@ -411,7 +411,7 @@ return function(options)
                 MarkAsModified(false)
             end
 
-            options.onsave(refreshTitle)
+            options.onsave(dialog.data, GetParameters(), refreshTitle)
         end
     } --
     :button{text = "Load", onclick = function() options.onload() end} --
