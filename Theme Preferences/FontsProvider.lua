@@ -231,18 +231,18 @@ function FontsProvider:_GetSystemFonts()
     return systemFonts
 end
 
-function FontsProvider:OpenDialog(onconfirm)
+function FontsProvider:OpenDialog(onClose, onSuccess)
     local currentFont = FontsProvider:GetCurrentFont()
 
     local onConfirm = function(newFont)
         FontsProvider:SetCurrentFont(newFont)
-        onconfirm(newFont)
+        onSuccess(newFont)
     end
 
     local dialog = FontConfigurationDialog(currentFont, self.availableFonts,
-                                           onConfirm)
+                                           onClose, onConfirm)
 
-    dialog:show()
+    dialog:show{wait = false}
 end
 
 return FontsProvider

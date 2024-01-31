@@ -13,10 +13,10 @@ function GetFontNames(fonts)
     return fontNames
 end
 
-return function(font, availableFonts, onconfirm)
+return function(font, availableFonts, onclose, onconfirm)
     local fontNames = GetFontNames(availableFonts)
 
-    local dialog = Dialog("Font Configuration")
+    local dialog = Dialog {title = "Font Configuration", onclose = onclose}
 
     local updateFonts = function()
         local fontName = dialog.data["default-font"]

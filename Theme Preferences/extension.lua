@@ -7,8 +7,8 @@ local RefreshTheme = dofile("./RefreshTheme.lua")
 
 local DialogSize = Size(240, 412)
 
--- Start from the template
 local IsDialogOpen = false
+local IsFontsDialogOpen = false
 
 function init(plugin)
     -- Do nothing when UI is not available
@@ -72,20 +72,6 @@ function init(plugin)
                 dialog = CreateDialog()
             end
 
-            local onFont = function()
-                -- Hide the Theme Preferences dialog
-                dialog:close()
-
-                local onConfirm = function(font)
-                    RefreshTheme(currentTheme, font)
-                end
-
-                FontsProvider:OpenDialog(onConfirm)
-
-                -- Reopen the dialog
-                dialog = CreateDialog()
-            end
-
             local onConfirm = function(colors, parameters)
                 currentTheme.colors = colors
                 currentTheme.parameters = parameters
@@ -108,7 +94,6 @@ function init(plugin)
                     onclose = function() IsDialogOpen = false end,
                     onsave = onSave,
                     onload = onLoad,
-                    onfont = onFont,
                     onok = onConfirm
                 }
 
@@ -129,8 +114,29 @@ function init(plugin)
             IsDialogOpen = true
         end
     }
+
+    plugin:newCommand{
+        id = "FontPreferences",
+        title = "Font Preferences...",
+        group = "view_screen",
+        onenabled = function() return not IsFontsDialogOpen end,
+        onclick = function()
+            local onClose = function() IsFontsDialogOpen = false end
+
+            local onConfirm = function(font)
+                local currentTheme = ThemeManager:GetCurrentTheme()
+                RefreshTheme(currentTheme, font)
+            end
+
+            FontsProvider:OpenDialog(onClose, onConfirm)
+
+            IsFontsDialogOpen = true
+        end
+    }
 end
 
 function exit(plugin)
     plugin.preferences.themePreferences.isThemeModified = IsModified
 end
+
+-- TODO: Consider moving the font configuration to a separate menu option - "Font Preferences..."

@@ -415,7 +415,6 @@ return function(options)
         end
     } --
     :button{text = "Load", onclick = function() options.onload() end} --
-    :button{text = "Font", onclick = function() options.onfont() end}
 
     dialog --
     :separator() --

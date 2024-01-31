@@ -16,6 +16,7 @@ Update v1.0.3.
 Unreleased:
 
 - [Improvement] Minor performance improvement when saving or applying themes
+- [Improvement] Move the Font configuration to it's own menu option under View > Font Preferences...
 
 Update v2.0.0:
 
