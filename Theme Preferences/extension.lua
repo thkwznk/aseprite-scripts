@@ -33,7 +33,6 @@ function init(plugin)
         onenabled = function() return not IsDialogOpen end,
         onclick = function()
             local currentTheme = ThemeManager:GetCurrentTheme()
-            local currentFont = FontsProvider:GetCurrentFont()
 
             local dialog = nil
             local CreateDialog = function() end
@@ -61,6 +60,8 @@ function init(plugin)
                     ThemeManager:SetCurrentTheme(currentTheme)
                     IsModified = false
 
+                    local currentFont = FontsProvider:GetCurrentFont()
+
                     RefreshTheme(currentTheme, currentFont)
                 end
 
@@ -75,8 +76,7 @@ function init(plugin)
                 dialog:close()
 
                 local onConfirm = function(font)
-                    currentFont = font
-                    RefreshTheme(currentTheme, currentFont)
+                    RefreshTheme(currentTheme, font)
                 end
 
                 FontsProvider:OpenDialog(onConfirm)
@@ -92,6 +92,8 @@ function init(plugin)
                 IsModified = parameters.isModified
 
                 ThemeManager:SetCurrentTheme(currentTheme)
+
+                local currentFont = FontsProvider:GetCurrentFont()
 
                 RefreshTheme(currentTheme, currentFont)
             end
