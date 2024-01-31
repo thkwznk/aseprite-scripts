@@ -2,6 +2,7 @@ local DefaultFont = {
     default = {name = "Aseprite", size = "9"},
     mini = {name = "Aseprite Mini", size = "7"}
 }
+
 local FontSizes = {"6", "7", "8", "9", "10", "11", "12"}
 
 local FontsProvider = {storage = nil, availableFonts = {}}
@@ -44,13 +45,6 @@ end
 
 function FontsProvider:SetMiniFontSize(fontSize)
     self.storage.font.mini.size = fontSize
-end
-
-function FontsProvider:GetFontDeclaration(font)
-    if not font.type or not font.file then return "" end
-
-    return string.format("<font name=\"%s\" type=\"%s\" file=\"%s\" />",
-                         font.name, font.type, font.file)
 end
 
 -- FUTURE: Revisit this, currently can cause issues and completely break the window layout rendering Aseprite unusable
@@ -297,7 +291,7 @@ function FontsProvider:OpenDialog(onconfirm)
         self:SetDefaultFont(dialog.data["default-font"])
         self:SetMiniFont(dialog.data["mini-font"])
 
-        onconfirm()
+        onconfirm(self:GetCurrentFont())
 
         -- self:VerifyScaling()
     end

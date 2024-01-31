@@ -1,6 +1,6 @@
 local IMPORT_DIALOG_WIDTH = 540
 
-return function(decode, onok)
+return function(decode, onConfirm)
     local dialog = Dialog("Import")
 
     dialog --
@@ -17,7 +17,7 @@ return function(decode, onok)
             end
 
             dialog:close()
-            onok(theme)
+            onConfirm(theme)
         end
     } --
     :button{text = "Cancel"} --

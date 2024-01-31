@@ -406,12 +406,12 @@ return function(options)
         text = "Save",
         enabled = isModified, -- Only allows saving of a modified theme
         onclick = function()
-            local onsuccess = function(theme)
-                UpdateTitle(theme.name)
+            local refreshTitle = function(name)
+                UpdateTitle(name)
                 MarkAsModified(false)
             end
 
-            options.onsave(dialog.data, GetParameters(), onsuccess)
+            options.onsave(refreshTitle)
         end
     } --
     :button{text = "Load", onclick = function() options.onload() end} --
