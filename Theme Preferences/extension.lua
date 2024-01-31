@@ -5,7 +5,7 @@ local ThemePreferencesDialog = dofile("./ThemePreferencesDialog.lua")
 local GetWindowSize = dofile("./GetWindowSize.lua") -- TODO: This would be a good place to use "require"
 local RefreshTheme = dofile("./RefreshTheme.lua")
 
-local DialogSize = Size(240, 412)
+local DialogSize = Size(240, 422)
 
 local IsDialogOpen = false
 local IsFontsDialogOpen = false
@@ -72,6 +72,23 @@ function init(plugin)
                 dialog = CreateDialog()
             end
 
+            local onReset = function()
+                -- Hide the Theme Preferences dialog
+                dialog:close()
+
+                currentTheme = theme or Template()
+
+                ThemeManager:SetCurrentTheme(currentTheme)
+                IsModified = false
+
+                local currentFont = FontsProvider:GetCurrentFont()
+
+                RefreshTheme(currentTheme, currentFont)
+
+                -- Reopen the dialog
+                dialog = CreateDialog()
+            end
+
             local onConfirm = function(colors, parameters)
                 currentTheme.colors = colors
                 currentTheme.parameters = parameters
@@ -94,6 +111,7 @@ function init(plugin)
                     onclose = function() IsDialogOpen = false end,
                     onsave = onSave,
                     onload = onLoad,
+                    onreset = onReset,
                     onok = onConfirm
                 }
 

@@ -415,8 +415,11 @@ return function(options)
         end
     } --
     :button{text = "Load", onclick = function() options.onload() end} --
-
-    dialog --
+    :separator() --
+    :button{
+        text = "Reset to Default",
+        onclick = function() options.onreset() end
+    } --
     :separator() --
     :button{
         text = "OK",

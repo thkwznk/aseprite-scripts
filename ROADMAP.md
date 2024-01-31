@@ -17,6 +17,7 @@ Unreleased:
 
 - [Improvement] Minor performance improvement when saving or applying themes
 - [Improvement] Move the Font configuration to it's own menu option under View > Font Preferences...
+- [Improvement] Move the "Reset to Default" option to the main Theme Preferences dialog window
 
 Update v2.0.0:
 

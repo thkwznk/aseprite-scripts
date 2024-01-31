@@ -5,9 +5,6 @@ local SaveConfigurationDialog = dofile("./SaveConfigurationDialog.lua")
 
 local ThemeManager = {storage = nil}
 
-local DefaultThemeEncoded =
-    "<Default:1:A:////xsbGfHx8eGBQ////rsvffZKeZVVh/+u2////0sq9lYF0ZFVgAgIC/f39LEyRLEyR/1dX////xsbGtbW1ZVVhQUEs//99m6Vdgmcf/v//e3x8AQAAAQEB>"
-
 function ThemeManager:Init(options)
     self.storage = options.storage
 
@@ -27,7 +24,8 @@ function ThemeManager:Init(options)
         "<Game Boy Light:1:B:7//qrtnISLGWSLGW7//qrtnISLGWCQkIrtnI7//q7//qSLGWF4WCCQkI7//qrtnISLGWSLGW7//qtsaxpbWgrtnIisWTrtnISn+oMUFq7//qfIR5CQkICQkI>"
     }
 
-    self.storage.savedThemes = self.storage.savedThemes or DefaultThemeEncoded
+    self.storage.savedThemes = self.storage.savedThemes or
+                                   "<Default:1:A:////xsbGfHx8eGBQ////rsvffZKeZVVh/+u2////0sq9lYF0ZFVgAgIC/f39LEyRLEyR/1dX////xsbGtbW1ZVVhQUEs//99m6Vdgmcf/v//e3x8AQAAAQEB>"
 end
 
 function ThemeManager:SetCurrentTheme(theme)
@@ -91,12 +89,9 @@ function ThemeManager:Save(theme, onsave, isImport)
 end
 
 function ThemeManager:GetDecodedThemes()
-    local encodedThemes = {
-        DefaultThemeEncoded, table.unpack(self.storage.savedThemes)
-    }
     local themes = {}
 
-    for _, encodedTheme in ipairs(encodedThemes) do
+    for _, encodedTheme in ipairs(self.storage.savedThemes) do
         local theme = ThemeEncoder:DecodeSigned(encodedTheme)
         theme.code = encodedTheme
 

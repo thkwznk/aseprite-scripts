@@ -42,7 +42,6 @@ return function(themes, onload, ondelete, onimport)
             } --
             :button{
                 text = "Export",
-                enabled = index > 1,
                 onclick = function()
                     dialog:close()
                     local onExportDialogClose = function()
@@ -57,7 +56,6 @@ return function(themes, onload, ondelete, onimport)
             } --
             :button{
                 text = "Delete",
-                enabled = index > 1,
                 onclick = function()
                     local confirmation = app.alert {
                         title = "Delete " .. theme.name,
