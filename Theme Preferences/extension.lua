@@ -138,5 +138,3 @@ end
 function exit(plugin)
     plugin.preferences.themePreferences.isThemeModified = IsModified
 end
-
--- TODO: Consider moving the font configuration to a separate menu option - "Font Preferences..."

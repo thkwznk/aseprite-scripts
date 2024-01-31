@@ -1,4 +1,4 @@
-local FontConfigurationDialog = dofile("./FontConfigurationDialog.lua")
+local FontPreferencesDialog = dofile("./FontPreferencesDialog.lua")
 local DefaultFont = dofile("./DefaultFont.lua")
 
 local FontsProvider = {storage = nil, availableFonts = {}}
@@ -239,8 +239,8 @@ function FontsProvider:OpenDialog(onClose, onSuccess)
         onSuccess(newFont)
     end
 
-    local dialog = FontConfigurationDialog(currentFont, self.availableFonts,
-                                           onClose, onConfirm)
+    local dialog = FontPreferencesDialog(currentFont, self.availableFonts,
+                                         onClose, onConfirm)
 
     dialog:show{wait = false}
 end
