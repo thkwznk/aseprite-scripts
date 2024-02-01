@@ -15,7 +15,7 @@ Update v1.0.3.
 
 Unreleased:
 
-- [Improvement] Minor performance improvement when saving or applying themes
+- [Improvement] Major performance improvement when applying theme preferences
 - [Improvement] Move the Font configuration to it's own menu option under View > Font Preferences...
 - [Improvement] Move the "Reset to Default" option to the main Theme Preferences dialog window
 

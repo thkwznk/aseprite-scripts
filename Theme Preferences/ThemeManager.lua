@@ -2,6 +2,7 @@ local ThemeEncoder = dofile("./Base64Encoder.lua")
 local LoadConfigurationDialog = dofile("./LoadConfigurationDialog.lua")
 local ImportConfigurationDialog = dofile("./ImportConfigurationDialog.lua")
 local SaveConfigurationDialog = dofile("./SaveConfigurationDialog.lua")
+local Template = dofile("./Template.lua")
 
 local ThemeManager = {storage = nil}
 
@@ -39,6 +40,8 @@ function ThemeManager:GetCurrentTheme()
     if self.storage.currentTheme then
         return ThemeEncoder:DecodeSigned(self.storage.currentTheme)
     end
+
+    return Template()
 end
 
 function ThemeManager:Save(theme, onsave, isImport)

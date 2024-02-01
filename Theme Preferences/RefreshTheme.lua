@@ -12,6 +12,9 @@ local ThemeXmlTemplatePath = app.fs.joinPath(ThemePreferencesDirectory,
                                              "theme-template.xml")
 local ThemeXmlPath = app.fs.joinPath(ThemePreferencesDirectory, "theme.xml")
 
+-- Preload the theme sheet template file
+local TemplateSheetImage = Image {fromFile = SheetTemplatePath}
+
 function ColorToHex(color)
     return string.format("#%02x%02x%02x", color.red, color.green, color.blue)
 end
@@ -40,7 +43,7 @@ function UpdateThemeSheet(template, theme)
     end
 
     -- Prepare sheet.png
-    local image = Image {fromFile = SheetTemplatePath}
+    local image = Image(TemplateSheetImage)
 
     -- Save references to function to improve performance
     local getPixel, drawPixel = image.getPixel, image.drawPixel
@@ -55,13 +58,8 @@ function UpdateThemeSheet(template, theme)
             themeColor = map[rgba(r(value), g(value), b(value))]
 
             if themeColor then
-                drawPixel(image, x, y, Color {
-                    red = themeColor.red,
-                    green = themeColor.green,
-                    blue = themeColor.blue,
-                    -- Restore the original alpha value
-                    alpha = rgbaA(value)
-                })
+                drawPixel(image, x, y, rgba(themeColor.red, themeColor.green,
+                                            themeColor.blue, rgbaA(value)))
             end
         end
     end
