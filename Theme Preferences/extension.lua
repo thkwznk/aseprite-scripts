@@ -2,10 +2,11 @@ local Template = dofile("./Template.lua")
 local ThemeManager = dofile("./ThemeManager.lua")
 local FontsProvider = dofile("./FontsProvider.lua")
 local ThemePreferencesDialog = dofile("./ThemePreferencesDialog.lua")
-local GetWindowSize = dofile("./GetWindowSize.lua") -- TODO: This would be a good place to use "require"
+local DialogBounds = dofile("./DialogBounds.lua")
 local RefreshTheme = dofile("./RefreshTheme.lua")
 
-local DialogSize = Size(240, 422)
+local SimpleDialogSize = Size(240, 422)
+local AdvancedDialogSize = Size(240, 440)
 
 local IsDialogOpen = false
 local IsFontsDialogOpen = false
@@ -115,14 +116,12 @@ function init(plugin)
                     onok = onConfirm
                 }
 
-                local window = GetWindowSize()
-                local bounds = Rectangle((window.width - DialogSize.width) / 2,
-                                         (window.height - DialogSize.height) / 2,
-                                         DialogSize.width, DialogSize.height)
+                local bounds = currentTheme.parameters.isAdvanced and
+                                   AdvancedDialogSize or SimpleDialogSize
 
                 newDialog:show{
                     wait = false,
-                    bounds = bounds,
+                    bounds = DialogBounds(bounds),
                     autoscrollbars = true
                 }
                 return newDialog

@@ -1,4 +1,7 @@
 local ExportConfigurationDialog = dofile("./ExportConfigurationDialog.lua")
+local DialogBounds = dofile("./DialogBounds.lua")
+
+local ExportDialogSize = Size(540, 67)
 
 local ConfigurationsPerPage = 10
 local CurrentPage = 1
@@ -51,7 +54,7 @@ return function(themes, onload, ondelete, onimport)
                     local exportDialog =
                         ExportConfigurationDialog(theme.name, theme.code,
                                                   onExportDialogClose)
-                    exportDialog:show()
+                    exportDialog:show{bounds = DialogBounds(ExportDialogSize)}
                 end
             } --
             :button{
