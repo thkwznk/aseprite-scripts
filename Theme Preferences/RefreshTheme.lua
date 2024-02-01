@@ -44,13 +44,15 @@ function UpdateThemeSheet(template, theme)
 
     -- Save references to function to improve performance
     local getPixel, drawPixel = image.getPixel, image.drawPixel
-    local rgbaA = app.pixelColor.rgbaA
-    local pixelValue, themeColor
+    local value, themeColor
+
+    local pc = app.pixelColor
+    local rgba, r, g, b, rgbaA = pc.rgba, pc.rgbaR, pc.rgbaG, pc.rgbaB, pc.rgbaA
 
     for x = 0, image.width - 1 do
         for y = 0, image.height - 1 do
-            pixelValue = getPixel(image, x, y)
-            themeColor = map[pixelValue]
+            value = getPixel(image, x, y)
+            themeColor = map[rgba(r(value), g(value), b(value))]
 
             if themeColor then
                 drawPixel(image, x, y, Color {
@@ -58,7 +60,7 @@ function UpdateThemeSheet(template, theme)
                     green = themeColor.green,
                     blue = themeColor.blue,
                     -- Restore the original alpha value
-                    alpha = rgbaA(pixelValue)
+                    alpha = rgbaA(value)
                 })
             end
         end
