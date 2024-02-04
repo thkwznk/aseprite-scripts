@@ -18,44 +18,23 @@ function FontPreferences:SetCurrentFont(font)
 end
 
 -- FUTURE: Revisit this, currently can cause issues and completely break the window layout rendering Aseprite unusable
-function FontPreferences:VerifyScaling()
-    local currentFont = self:GetCurrentFont()
-
-    local isDefaultFontVector = currentFont.default.type == nil or
-                                    currentFont.default.type ~= "spritesheet"
-    local isMiniFontVector = currentFont.mini.type == nil or
-                                 currentFont.mini.type == "spritesheet"
-
-    if not isDefaultFontVector and not isMiniFontVector then return end
+function FontPreferences:VerifyScaling(font)
+    if font.default.type == "spritesheet" and font.mini.type == "spritesheet" then
+        return
+    end
 
     local screenScale = app.preferences.general["screen_scale"]
     local uiScale = app.preferences.general["ui_scale"]
 
     if screenScale < uiScale then return end
 
-    local userChoice = app.alert {
+    app.preferences.general["screen_scale"] = uiScale
+    app.preferences.general["ui_scale"] = screenScale
+
+    app.alert {
         title = "Warning",
-        text = {
-            "One of the selected fonts may appear blurry, switching UI and Screen Scaling may help.",
-            "",
-            "Current: Screen " .. tostring(screenScale * 100) .. "%, " .. "UI " ..
-                tostring(uiScale * 100) .. "%",
-            "Suggested: Screen " .. tostring(uiScale * 100) .. "%, " .. "UI " ..
-                tostring(screenScale * 100) .. "%", "",
-            "Would you like to switch?"
-        },
-        buttons = {"Yes", "No"}
+        text = "If the fonts appear blurry, please restart Aseprite for all changes to be applied."
     }
-
-    if userChoice == 1 then -- Yes = 1
-        app.preferences.general["screen_scale"] = uiScale
-        app.preferences.general["ui_scale"] = screenScale
-
-        app.alert {
-            title = "Aseprite Restart Necessary",
-            text = "Please restart Aseprite for the changes to be applied."
-        }
-    end
 end
 
 function FontPreferences:_FindAll(content, patternStart, patternEnd)
@@ -231,6 +210,7 @@ function FontPreferences:OpenDialog(onClose, onSuccess)
     local onConfirm = function(newFont)
         FontPreferences:SetCurrentFont(newFont)
         onSuccess(newFont)
+        self:VerifyScaling(newFont)
     end
 
     local dialog = FontPreferencesDialog(currentFont, self.availableFonts,

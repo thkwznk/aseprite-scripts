@@ -78,8 +78,6 @@ function UpdateThemeXml(template, theme, font)
     xmlContent = xmlContent:gsub("<mini_font>", font.mini.name)
     xmlContent = xmlContent:gsub("<mini_font_size>", font.mini.size)
 
-    -- TODO: If using system fonts - ask user if they want to switch default scaling percentages
-
     FileProvider:Write(XmlPath, xmlContent)
 end
 

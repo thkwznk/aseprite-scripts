@@ -41,8 +41,6 @@ return function(font, availableFonts, onclose, onconfirm)
         }
 
         onconfirm(newFont)
-
-        -- self:VerifyScaling()
     end
 
     dialog --
@@ -105,8 +103,8 @@ return function(font, availableFonts, onclose, onconfirm)
     :button{
         text = "OK",
         onclick = function()
-            updateFonts()
             dialog:close()
+            updateFonts()
         end
     } --
     :button{text = "Apply", onclick = updateFonts} --
