@@ -43,7 +43,15 @@ function init(plugin)
             local dialog = nil
             local CreateDialog = function() end
 
-            local onSave = function(colors, parameters, refreshTitle)
+            local onSave = function(colors, parameters)
+                currentTheme.colors = colors
+                currentTheme.parameters = parameters
+                IsModified = false
+
+                ThemePreferences:Save(currentTheme)
+            end
+
+            local onSaveAs = function(colors, parameters, refreshTitle)
                 local onsuccess = function(theme)
                     refreshTitle(theme.name)
 
@@ -54,7 +62,7 @@ function init(plugin)
                     ThemePreferences:SetCurrentTheme(theme)
                 end
 
-                ThemePreferences:Save(currentTheme, onsuccess)
+                ThemePreferences:SaveAs(currentTheme, onsuccess)
             end
 
             local onLoad = function()
@@ -116,6 +124,7 @@ function init(plugin)
                     isModified = IsModified,
                     onclose = function() IsDialogOpen = false end,
                     onsave = onSave,
+                    onsaveas = onSaveAs,
                     onload = onLoad,
                     onreset = onReset,
                     onok = onConfirm

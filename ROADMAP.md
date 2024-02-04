@@ -19,6 +19,7 @@ Unreleased:
 - [Improvement] Move the Font configuration to it's own menu option under View > Font Preferences...
 - [Improvement] Move the "Reset to Default" option to the main Theme Preferences dialog window
 - [Improvement] Change user screen & UI scaling settings to correctly display vector fonts
+- [Improvement] Add "Save As" button for the Theme configuration
 
 Update v2.0.0:
 

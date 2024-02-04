@@ -45,6 +45,7 @@ return function(options)
 
         dialog --
         :modify{id = "save-configuration", enabled = value} --
+        :modify{id = "save-as-configuration", enabled = value} --
         :modify{title = title .. (value and " (modified)" or "")}
     end
 
@@ -406,12 +407,21 @@ return function(options)
         text = "Save",
         enabled = isModified, -- Only allows saving of a modified theme
         onclick = function()
+            options.onsave(dialog.data, GetParameters())
+            MarkAsModified(false)
+        end
+    } --
+    :button{
+        id = "save-as-configuration",
+        text = "Save As",
+        enabled = isModified, -- Only allows saving of a modified theme
+        onclick = function()
             local refreshTitle = function(name)
                 UpdateTitle(name)
                 MarkAsModified(false)
             end
 
-            options.onsave(dialog.data, GetParameters(), refreshTitle)
+            options.onsaveas(dialog.data, GetParameters(), refreshTitle)
         end
     } --
     :button{text = "Load", onclick = function() options.onload() end} --
@@ -439,5 +449,4 @@ return function(options)
     return dialog
 end
 
--- TODO: Add SaveAs button
 -- TODO: Add Reset button

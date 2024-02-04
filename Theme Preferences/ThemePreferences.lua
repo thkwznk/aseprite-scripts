@@ -42,19 +42,26 @@ function ThemePreferences:GetCurrentTheme()
     return Template()
 end
 
-function ThemePreferences:Save(theme, onsave, isImport)
+function ThemePreferences:GetThemeIndex(name)
+    for i, encodedTheme in ipairs(self.preferences.savedThemes) do
+        if ThemeEncoder:DecodeName(encodedTheme) == name then return i end
+    end
+end
+
+function ThemePreferences:Save(theme)
+    local themeIndex = self:GetThemeIndex(theme.name)
+
+    local code = ThemeEncoder:EncodeSigned(theme.name, theme.parameters,
+                                           theme.colors)
+
+    self.preferences.savedThemes[themeIndex] = code
+end
+
+function ThemePreferences:SaveAs(theme, onsave, isImport)
     local dialog = nil
 
-    local getThemeIndex = function(name)
-        for i, encodedTheme in ipairs(self.preferences.savedThemes) do
-            if ThemeEncoder:DecodeName(encodedTheme) == name then
-                return i
-            end
-        end
-    end
-
     local onConfirm = function(name, applyImmediately)
-        local themeIndex = getThemeIndex(name)
+        local themeIndex = self:GetThemeIndex(name)
 
         if themeIndex then
             local overwriteConfirmation = app.alert {
