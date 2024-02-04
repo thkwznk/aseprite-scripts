@@ -2,23 +2,23 @@ local FontPreferencesDialog = dofile("./FontPreferencesDialog.lua")
 local DefaultFont = dofile("./DefaultFont.lua")
 local FileProvider = dofile("./FileProvider.lua")
 
-local FontsProvider = {storage = nil, availableFonts = {}}
+local FontPreferences = {preferences = nil, availableFonts = {}}
 
-function FontsProvider:Init(options)
-    self.storage = options.storage
-    self.storage.font = self.storage.font or DefaultFont()
+function FontPreferences:Init(preferences)
+    self.preferences = preferences
+    self.preferences.font = self.preferences.font or DefaultFont()
 
     self:_RefreshAvailableFonts()
 end
 
-function FontsProvider:GetCurrentFont() return self.storage.font end
+function FontPreferences:GetCurrentFont() return self.preferences.font end
 
-function FontsProvider:SetCurrentFont(font)
-    self.storage.font = font or DefaultFont()
+function FontPreferences:SetCurrentFont(font)
+    self.preferences.font = font or DefaultFont()
 end
 
 -- FUTURE: Revisit this, currently can cause issues and completely break the window layout rendering Aseprite unusable
-function FontsProvider:VerifyScaling()
+function FontPreferences:VerifyScaling()
     local currentFont = self:GetCurrentFont()
 
     local isDefaultFontVector = currentFont.default.type == nil or
@@ -58,7 +58,7 @@ function FontsProvider:VerifyScaling()
     end
 end
 
-function FontsProvider:_FindAll(content, patternStart, patternEnd)
+function FontPreferences:_FindAll(content, patternStart, patternEnd)
     local results = {}
     local start = 0
 
@@ -80,7 +80,7 @@ function FontsProvider:_FindAll(content, patternStart, patternEnd)
     return results
 end
 
-function FontsProvider:_ParseFont(fontDescription)
+function FontPreferences:_ParseFont(fontDescription)
     local result = {}
 
     local name = ""
@@ -121,7 +121,7 @@ function FontsProvider:_ParseFont(fontDescription)
     return result
 end
 
-function FontsProvider:_ExtractFonts(filePath)
+function FontPreferences:_ExtractFonts(filePath)
     local fileContent = FileProvider:ReadAll(filePath)
     fileContent = fileContent:gsub("[\n\r\t]+", " ")
 
@@ -137,7 +137,7 @@ function FontsProvider:_ExtractFonts(filePath)
     return result
 end
 
-function FontsProvider:GetFontsFromDirectory(path, fonts)
+function FontPreferences:GetFontsFromDirectory(path, fonts)
     -- Validate the path
     if not app.fs.isDirectory(path) then return end
 
@@ -170,7 +170,7 @@ function FontsProvider:GetFontsFromDirectory(path, fonts)
     return fonts
 end
 
-function FontsProvider:_RefreshAvailableFonts()
+function FontPreferences:_RefreshAvailableFonts()
     self.availableFonts = {}
 
     local systemFonts = self:_GetSystemFonts()
@@ -192,7 +192,7 @@ function FontsProvider:_RefreshAvailableFonts()
     end
 end
 
-function FontsProvider:_GetSystemFonts()
+function FontPreferences:_GetSystemFonts()
     -- Windows
     local roamingPath = os.getenv("APPDATA")
     local appDataPath = roamingPath and app.fs.filePath(roamingPath)
@@ -225,11 +225,11 @@ function FontsProvider:_GetSystemFonts()
     return systemFonts
 end
 
-function FontsProvider:OpenDialog(onClose, onSuccess)
-    local currentFont = FontsProvider:GetCurrentFont()
+function FontPreferences:OpenDialog(onClose, onSuccess)
+    local currentFont = FontPreferences:GetCurrentFont()
 
     local onConfirm = function(newFont)
-        FontsProvider:SetCurrentFont(newFont)
+        FontPreferences:SetCurrentFont(newFont)
         onSuccess(newFont)
     end
 
@@ -239,4 +239,4 @@ function FontsProvider:OpenDialog(onClose, onSuccess)
     dialog:show{wait = false}
 end
 
-return FontsProvider
+return FontPreferences

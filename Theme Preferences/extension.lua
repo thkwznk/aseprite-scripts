@@ -1,6 +1,6 @@
 local Template = dofile("./Template.lua")
-local ThemeManager = dofile("./ThemeManager.lua")
-local FontsProvider = dofile("./FontsProvider.lua")
+local ThemePreferences = dofile("./ThemePreferences.lua")
+local FontPreferences = dofile("./FontPreferences.lua")
 local ThemePreferencesDialog = dofile("./ThemePreferencesDialog.lua")
 local DialogBounds = dofile("./DialogBounds.lua")
 local RefreshTheme = dofile("./RefreshTheme.lua")
@@ -10,22 +10,27 @@ local AdvancedDialogSize = Size(240, 440)
 
 local IsDialogOpen = false
 local IsFontsDialogOpen = false
+local IsModified = false
 
 function init(plugin)
     -- Do nothing when UI is not available
     if not app.isUIAvailable then return end
 
-    -- Initialize plugin preferences data for backwards compatibility
-    plugin.preferences.themePreferences =
-        plugin.preferences.themePreferences or {}
-    local storage = plugin.preferences.themePreferences
+    -- Copy plugin theme preferences data for backwards compatibility
+    if plugin.preferences.themePreferences then
+        for key, value in pairs(plugin.preferences.themePreferences) do
+            plugin.preferences[key] = value
+        end
+
+        plugin.preferences.themePreferences = nil
+    end
+
+    local preferences = plugin.preferences
 
     -- Initialize data from plugin preferences
-    ThemeManager:Init{storage = storage}
-    Theme = ThemeManager:GetCurrentTheme() or Theme
-
-    FontsProvider:Init{storage = storage}
-    IsModified = storage.isThemeModified
+    ThemePreferences:Init(preferences)
+    FontPreferences:Init(preferences)
+    IsModified = preferences.isThemeModified
 
     plugin:newCommand{
         id = "ThemePreferencesNew",
@@ -33,7 +38,7 @@ function init(plugin)
         group = "view_screen",
         onenabled = function() return not IsDialogOpen end,
         onclick = function()
-            local currentTheme = ThemeManager:GetCurrentTheme()
+            local currentTheme = ThemePreferences:GetCurrentTheme()
 
             local dialog = nil
             local CreateDialog = function() end
@@ -46,10 +51,10 @@ function init(plugin)
                     currentTheme.parameters = parameters
                     IsModified = false
 
-                    ThemeManager:SetCurrentTheme(theme)
+                    ThemePreferences:SetCurrentTheme(theme)
                 end
 
-                ThemeManager:Save(currentTheme, onsuccess)
+                ThemePreferences:Save(currentTheme, onsuccess)
             end
 
             local onLoad = function()
@@ -59,15 +64,15 @@ function init(plugin)
                 local onConfirm = function(theme)
                     currentTheme = theme or Template()
 
-                    ThemeManager:SetCurrentTheme(currentTheme)
+                    ThemePreferences:SetCurrentTheme(currentTheme)
                     IsModified = false
 
-                    local currentFont = FontsProvider:GetCurrentFont()
+                    local currentFont = FontPreferences:GetCurrentFont()
 
                     RefreshTheme(currentTheme, currentFont)
                 end
 
-                ThemeManager:Load(onConfirm)
+                ThemePreferences:Load(onConfirm)
 
                 -- Reopen the dialog
                 dialog = CreateDialog()
@@ -77,12 +82,12 @@ function init(plugin)
                 -- Hide the Theme Preferences dialog
                 dialog:close()
 
-                currentTheme = theme or Template()
+                currentTheme = Template()
 
-                ThemeManager:SetCurrentTheme(currentTheme)
+                ThemePreferences:SetCurrentTheme(currentTheme)
                 IsModified = false
 
-                local currentFont = FontsProvider:GetCurrentFont()
+                local currentFont = FontPreferences:GetCurrentFont()
 
                 RefreshTheme(currentTheme, currentFont)
 
@@ -96,9 +101,9 @@ function init(plugin)
 
                 IsModified = parameters.isModified
 
-                ThemeManager:SetCurrentTheme(currentTheme)
+                ThemePreferences:SetCurrentTheme(currentTheme)
 
-                local currentFont = FontsProvider:GetCurrentFont()
+                local currentFont = FontPreferences:GetCurrentFont()
 
                 RefreshTheme(currentTheme, currentFont)
             end
@@ -147,17 +152,15 @@ function init(plugin)
             local onClose = function() IsFontsDialogOpen = false end
 
             local onConfirm = function(font)
-                local currentTheme = ThemeManager:GetCurrentTheme()
+                local currentTheme = ThemePreferences:GetCurrentTheme()
                 RefreshTheme(currentTheme, font)
             end
 
-            FontsProvider:OpenDialog(onClose, onConfirm)
+            FontPreferences:OpenDialog(onClose, onConfirm)
 
             IsFontsDialogOpen = true
         end
     }
 end
 
-function exit(plugin)
-    plugin.preferences.themePreferences.isThemeModified = IsModified
-end
+function exit(plugin) plugin.preferences.isThemeModified = IsModified end

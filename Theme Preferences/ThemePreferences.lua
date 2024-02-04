@@ -4,12 +4,11 @@ local ImportConfigurationDialog = dofile("./ImportConfigurationDialog.lua")
 local SaveConfigurationDialog = dofile("./SaveConfigurationDialog.lua")
 local Template = dofile("./Template.lua")
 
-local ThemeManager = {storage = nil}
+local ThemePreferences = {preferences = nil}
 
-function ThemeManager:Init(options)
-    self.storage = options.storage
-
-    self.storage.savedThemes = self.storage.savedThemes or {
+function ThemePreferences:Init(preferences)
+    self.preferences = preferences
+    self.preferences.savedThemes = self.preferences.savedThemes or {
         "<Peach:1:A:////6MbGnnx8eGBQ////98vfxpKerlVh/+u2////0sq9lYF0ZFVgAgIC/f39/0wA/0wA/1dX////xsbGtbW1ZVVhQUEs/wB9mwBdggAf/v//f39/AQAAAQEB>",
         "<Garden:1:B:////3u7T/5wAaseC7f//8cq9aseCUnNh/+u2////8cq9tIF0g1VgAAAA////ATskATsk/5wA////xsbGtbW1YGBgPEwr/5wAm0IAggQA/v///s1//5wAATsk>",
         "<Blue:1:A:////5ubmnJyceGBQ6O//lrr/ZYHNTUSQ/+u26fL+vLy8f3NzTkdfAAAA////S1r/S1r/AM3/6fL+sLnFn6i0TExMKDgXAM3/AHPfADWhAAAAcH9/4P//AAFV>",
@@ -25,30 +24,29 @@ function ThemeManager:Init(options)
         "<Game Boy Light:1:B:7//qrtnISLGWSLGW7//qrtnISLGWCQkIrtnI7//q7//qSLGWF4WCCQkI7//qrtnISLGWSLGW7//qtsaxpbWgrtnIisWTrtnISn+oMUFq7//qfIR5CQkICQkI>"
     }
 
-    self.storage.savedThemes = self.storage.savedThemes or
-                                   "<Default:1:A:////xsbGfHx8eGBQ////rsvffZKeZVVh/+u2////0sq9lYF0ZFVgAgIC/f39LEyRLEyR/1dX////xsbGtbW1ZVVhQUEs//99m6Vdgmcf/v//e3x8AQAAAQEB>"
+    self.preferences.savedThemes = self.preferences.savedThemes or
+                                       "<Default:1:A:////xsbGfHx8eGBQ////rsvffZKeZVVh/+u2////0sq9lYF0ZFVgAgIC/f39LEyRLEyR/1dX////xsbGtbW1ZVVhQUEs//99m6Vdgmcf/v//e3x8AQAAAQEB>"
 end
 
-function ThemeManager:SetCurrentTheme(theme)
+function ThemePreferences:SetCurrentTheme(theme)
     local code = ThemeEncoder:EncodeSigned(theme.name, theme.parameters,
                                            theme.colors)
 
-    if code then self.storage.currentTheme = code end
+    if code then self.preferences.currentTheme = code end
 end
 
-function ThemeManager:GetCurrentTheme()
-    if self.storage.currentTheme then
-        return ThemeEncoder:DecodeSigned(self.storage.currentTheme)
-    end
+function ThemePreferences:GetCurrentTheme()
+    local currentTheme = self.preferences.currentTheme
+    if currentTheme then return ThemeEncoder:DecodeSigned(currentTheme) end
 
     return Template()
 end
 
-function ThemeManager:Save(theme, onsave, isImport)
+function ThemePreferences:Save(theme, onsave, isImport)
     local dialog = nil
 
     local getThemeIndex = function(name)
-        for i, encodedTheme in ipairs(self.storage.savedThemes) do
+        for i, encodedTheme in ipairs(self.preferences.savedThemes) do
             if ThemeEncoder:DecodeName(encodedTheme) == name then
                 return i
             end
@@ -79,9 +77,9 @@ function ThemeManager:Save(theme, onsave, isImport)
                                                theme.colors)
 
         if themeIndex then
-            self.storage.savedThemes[themeIndex] = code
+            self.preferences.savedThemes[themeIndex] = code
         else
-            table.insert(self.storage.savedThemes, code)
+            table.insert(self.preferences.savedThemes, code)
         end
 
         dialog:close()
@@ -91,10 +89,10 @@ function ThemeManager:Save(theme, onsave, isImport)
     dialog:show()
 end
 
-function ThemeManager:GetDecodedThemes()
+function ThemePreferences:GetDecodedThemes()
     local themes = {}
 
-    for _, encodedTheme in ipairs(self.storage.savedThemes) do
+    for _, encodedTheme in ipairs(self.preferences.savedThemes) do
         local theme = ThemeEncoder:DecodeSigned(encodedTheme)
         theme.code = encodedTheme
 
@@ -104,7 +102,7 @@ function ThemeManager:GetDecodedThemes()
     return themes
 end
 
-function ThemeManager:Load(onload)
+function ThemePreferences:Load(onload)
     local themes = self:GetDecodedThemes()
 
     local dialog = nil
@@ -117,7 +115,7 @@ function ThemeManager:Load(onload)
     end
 
     onDelete = function(index)
-        table.remove(self.storage.savedThemes, index)
+        table.remove(self.preferences.savedThemes, index)
         themes = self:GetDecodedThemes()
         CreateDialog()
     end
@@ -136,4 +134,4 @@ function ThemeManager:Load(onload)
     CreateDialog()
 end
 
-return ThemeManager
+return ThemePreferences
