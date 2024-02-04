@@ -9,7 +9,7 @@ function GetWindowSize()
                 dialog.bounds.y * 2 + dialog.bounds.height)
 end
 
-return function(size)
+return function(size, position)
     local window = GetWindowSize()
 
     local uiScale = app.preferences.general["ui_scale"]
@@ -17,6 +17,11 @@ return function(size)
 
     local x = (window.width - size.width) / 2
     local y = (window.height - size.height) / 2
+
+    if position then
+        x = position.x
+        y = position.y
+    end
 
     return Rectangle(x, y, size.width, size.height)
 end

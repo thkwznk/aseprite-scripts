@@ -119,9 +119,15 @@ function init(plugin)
                 local bounds = currentTheme.parameters.isAdvanced and
                                    AdvancedDialogSize or SimpleDialogSize
 
+                local position = nil
+
+                if dialog then
+                    position = Point(dialog.bounds.x, dialog.bounds.y)
+                end
+
                 newDialog:show{
                     wait = false,
-                    bounds = DialogBounds(bounds),
+                    bounds = DialogBounds(bounds, position),
                     autoscrollbars = true
                 }
                 return newDialog
