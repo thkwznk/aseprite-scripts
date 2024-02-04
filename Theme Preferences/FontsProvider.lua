@@ -1,5 +1,6 @@
 local FontPreferencesDialog = dofile("./FontPreferencesDialog.lua")
 local DefaultFont = dofile("./DefaultFont.lua")
+local FileProvider = dofile("./FileProvider.lua")
 
 local FontsProvider = {storage = nil, availableFonts = {}}
 
@@ -55,13 +56,6 @@ function FontsProvider:VerifyScaling()
             text = "Please restart Aseprite for the changes to be applied."
         }
     end
-end
-
-function FontsProvider:_ReadAll(filePath)
-    local file = assert(io.open(filePath, "rb"))
-    local content = file:read("*all")
-    file:close()
-    return content
 end
 
 function FontsProvider:_FindAll(content, patternStart, patternEnd)
@@ -128,7 +122,7 @@ function FontsProvider:_ParseFont(fontDescription)
 end
 
 function FontsProvider:_ExtractFonts(filePath)
-    local fileContent = self:_ReadAll(filePath)
+    local fileContent = FileProvider:ReadAll(filePath)
     fileContent = fileContent:gsub("[\n\r\t]+", " ")
 
     local fontDeclarations = self:_FindAll(fileContent, "<font ", ">")

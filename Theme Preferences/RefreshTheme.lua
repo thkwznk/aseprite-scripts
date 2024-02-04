@@ -1,37 +1,21 @@
 local Template = dofile("./Template.lua")
+local FileProvider = dofile("./FileProvider.lua")
 
 local THEME_ID = "custom"
 
 local ExtensionsDirectory = app.fs.joinPath(app.fs.userConfigPath, "extensions")
-local ThemePreferencesDirectory = app.fs.joinPath(ExtensionsDirectory,
-                                                  "theme-preferences")
-local SheetTemplatePath = app.fs.joinPath(ThemePreferencesDirectory,
-                                          "sheet-template.png")
-local SheetPath = app.fs.joinPath(ThemePreferencesDirectory, "sheet.png")
-local ThemeXmlTemplatePath = app.fs.joinPath(ThemePreferencesDirectory,
-                                             "theme-template.xml")
-local ThemeXmlPath = app.fs.joinPath(ThemePreferencesDirectory, "theme.xml")
+local BaseDirectory = app.fs.joinPath(ExtensionsDirectory, "theme-preferences")
+
+local SheetTemplatePath = app.fs.joinPath(BaseDirectory, "sheet-template.png")
+local SheetPath = app.fs.joinPath(BaseDirectory, "sheet.png")
+local XmlTemplatePath = app.fs.joinPath(BaseDirectory, "theme-template.xml")
+local XmlPath = app.fs.joinPath(BaseDirectory, "theme.xml")
 
 -- Preload the theme sheet template file
 local TemplateSheetImage = Image {fromFile = SheetTemplatePath}
 
 function ColorToHex(color)
     return string.format("#%02x%02x%02x", color.red, color.green, color.blue)
-end
-
-function ReadAll(filePath)
-    local file = assert(io.open(filePath, "rb"))
-    local content = file:read("*all")
-    file:close()
-    return content
-end
-
-function WriteAll(filePath, content)
-    local file = io.open(filePath, "w")
-    if file then
-        file:write(content)
-        file:close()
-    end
 end
 
 function UpdateThemeSheet(template, theme)
@@ -76,7 +60,7 @@ end
 
 function UpdateThemeXml(template, theme, font)
     -- Prepare theme.xml
-    local xmlContent = ReadAll(ThemeXmlTemplatePath)
+    local xmlContent = FileProvider:ReadAll(XmlTemplatePath)
 
     for id, _ in pairs(template.colors) do
         xmlContent = xmlContent:gsub("<" .. id .. ">",
@@ -96,7 +80,7 @@ function UpdateThemeXml(template, theme, font)
 
     -- TODO: If using system fonts - ask user if they want to switch default scaling percentages
 
-    WriteAll(ThemeXmlPath, xmlContent)
+    FileProvider:Write(XmlPath, xmlContent)
 end
 
 return function(theme, font)
