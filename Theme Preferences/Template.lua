@@ -42,7 +42,10 @@ return function()
             ["editor_cursor"] = Color {r = 254, g = 255, b = 255},
             ["editor_cursor_shadow"] = Color {r = 123, g = 124, b = 124},
             ["editor_cursor_outline"] = Color {r = 1, g = 0, b = 0},
-            ["editor_icons"] = Color {gray = 1}
+            ["editor_icons"] = Color {gray = 1},
+
+            -- Outline
+            ["outline"] = Color {gray = 0}
         },
         parameters = {isAdvanced = false}
     }

@@ -20,6 +20,7 @@ Unreleased:
 - [Improvement] Move the "Reset to Default" option to the main Theme Preferences dialog window
 - [Improvement] Change user screen & UI scaling settings to correctly display vector fonts
 - [Improvement] Add "Save As" button for the Theme configuration
+- [Feature] Add "Outline" color
 
 Update v2.0.0:
 

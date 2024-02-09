@@ -1,4 +1,6 @@
-local CODE_VERSION = 1
+local Template = dofile("./Template.lua")()
+
+local CODE_VERSION = 2
 local START_CHARACTER = "<"
 local LAST_CHARACTER = ">"
 local SPLIT_CHARACTER = ":"
@@ -41,7 +43,9 @@ local Base64ThemeEncoder = {
         "editor_cursor", --
         "editor_cursor_shadow", --
         "editor_cursor_outline", --
-        "editor_icons" --
+        "editor_icons", --
+        -- Outline
+        "outline"
     }
 }
 
@@ -149,7 +153,7 @@ function Base64ThemeEncoder:EncodeColors(colors)
     local result = ""
 
     for _, id in ipairs(self.colorIds) do
-        result = result .. self:EncodeColor(colors[id])
+        result = result .. self:EncodeColor(colors[id] or Template.colors[id])
     end
 
     return result
@@ -228,7 +232,9 @@ function Base64ThemeEncoder:DecodeColors(version, encodedColors)
     end
 
     local colors = {}
-    for i, id in ipairs(self.colorIds) do colors[id] = decodedColors[i] end
+    for i, id in ipairs(self.colorIds) do
+        colors[id] = decodedColors[i] or Template.colors[id]
+    end
 
     return colors
 end

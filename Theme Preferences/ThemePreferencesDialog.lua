@@ -1,3 +1,5 @@
+local Template = dofile("./Template.lua")()
+
 function ShiftRGB(value, modifier)
     return math.max(math.min(value + modifier, 255), 0)
 end
@@ -53,7 +55,8 @@ return function(options)
         dialog:color{
             id = widgetOptions.id,
             label = widgetOptions.label,
-            color = colors[widgetOptions.id],
+            color = colors[widgetOptions.id] or
+                Template.colors[widgetOptions.id],
             visible = widgetOptions.visible,
             onchange = function()
                 if widgetOptions.onchange then
@@ -398,6 +401,7 @@ return function(options)
     } --
 
     ThemeColor {label = "Hover", id = "window_hover", visible = true}
+    ThemeColor {label = "Outline", id = "outline", visible = true}
 
     dialog --
     :separator() --
@@ -449,4 +453,4 @@ return function(options)
     return dialog
 end
 
--- TODO: Add Reset button
+-- TODO: Reset the theme on cancel, reverting all unsaved changes?
