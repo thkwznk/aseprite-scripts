@@ -21,10 +21,10 @@ Unreleased:
 - [Improvement] Change user screen & UI scaling settings to correctly display vector fonts
 - [Improvement] Add "Save As" button for the Theme configuration
 - [Feature] Add "Outline" color
+- [Feature] Add "Title Bar" Window color
 
 Update v2.0.0:
 
-- [Test-Feature] Tint Mode where you can only edit the Tab color + optional underglow
 - [Improvement] A new color (set) - Window Title Bar
 - [Improvement] Read font names from TTF files
 
@@ -33,8 +33,6 @@ Future:
 - [Feature] Add a Dark theme template
 - [Feature] [Blocked] Separate "field_background" when Aseprite fixes the menu shadow
 - [Feature] [Blocked] Add separate color for Tooltip Text (Tooltip Section?) - currently it doesn't work due to a bug
-- [Feature] Generating a theme from the current color palette
-- [Refactor] Add a Default model next to Template - Template is a template, default is default
 
 ## FX
 
