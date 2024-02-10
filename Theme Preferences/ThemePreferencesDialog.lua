@@ -117,6 +117,10 @@ return function(options)
             } --
             :modify{id = "simple-tab", color = dialog.data["tab_background"]} --
             :modify{
+                id = "simple-window-title-bar",
+                color = dialog.data["window_title_bar_background"]
+            } --
+            :modify{
                 id = "simple-window",
                 color = dialog.data["window_background"]
             } --
@@ -127,13 +131,16 @@ return function(options)
         :modify{id = "simple-link", visible = isSimple} --
         :modify{id = "simple-button", visible = isSimple} --
         :modify{id = "simple-tab", visible = isSimple} --
-        :modify{id = "simple-window", visible = isSimple}
+        :modify{id = "simple-window-title-bar", visible = isSimple} --
+        :modify{id = "simple-window", visible = isSimple} --
 
         local advancedWidgetIds = {
             "button_highlight", "button_background", "button_shadow",
             "tab_corner_highlight", "tab_highlight", "tab_background",
             "tab_shadow", "window_highlight", "window_background",
-            "window_shadow", "text_link", "text_separator", "editor_icons"
+            "window_shadow", "text_link", "text_separator", "editor_icons",
+            "window_title_bar_corner_highlight", "window_title_bar_highlight",
+            "window_title_bar_background", "window_title_bar_shadow"
         }
 
         for _, id in ipairs(advancedWidgetIds) do
@@ -329,7 +336,42 @@ return function(options)
 
     dialog:separator{text = "Window"}
 
+    dialog:color{
+        label = "Title Bar",
+        id = "simple-window-title-bar",
+        color = colors["window_title_bar_background"],
+        onchange = function()
+            local color = dialog.data["simple-window-title-bar"]
+
+            dialog:modify{
+                id = "window_title_bar_corner_highlight",
+                color = ShiftColor(color, 131, 110, 98)
+            }
+            dialog:modify{
+                id = "window_title_bar_highlight",
+                color = ShiftColor(color, 49, 57, 65)
+            }
+            dialog:modify{id = "window_title_bar_background", color = color}
+            dialog:modify{
+                id = "window_title_bar_shadow",
+                color = ShiftColor(color, -24, -61, -61)
+            }
+
+            MarkAsModified(true)
+        end
+    } --
+
     ThemeColor {
+        label = "Title Bar",
+        id = "window_title_bar_corner_highlight",
+        visible = false
+    }
+    ThemeColor {id = "window_title_bar_highlight", visible = false}
+    ThemeColor {id = "window_title_bar_background", visible = false}
+    ThemeColor {id = "window_title_bar_shadow", visible = false}
+
+    ThemeColor {
+        label = "Body",
         id = "window_highlight",
         visible = false,
         onchange = function(color)
@@ -366,6 +408,7 @@ return function(options)
     ThemeColor {id = "field_corner_shadow", visible = false}
 
     dialog:color{
+        label = "Body",
         id = "simple-window",
         color = colors["window_background"],
         onchange = function()

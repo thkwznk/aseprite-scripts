@@ -45,7 +45,17 @@ return function()
             ["editor_icons"] = Color {gray = 1},
 
             -- Outline
-            ["outline"] = Color {gray = 0}
+            ["outline"] = Color {gray = 0},
+
+            -- Window Title Bar
+            ["window_title_bar_corner_highlight"] = Color {
+                r = 255,
+                g = 255,
+                b = 253
+            },
+            ["window_title_bar_highlight"] = Color {r = 173, g = 202, b = 221},
+            ["window_title_bar_background"] = Color {r = 125, g = 146, b = 156},
+            ["window_title_bar_shadow"] = Color {r = 100, g = 85, b = 95}
         },
         parameters = {isAdvanced = false}
     }

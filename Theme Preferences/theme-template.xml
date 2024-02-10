@@ -68,9 +68,9 @@
         <color id="menuitem_highlight_face" value="<tab_background>" />
         <color id="window_face" value="<window_background>" />
         <color id="window_titlebar_text" value="<text_active>" />
-        <color id="window_titlebar_face" value="<tab_background>" />
+        <color id="window_titlebar_face" value="<window_title_bar_background>" />
         <color id="editor_face" value="<editor_background>" />
-        <color id="editor_sprite_border" value="#000000" />
+        <color id="editor_sprite_border" value="<outline>" />
         <color id="editor_sprite_bottom_border" value="<editor_background_shadow>" />
         <color id="editor_view_face" value="#000000" />
         <color id="view_shadow" value="<field_shadow>" />

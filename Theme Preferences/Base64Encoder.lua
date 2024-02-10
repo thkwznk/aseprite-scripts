@@ -45,7 +45,12 @@ local Base64ThemeEncoder = {
         "editor_cursor_outline", --
         "editor_icons", --
         -- Outline
-        "outline"
+        "outline", --
+        -- Window Title Bar
+        "window_title_bar_corner_highlight", --
+        "window_title_bar_highlight", --
+        "window_title_bar_background", --
+        "window_title_bar_shadow"
     }
 }
 
@@ -153,7 +158,9 @@ function Base64ThemeEncoder:EncodeColors(colors)
     local result = ""
 
     for _, id in ipairs(self.colorIds) do
-        result = result .. self:EncodeColor(colors[id] or Template.colors[id])
+        result = result ..
+                     self:EncodeColor(
+                         colors[id] or self:GetDefaultColor(id, colors))
     end
 
     return result
@@ -233,7 +240,7 @@ function Base64ThemeEncoder:DecodeColors(version, encodedColors)
 
     local colors = {}
     for i, id in ipairs(self.colorIds) do
-        colors[id] = decodedColors[i] or Template.colors[id]
+        colors[id] = decodedColors[i] or self:GetDefaultColor(id, colors)
     end
 
     return colors
@@ -255,6 +262,22 @@ function Base64ThemeEncoder:DecodeName(code)
     local name = codeSplit[1]
 
     return name
+end
+
+function Base64ThemeEncoder:GetDefaultColor(id, colors)
+    if id == "outline" then return Template.colors[id] end
+
+    if id == "window_title_bar_corner_highlight" then
+        return colors["tab_corner_highlight"]
+    end
+
+    if id == "window_title_bar_highlight" then return colors["tab_highlight"] end
+
+    if id == "window_title_bar_background" then
+        return colors["tab_background"]
+    end
+
+    if id == "window_title_bar_shadow" then return colors["tab_shadow"] end
 end
 
 return Base64ThemeEncoder
