@@ -23,13 +23,18 @@ Unreleased:
 - [Feature] Add "Outline" color
 - [Feature] Add "Title Bar" Window color
 
+Update v1.0.7:
+
+- [Improvement] Rework the dialogs and menu options
+- [Improvement] Update template with new elements for 1.3 and check for compatibility with 1.2
+
+Update v1.0.8:
+
+- [Fix] Make the title bar change it's height with font size
+
 Update v2.0.0:
 
-- [Improvement] A new color (set) - Window Title Bar
 - [Improvement] Read font names from TTF files
-
-Future:
-
 - [Feature] Add a Dark theme template
 - [Feature] [Blocked] Separate "field_background" when Aseprite fixes the menu shadow
 - [Feature] [Blocked] Add separate color for Tooltip Text (Tooltip Section?) - currently it doesn't work due to a bug
