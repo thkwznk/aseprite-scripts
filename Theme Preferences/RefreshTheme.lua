@@ -12,7 +12,7 @@ local XmlTemplatePath = app.fs.joinPath(BaseDirectory, "theme-template.xml")
 local XmlPath = app.fs.joinPath(BaseDirectory, "theme.xml")
 
 -- Preload the theme sheet template file
-local TemplateSheetImage = Image {fromFile = SheetTemplatePath}
+local TemplateSheetImage = nil
 
 function ColorToHex(color)
     return string.format("#%02x%02x%02x", color.red, color.green, color.blue)
@@ -27,6 +27,10 @@ function UpdateThemeSheet(template, theme)
     end
 
     -- Prepare sheet.png
+    if TemplateSheetImage == nil then
+        TemplateSheetImage = Image {fromFile = SheetTemplatePath}
+    end
+
     local image = Image(TemplateSheetImage)
 
     -- Save references to function to improve performance
