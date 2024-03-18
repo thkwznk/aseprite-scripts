@@ -36,6 +36,7 @@ Future:
 Unreleased:
 
 - [Feature] Add Three Shear Rotation effect
+- [Improvement] Update Neon FX to use Screen blending mode for the blurred color layers
 
 Future:
 

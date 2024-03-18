@@ -98,7 +98,7 @@ function Neon:Generate(parameters)
         colorLayer.name = "Color Blur #" .. tostring(colorNumber)
         colorLayer.parent = groupLayer
         colorLayer.stackIndex = 1
-        colorLayer.blendMode = BlendMode.HARD_LIGHT
+        colorLayer.blendMode = BlendMode.SCREEN
         sprite:newCel(colorLayer, frameNumber, colorImage, position)
 
         if expand > 0 then
