@@ -35,7 +35,7 @@ Future:
 
 Unreleased:
 
-- ...
+- [Feature] Add Three Shear Rotation effect
 
 Future:
 

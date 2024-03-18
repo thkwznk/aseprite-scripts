@@ -2,12 +2,15 @@ local DropShadow = dofile("./fx/DropShadow.lua")
 local LCDScreen = dofile("./fx/LCDScreen.lua")
 local Neon = dofile("./fx/Neon.lua")
 local Parallax = dofile("./fx/Parallax.lua")
+local ThreeShearRotation = dofile("./fx/ThreeShearRotation.lua")
 local ImageProcessor = dofile("./ImageProcessor.lua")
+local PreviewCanvas = dofile("./PreviewCanvas.lua")
 
 local InitialXOffset = 2
 local InitialYOffset = 2
 
 local FxSession = {}
+local Sqrt2 = math.sqrt(2)
 
 function FxSession:Get(sprite, key)
     if not self[sprite.filename] then return nil end
@@ -20,6 +23,62 @@ function FxSession:Set(sprite, key, value)
 
     self[sprite.filename][key] = value
 end
+
+function GetActiveSpritePreview()
+    local sprite = app.activeSprite
+    local cels = app.range.cels
+
+    local previewImage = Image(sprite.width, sprite.height, sprite.colorMode)
+
+    for _, cel in ipairs(cels) do
+        if cel.frame == app.activeFrame and cel.layer.isVisible then
+            previewImage:drawImage(cel.image, cel.position)
+        end
+    end
+
+    local bounds = previewImage:shrinkBounds()
+    return Image(previewImage, bounds)
+end
+
+function RotateCel(cel, angle)
+    local image = cel.image
+
+    if angle >= math.pi / 2 and angle <= math.pi * 1.5 then
+        image:flip(FlipType.HORIZONTAL)
+        image:flip(FlipType.VERTICAL)
+    end
+
+    local skewedImage = ThreeShearRotation(image, image, angle)
+    local bounds = skewedImage:shrinkBounds()
+
+    local dx = bounds.width - cel.image.width
+    local dy = bounds.height - cel.image.height
+    cel.position = Point(cel.position.x - dx / 2, cel.position.y - dy / 2)
+    cel.image = Image(skewedImage, bounds)
+end
+
+-- TODO: Leaving this disabled for now due to poor UX
+-- function RotationSelection(cel, angle)
+--     local bounds = cel.sprite.selection.bounds
+--     local existingImage = cel.image:clone()
+--     local imagePart = Image(cel.image, bounds)
+--     existingImage:clear(bounds)
+
+--     if angle >= math.pi / 2 and angle <= math.pi * 1.5 then
+--         imagePart:flip(FlipType.HORIZONTAL)
+--         imagePart:flip(FlipType.VERTICAL)
+--     end
+
+--     local skewedImage = ThreeShearRotation(imagePart, imagePart, angle)
+
+--     local dx = skewedImage.width - bounds.width
+--     local dy = skewedImage.height - bounds.height
+--     existingImage:drawImage(skewedImage,
+--                             Point(bounds.x - dx / 2, bounds.y - dy / 2))
+--     cel.image = existingImage
+
+--     cel.sprite.selection:deselect()
+-- end
 
 function ParallaxOnClick()
     local sprite = app.activeSprite
@@ -332,6 +391,73 @@ function init(plugin)
         group = "edit_fx",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = ParallaxOnClick
+    }
+
+    plugin:newCommand{
+        id = "ThreeShearRotation",
+        title = "Three Shear Rotation",
+        group = "edit_fx",
+        onenabled = function() return app.activeSprite ~= nil end,
+        onclick = function()
+            local sprite = app.activeSprite
+            local previewImage = GetActiveSpritePreview()
+
+            -- Precalculate a flipped image
+            local previewImageFlipped = previewImage:clone()
+            previewImageFlipped:flip(FlipType.HORIZONTAL)
+            previewImageFlipped:flip(FlipType.VERTICAL)
+
+            local dialog = Dialog {title = "Three Shear Rotation"}
+            local canvasSize = math.max(previewImage.width * Sqrt2,
+                                        previewImage.height * Sqrt2)
+            local RedrawPreview = PreviewCanvas(dialog, canvasSize, canvasSize,
+                                                sprite, previewImage)
+
+            dialog --
+            :separator() --
+            :slider{
+                id = "angle",
+                label = "Angle:",
+                min = 0,
+                max = 360,
+                value = 0,
+                onchange = function()
+                    local angle = math.rad(dialog.data.angle)
+                    local skewedImage = ThreeShearRotation(previewImage,
+                                                           previewImageFlipped,
+                                                           angle)
+
+                    RedrawPreview(skewedImage)
+                end
+            } --
+            :button{
+                text = "&OK",
+                onclick = function()
+                    app.transaction(function()
+                        local cels = app.range.cels
+
+                        for _, cel in ipairs(cels) do
+                            if cel.image ~= nil and cel.layer.isEditable then
+                                local angle = math.rad(dialog.data.angle)
+                                RotateCel(cel, angle)
+                            end
+                        end
+
+                        local selection = app.activeSprite.selection
+
+                        if not selection.isEmpty then
+                            selection:deselect()
+                        end
+                    end)
+
+                    dialog:close()
+                    app.refresh()
+                end
+            } --
+            :button{text = "&Cancel"}
+
+            dialog:show()
+        end
     }
 end
 
