@@ -19,7 +19,15 @@ function CenterImageInActiveSprite(options)
                            CenterCel
 
         for _, cel in ipairs(app.range.cels) do
-            if cel.layer.isEditable then center(cel, options, sprite) end
+            if cel.layer.isEditable then
+                -- If the entire cel image is within the selection, then move the cel
+                if sprite.selection.isEmpty or
+                    sprite.selection.bounds:contains(cel.bounds) then
+                    CenterCel(cel, options, sprite)
+                else
+                    CenterSelection(cel, options, sprite)
+                end
+            end
         end
     end)
 
@@ -67,32 +75,34 @@ function CenterSelection(cel, options, sprite)
     end
 
     sprite:newCel(cel.layer, cel.frameNumber, newImage, newPosition)
+
+end
+
+function GetCanvasCenter(sprite)
+    local selection = sprite.selection
+    local x, y
+
+    if selection.isEmpty then
+
+        x = sprite.width / 2
+        y = sprite.height / 2
+    else
+        x = selection.bounds.width / 2 + selection.bounds.x
+        y = selection.bounds.height / 2 + selection.bounds.y
+    end
+
+    return Point(math.floor(x), math.floor(y))
 end
 
 function CenterCel(cel, options, sprite)
     local x = cel.bounds.x
     local y = cel.bounds.y
 
-    if options.weighted then
-        local imageCenter = GetImageCenter(cel.image, options)
+    local canvasCenter = GetCanvasCenter(sprite)
+    local imageCenter = GetImageCenter(cel.image, options)
 
-        if options.xAxis then
-            x = math.floor(sprite.width / 2) - imageCenter.x
-        end
-
-        if options.yAxis then
-            y = math.floor(sprite.height / 2) - imageCenter.y
-        end
-    else
-        if options.xAxis then
-            x = math.floor(sprite.width / 2) - math.floor(cel.bounds.width / 2)
-        end
-
-        if options.yAxis then
-            y = math.floor(sprite.height / 2) -
-                    math.floor(cel.bounds.height / 2)
-        end
-    end
+    if options.xAxis then x = canvasCenter.x - imageCenter.x end
+    if options.yAxis then y = canvasCenter.y - imageCenter.y end
 
     cel.position = Point(x, y)
 end
