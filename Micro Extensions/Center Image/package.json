@@ -2,7 +2,7 @@
   "name": "center-image",
   "displayName": "Center Image",
   "description": "Provides an option to move image content precisely to the center of a sprite or selection.",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": {
     "name": "Kacper Woźniak",
     "email": "kac.wozniak@gmail.com",
