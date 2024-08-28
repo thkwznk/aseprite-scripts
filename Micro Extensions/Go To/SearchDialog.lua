@@ -196,46 +196,46 @@ function SearchDialog(options)
             RefreshWidgets()
         end
     } --
-    :check{
-        id = "search-layers",
-        text = "Layers",
-        selected = sources.layers,
-        onclick = function()
-            sources.layers = dialog.data["search-layers"]
-            results = Search(app.activeSprite, search, sources)
-            RefreshWidgets()
-        end
-    } --
-    :check{
-        id = "search-tags",
-        text = "Tags",
-        selected = sources.tags,
-        onclick = function()
-            sources.tags = dialog.data["search-tags"]
-            results = Search(app.activeSprite, search, sources)
-            RefreshWidgets()
-        end
-    } --
-    :check{
-        id = "search-frames",
-        text = "Frames",
-        selected = sources.frames,
-        onclick = function()
-            sources.frames = dialog.data["search-frames"]
-            results = Search(app.activeSprite, search, sources)
-            RefreshWidgets()
-        end
-    } --
-    :check{
-        id = "search-sprites",
-        text = "Sprites",
-        selected = sources.sprites,
-        onclick = function()
-            sources.sprites = dialog.data["search-sprites"]
-            results = Search(app.activeSprite, search, sources)
-            RefreshWidgets()
-        end
-    } --
+    -- :check{
+    --     id = "search-layers",
+    --     text = "Layers",
+    --     selected = sources.layers,
+    --     onclick = function()
+    --         sources.layers = dialog.data["search-layers"]
+    --         results = Search(app.activeSprite, search, sources)
+    --         RefreshWidgets()
+    --     end
+    -- } --
+    -- :check{
+    --     id = "search-tags",
+    --     text = "Tags",
+    --     selected = sources.tags,
+    --     onclick = function()
+    --         sources.tags = dialog.data["search-tags"]
+    --         results = Search(app.activeSprite, search, sources)
+    --         RefreshWidgets()
+    --     end
+    -- } --
+    -- :check{
+    --     id = "search-frames",
+    --     text = "Frames",
+    --     selected = sources.frames,
+    --     onclick = function()
+    --         sources.frames = dialog.data["search-frames"]
+    --         results = Search(app.activeSprite, search, sources)
+    --         RefreshWidgets()
+    --     end
+    -- } --
+    -- :check{
+    --     id = "search-sprites",
+    --     text = "Sprites",
+    --     selected = sources.sprites,
+    --     onclick = function()
+    --         sources.sprites = dialog.data["search-sprites"]
+    --         results = Search(app.activeSprite, search, sources)
+    --         RefreshWidgets()
+    --     end
+    -- } --
     :separator{text = "Results:"} --
     :label{id = "no-results", text = "No results"} --
     :button{
