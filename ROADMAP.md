@@ -35,7 +35,7 @@ Future:
 
 Unreleased:
 
-- ...
+- [Fix] Correctly select masks for the color blur layers
 
 Future:
 

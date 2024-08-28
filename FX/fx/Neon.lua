@@ -26,12 +26,30 @@ function Neon:_SplitImageByColors(image)
     return maskImage, colorImages
 end
 
-function Neon:Generate(parameters)
-    local sprite = app.activeSprite
-    local cel = app.activeCel
-    local originalSelection = Selection()
-    originalSelection:add(sprite.selection)
+function Neon:_SelectContent(cel)
+    local image = cel.image
+    local getPixel = image.getPixel
 
+    for x = 0, image.width - 1 do
+        for y = 0, image.height - 1 do
+            if getPixel(image, x + cel.position.x, y + cel.position.y) == 0 then
+                app.useTool {
+                    tool = "magic_wand",
+                    points = {Point(x, y)},
+                    button = MouseButton.LEFT,
+                    contiguous = false,
+                    selection = SelectionMode.REPLACE
+                }
+
+                app.command.InvertMask()
+
+                return
+            end
+        end
+    end
+end
+
+function Neon:_UnpackParameters(parameters)
     local expand = 1
     local blurMode = "blur-3x3"
 
@@ -48,6 +66,17 @@ function Neon:Generate(parameters)
         expand = 5
         blurMode = "blur-17x17"
     end
+
+    return expand, blurMode
+end
+
+function Neon:Generate(parameters)
+    local sprite = app.activeSprite
+    local cel = app.activeCel
+    local originalSelection = Selection()
+    originalSelection:add(sprite.selection)
+
+    local expand, blurMode = self:_UnpackParameters(parameters)
 
     local frameNumber = app.activeFrame.frameNumber
     local image = cel.image
@@ -99,17 +128,12 @@ function Neon:Generate(parameters)
         colorLayer.parent = groupLayer
         colorLayer.stackIndex = 1
         colorLayer.blendMode = BlendMode.SCREEN
-        sprite:newCel(colorLayer, frameNumber, colorImage, position)
+        local colorCel = sprite:newCel(colorLayer, frameNumber, colorImage,
+                                       position)
 
         if expand > 0 then
-            app.useTool {
-                tool = "magic_wand",
-                points = {Point(-1, -1)},
-                button = MouseButton.LEFT,
-                contiguous = false,
-                selection = SelectionMode.REPLACE
-            }
-            app.command.InvertMask()
+            self:_SelectContent(colorCel)
+
             app.command.ModifySelection {
                 modifier = "expand",
                 quantity = expand,
