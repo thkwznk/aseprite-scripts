@@ -23,7 +23,7 @@ function SearchDialog:Create(options)
     self.dialog = Dialog(options.title)
 
     self.dialog --
-    :label{text = "Frame numer or layer/tag name:                      "} --
+    :label{text = "Frame number, layer name or tag name:   "} --
     :entry{
         id = "search",
         text = self.search,

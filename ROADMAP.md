@@ -134,3 +134,9 @@ Unreleased:
 Update v2.0.0:
 
 - [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Brush Transformations options
+
+## Go To
+
+Unreleased:
+
+- [Fix] Fix a typo in the search label
