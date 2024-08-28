@@ -124,6 +124,7 @@ Update v3.0.0:
 Unreleased:
 
 - [Improvement] Minor performance improvements
+- [Fix] No longer duplicate an image part when centering within a selection (issue prevalent after Aseprite v1.3.8 update)
 
 ## Brush Transformations
 

@@ -15,14 +15,12 @@ function CenterImageInActiveSprite(options)
 
     app.transaction(function()
         local sprite = app.activeSprite
-        local center = not sprite.selection.isEmpty and CenterSelection or
-                           CenterCel
+        local selection = sprite.selection
 
         for _, cel in ipairs(app.range.cels) do
             if cel.layer.isEditable then
                 -- If the entire cel image is within the selection, then move the cel
-                if sprite.selection.isEmpty or
-                    sprite.selection.bounds:contains(cel.bounds) then
+                if selection.isEmpty or selection.bounds:contains(cel.bounds) then
                     CenterCel(cel, options, sprite)
                 else
                     CenterSelection(cel, options, sprite)
@@ -37,11 +35,12 @@ end
 function CenterSelection(cel, options, sprite)
     local selection = sprite.selection.bounds
 
-    local centeredImage, centertedImageBounds = CutImagePart(cel, selection)
-    local imageCenter = GetImageCenter(centeredImage, options)
+    local selectedImagePart, selectedImagePartBounds = CutImagePart(cel,
+                                                                    selection)
+    local imageCenter = GetImageCenter(selectedImagePart, options)
 
-    local x = centertedImageBounds.x
-    local y = centertedImageBounds.y
+    local x = selectedImagePartBounds.x
+    local y = selectedImagePartBounds.y
 
     if options.xAxis then
         x = selection.x + math.floor(selection.width / 2) - imageCenter.x
@@ -51,16 +50,22 @@ function CenterSelection(cel, options, sprite)
         y = selection.y + math.floor(selection.height / 2) - imageCenter.y
     end
 
-    local contentNewBounds = Rectangle(x, y, centeredImage.width,
-                                       centeredImage.height)
+    local contentNewBounds = Rectangle(x, y, selectedImagePart.width,
+                                       selectedImagePart.height)
 
     local newImageBounds = contentNewBounds:union(cel.bounds)
     local newImage = Image(newImageBounds.width, newImageBounds.height,
                            sprite.colorMode)
 
+    -- Draw the original image
     newImage:drawImage(cel.image, Point(cel.position.x - newImageBounds.x,
                                         cel.position.y - newImageBounds.y))
-    newImage:drawImage(centeredImage,
+
+    -- Clear the selected image part from it's original position
+    ClearImage(newImage, selectedImagePartBounds, newImageBounds)
+
+    -- Redraw the selected image part in the new position
+    newImage:drawImage(selectedImagePart,
                        Point(x - newImageBounds.x, y - newImageBounds.y))
 
     local newPosition = Point(newImageBounds.x, newImageBounds.y)
@@ -192,7 +197,12 @@ function GetContentBounds(cel, selection)
     return Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1)
 end
 
-function ClearImage(image, bounds)
+function ClearImage(image, bounds, outerBounds)
+    if outerBounds then
+        bounds = Rectangle(bounds.x - outerBounds.x, bounds.y - outerBounds.y,
+                           bounds.width, bounds.height)
+    end
+
     if app.apiVersion >= 23 then
         image:clear(bounds)
     else
@@ -205,8 +215,6 @@ end
 function CutImagePart(cel, selection)
     local partBounds = GetContentBounds(cel, selection)
     local imagePart = Image(cel.image, partBounds)
-
-    ClearImage(cel.image, partBounds)
 
     return imagePart,
            Rectangle(cel.bounds.x + partBounds.x, cel.bounds.y + partBounds.y,
