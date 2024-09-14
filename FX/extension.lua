@@ -5,6 +5,19 @@ local Parallax = dofile("./fx/Parallax.lua")
 local ThreeShearRotation = dofile("./fx/ThreeShearRotation.lua")
 local ImageProcessor = dofile("./ImageProcessor.lua")
 local PreviewCanvas = dofile("./PreviewCanvas.lua")
+local ColorOutlineDialog = dofile("./ColorOutlineDialog.lua")
+
+local directions = {
+    topLeft = {enabled = false, dx = 1, dy = 1},
+    top = {enabled = true, dx = 0, dy = 1},
+    topRight = {enabled = false, dx = -1, dy = 1},
+    left = {enabled = true, dx = 1, dy = 0},
+    center = {enabled = false, dx = 0, dy = 0},
+    right = {enabled = true, dx = -1, dy = 0},
+    bottomLeft = {enabled = false, dx = 1, dy = -1},
+    bottom = {enabled = true, dx = 0, dy = -1},
+    bottomRight = {enabled = false, dx = -1, dy = -1}
+}
 
 local InitialXOffset = 2
 local InitialYOffset = 2
@@ -221,6 +234,8 @@ function ParallaxOnClick()
 end
 
 function init(plugin)
+    local colorOutlineDialog = ColorOutlineDialog(directions)
+
     plugin:newCommand{
         id = "DropShadowFX",
         title = "Drop Shadow",
@@ -457,6 +472,17 @@ function init(plugin)
             :button{text = "&Cancel"}
 
             dialog:show()
+        end
+    }
+
+    plugin:newCommand{
+        id = "ColorOutline",
+        title = "Color Outline",
+        group = "edit_fx",
+        onenabled = function() return app.activeSprite ~= nil end,
+        onclick = function()
+            colorOutlineDialog:modify{id = "color", color = app.fgColor}
+            colorOutlineDialog:show()
         end
     }
 end

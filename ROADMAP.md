@@ -35,7 +35,7 @@ Future:
 
 Unreleased:
 
-- ...
+- [Feature] Color Outline
 
 Future:
 
