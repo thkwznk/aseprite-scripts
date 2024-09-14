@@ -23,7 +23,7 @@ function GetNewBounds(image, directions)
     return {x = x, y = y, width = w, height = h}
 end
 
-function ColorOutline(cel, opacity, color, directions)
+function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
     local sprite = cel.sprite
     local originalImage = cel.image
     local newBounds = GetNewBounds(originalImage, directions)
@@ -101,7 +101,9 @@ function ColorOutline(cel, opacity, color, directions)
                 local outlineColor
 
                 for _, directionColor in ipairs(colors) do
-                    if not IsTransparent(directionColor) then
+                    if not IsTransparent(directionColor) and
+                        (not ignoreOutlineColor or directionColor.rgbaPixel ~=
+                            color.rgbaPixel) then
                         if outlineColor == nil or directionColor.value >
                             outlineColor.value then
                             outlineColor = directionColor
@@ -351,6 +353,11 @@ function ColorOutlineDialog(directions)
             dialog:repaint()
         end
     } --
+    :check{
+        id = "ignoreOutlineColor",
+        text = "Ignore pixels in the outline color",
+        selected = false
+    } --
     :button{
         text = "&OK",
         focus = true,
@@ -361,7 +368,8 @@ function ColorOutlineDialog(directions)
             app.transaction(function()
                 for _, cel in ipairs(app.range.cels) do
                     if cel.layer.isEditable then
-                        ColorOutline(cel, opacity, color, directions)
+                        ColorOutline(cel, opacity, color, directions,
+                                     dialog.data.ignoreOutlineColor)
                     end
                 end
             end)
