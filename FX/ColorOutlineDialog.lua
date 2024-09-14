@@ -1,14 +1,16 @@
 local Transparent = Color(0)
 
 function ColorOutline(cel, opacity, color, directions)
+    local sprite = cel.sprite
     local originalImage = cel.image
-    local image = Image(originalImage.width + 2, cel.image.height + 2)
+    local image = Image(originalImage.width + 2, cel.image.height + 2,
+                        sprite.colorMode)
     image:drawImage(cel.image, 1, 1)
 
     local getPixel, drawPixel = image.getPixel, image.drawPixel
     local pixelColorCache = {}
 
-    local selection = cel.sprite.selection
+    local selection = sprite.selection
 
     function GetOriginalPixel(x, y)
         if x <= 0 or y <= 0 or x > cel.image.width or y > cel.image.height then
@@ -23,7 +25,7 @@ function ColorOutline(cel, opacity, color, directions)
         -- Shift 1 pixel on X and Y to adjust for the additional size of the result image
         local value = getPixel(originalImage, x - 1, y - 1)
         local pixelColor = Color(value)
-        pixelColorCache[x][y] = pixelColor
+        pixelColorCache[x][y] = pixelColor == 0 and Transparent or pixelColor -- TODO: Change to a better way to quickly detect transparency
 
         return pixelColor
     end
@@ -68,7 +70,7 @@ function ColorOutline(cel, opacity, color, directions)
                 local c
 
                 for _, dc in ipairs(colors) do
-                    if dc.alpha > 0 then
+                    if dc ~= Transparent and dc.alpha > 0 then
                         if c == nil or dc.value > c.value then
                             c = dc
                         end
