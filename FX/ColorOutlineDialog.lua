@@ -1,9 +1,34 @@
+function GetNewBounds(image, directions)
+    local x, y = 0, 0
+    local w, h = image.width, image.height
+
+    if directions["left"].enabled or directions["topLeft"].enabled or
+        directions["bottomLeft"].enabled then
+        x = x + 1
+        w = w + 1
+    end
+
+    if directions["right"].enabled or directions["topRight"].enabled or
+        directions["bottomRight"].enabled then w = w + 1 end
+
+    if directions["top"].enabled or directions["topLeft"].enabled or
+        directions["topRight"].enabled then
+        y = y + 1
+        h = h + 1
+    end
+
+    if directions["bottom"].enabled or directions["bottomLeft"].enabled or
+        directions["bottomRight"].enabled then h = h + 1 end
+
+    return {x = x, y = y, width = w, height = h}
+end
+
 function ColorOutline(cel, opacity, color, directions)
     local sprite = cel.sprite
     local originalImage = cel.image
-    local image = Image(originalImage.width + 2, cel.image.height + 2,
-                        sprite.colorMode)
-    image:drawImage(cel.image, 1, 1)
+    local newBounds = GetNewBounds(originalImage, directions)
+    local image = Image(newBounds.width, newBounds.height, sprite.colorMode)
+    image:drawImage(cel.image, newBounds.x, newBounds.y)
 
     local getPixel, drawPixel = image.getPixel, image.drawPixel
     local pixelColorCache = {}
@@ -16,7 +41,8 @@ function ColorOutline(cel, opacity, color, directions)
                               function(c) return c.alpha == 0 end
 
     function GetOriginalPixelColor(x, y)
-        if x < 1 or y < 1 or x > originalImage.width or y > originalImage.height then
+        if x < newBounds.x or y < newBounds.y or x > originalImage.width +
+            newBounds.x - 1 or y > originalImage.height + newBounds.y - 1 then
             return Color(0)
         end
 
@@ -25,8 +51,8 @@ function ColorOutline(cel, opacity, color, directions)
         end
         if not pixelColorCache[x] then pixelColorCache[x] = {} end
 
-        -- Shift 1 pixel on X and Y to adjust for the additional size of the result image
-        local value = getPixel(originalImage, x - 1, y - 1)
+        -- Shift on X and Y to adjust for the additional size of the result image
+        local value = getPixel(originalImage, x - newBounds.x, y - newBounds.y)
         local pixelColor = Color(value)
         pixelColorCache[x][y] = pixelColor
 
@@ -56,9 +82,10 @@ function ColorOutline(cel, opacity, color, directions)
             local originalColor = GetOriginalPixelColor(x, y)
 
             -- If the pixel has color, then skip it
-            if IsTransparent(originalColor) and (selection.isEmpty or
-                selection:contains(
-                    Point(x + cel.position.x - 1, y + cel.position.y - 1))) then
+            if IsTransparent(originalColor) and
+                (selection.isEmpty or
+                    selection:contains(Point(x + cel.position.x - newBounds.x,
+                                             y + cel.position.y - newBounds.y))) then
                 -- Check pixels in four main directions
                 local colors = {}
 
@@ -90,7 +117,8 @@ function ColorOutline(cel, opacity, color, directions)
     end
 
     cel.image = image
-    cel.position = Point(cel.position.x - 1, cel.position.y - 1)
+    cel.position = Point(cel.position.x - newBounds.x,
+                         cel.position.y - newBounds.y)
 end
 
 function ColorOutlineDialog(directions)
