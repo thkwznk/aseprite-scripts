@@ -15,9 +15,9 @@ function ColorOutline(cel, opacity, color, directions)
                               function(c) return c.index == 0 end or
                               function(c) return c.alpha == 0 end
 
-    function GetOriginalPixelValue(x, y)
-        if x <= 0 or y <= 0 or x > cel.image.width or y > cel.image.height then -- TODO: "x < 0"
-            return 0
+    function GetOriginalPixelColor(x, y)
+        if x < 1 or y < 1 or x > originalImage.width or y > originalImage.height then
+            return Color(0)
         end
 
         if pixelColorCache[x] and pixelColorCache[x][y] then
@@ -27,9 +27,10 @@ function ColorOutline(cel, opacity, color, directions)
 
         -- Shift 1 pixel on X and Y to adjust for the additional size of the result image
         local value = getPixel(originalImage, x - 1, y - 1)
-        pixelColorCache[x][y] = value
+        local pixelColor = Color(value)
+        pixelColorCache[x][y] = pixelColor
 
-        return value
+        return pixelColor
     end
 
     local colorCache = {}
@@ -52,8 +53,7 @@ function ColorOutline(cel, opacity, color, directions)
 
     for x = 0, image.width - 1 do
         for y = 0, image.height - 1 do
-            local originalValue = GetOriginalPixelValue(x, y)
-            local originalColor = Color(originalValue)
+            local originalColor = GetOriginalPixelColor(x, y)
 
             -- If the pixel has color, then skip it
             if IsTransparent(originalColor) and (selection.isEmpty or
@@ -64,10 +64,9 @@ function ColorOutline(cel, opacity, color, directions)
 
                 for _, direction in pairs(directions) do
                     if direction.enabled then
-                        local directionValue =
-                            GetOriginalPixelValue(x + direction.dx,
+                        local directionColor =
+                            GetOriginalPixelColor(x + direction.dx,
                                                   y + direction.dy)
-                        local directionColor = Color(directionValue)
                         table.insert(colors, directionColor)
                     end
                 end
