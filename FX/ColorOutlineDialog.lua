@@ -1,5 +1,3 @@
-local Transparent = Color(0)
-
 function ColorOutline(cel, opacity, color, directions)
     local sprite = cel.sprite
     local originalImage = cel.image
@@ -12,9 +10,14 @@ function ColorOutline(cel, opacity, color, directions)
 
     local selection = sprite.selection
 
-    function GetOriginalPixel(x, y)
-        if x <= 0 or y <= 0 or x > cel.image.width or y > cel.image.height then
-            return Transparent
+    local IsTransparent = (sprite.colorMode == ColorMode.INDEXED or
+                              sprite.colorMode == ColorMode.GRAY) and
+                              function(c) return c.index == 0 end or
+                              function(c) return c.alpha == 0 end
+
+    function GetOriginalPixelValue(x, y)
+        if x <= 0 or y <= 0 or x > cel.image.width or y > cel.image.height then -- TODO: "x < 0"
+            return 0
         end
 
         if pixelColorCache[x] and pixelColorCache[x][y] then
@@ -24,10 +27,9 @@ function ColorOutline(cel, opacity, color, directions)
 
         -- Shift 1 pixel on X and Y to adjust for the additional size of the result image
         local value = getPixel(originalImage, x - 1, y - 1)
-        local pixelColor = Color(value)
-        pixelColorCache[x][y] = pixelColor == 0 and Transparent or pixelColor -- TODO: Change to a better way to quickly detect transparency
+        pixelColorCache[x][y] = value
 
-        return pixelColor
+        return value
     end
 
     local colorCache = {}
@@ -50,35 +52,39 @@ function ColorOutline(cel, opacity, color, directions)
 
     for x = 0, image.width - 1 do
         for y = 0, image.height - 1 do
-            local originalColor = GetOriginalPixel(x, y)
+            local originalValue = GetOriginalPixelValue(x, y)
+            local originalColor = Color(originalValue)
 
             -- If the pixel has color, then skip it
-            if (originalColor == Transparent or originalColor.alpha == 0) and
-                (selection.isEmpty or
-                    selection:contains(
-                        Point(x + cel.position.x - 1, y + cel.position.y - 1))) then
+            if IsTransparent(originalColor) and (selection.isEmpty or
+                selection:contains(
+                    Point(x + cel.position.x - 1, y + cel.position.y - 1))) then
                 -- Check pixels in four main directions
                 local colors = {}
 
-                for _, d in pairs(directions) do
-                    if d.enabled then
-                        table.insert(colors,
-                                     GetOriginalPixel(x + d.dx, y + d.dy))
+                for _, direction in pairs(directions) do
+                    if direction.enabled then
+                        local directionValue =
+                            GetOriginalPixelValue(x + direction.dx,
+                                                  y + direction.dy)
+                        local directionColor = Color(directionValue)
+                        table.insert(colors, directionColor)
                     end
                 end
 
-                local c
+                local outlineColor
 
-                for _, dc in ipairs(colors) do
-                    if dc ~= Transparent and dc.alpha > 0 then
-                        if c == nil or dc.value > c.value then
-                            c = dc
+                for _, directionColor in ipairs(colors) do
+                    if not IsTransparent(directionColor) then
+                        if outlineColor == nil or directionColor.value >
+                            outlineColor.value then
+                            outlineColor = directionColor
                         end
                     end
                 end
 
-                if c ~= nil then
-                    drawPixel(image, x, y, GetOutlineColor(c))
+                if outlineColor ~= nil then
+                    drawPixel(image, x, y, GetOutlineColor(outlineColor))
                 end
             end
         end
