@@ -1,38 +1,69 @@
 function init(plugin)
+    function RestoreRange(prevFrames, prevLayers)
+        local frames, layers = {}, {}
+
+        for _, frame in ipairs(prevFrames) do
+            table.insert(frames, frame.frameNumber)
+        end
+
+        for _, layer in ipairs(prevLayers) do table.insert(layers, layer) end
+
+        app.range.frames = frames
+        app.range.layers = layers
+    end
+
     plugin:newCommand{
         id = "ExtendCel",
-        title = "Extend Cel",
+        title = "Extend Cel(s)",
         group = "cel_popup_links",
         onenabled = function()
-            -- If there's no active cel
-            if app.activeCel == nil then return false end
+            local cels = app.range.cels
 
-            local cel = app.activeCel
+            -- If there are no active cel
+            if #cels == 0 then return false end
 
-            -- If the active cel is in the last frame
-            if #cel.sprite.frames == cel.frameNumber then
-                return false
+            -- If there is at least one cel to process
+            for _, cel in ipairs(cels) do
+                -- If the active cel is in NOT the last frame
+                if #cel.sprite.frames ~= cel.frameNumber then
+                    return true
+                end
+
+                local nextCel = cel.layer:cel(cel.frameNumber + 1)
+
+                -- If the next cel is NOT occupied
+                if not nextCel then return true end
             end
 
-            local nextCel = cel.layer:cel(cel.frameNumber + 1)
-
-            -- If the next cel is occupied
-            if nextCel then return false end
-
-            return true
+            return false
         end,
         onclick = function()
-            local cel = app.activeCel
-            local frameNumbers = {cel.frameNumber}
+            app.transaction(function()
+                local cels = app.range.cels
+                local prevFrames = app.range.frames
+                local prevLayers = app.range.layers
 
-            for frameNumber = cel.frameNumber + 1, #cel.sprite.frames do
-                if cel.layer:cel(frameNumber) then break end
+                app.range:clear()
 
-                table.insert(frameNumbers, frameNumber)
-            end
+                for _, cel in ipairs(cels) do
+                    local frameNumbers = {cel.frameNumber}
 
-            app.range.frames = frameNumbers
-            app.command.LinkCels()
+                    -- The difference between using "Link Cels" and this function is that cels are being linked as far as possible, not limited by the selection
+                    for frameNumber = cel.frameNumber + 1, #cel.sprite.frames do
+                        if cel.layer:cel(frameNumber) then
+                            break
+                        end
+
+                        table.insert(frameNumbers, frameNumber)
+                    end
+
+                    app.range.frames = frameNumbers
+                    app.range.layers = {cel.layer}
+                    app.command.LinkCels()
+                end
+
+                RestoreRange(prevFrames, prevLayers)
+            end)
         end
     }
 end
