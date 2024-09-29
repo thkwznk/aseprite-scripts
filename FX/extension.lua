@@ -237,8 +237,6 @@ function ParallaxOnClick()
 end
 
 function init(plugin)
-    local colorOutlineDialog = ColorOutlineDialog(directions)
-
     plugin:newCommand{
         id = "DropShadowFX",
         title = "Drop Shadow",
@@ -493,8 +491,9 @@ function init(plugin)
         group = "edit_fx",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
-            colorOutlineDialog:modify{id = "color", color = app.fgColor}
-            colorOutlineDialog:show()
+            local dialog = ColorOutlineDialog(directions)
+            dialog:modify{id = "color", color = app.fgColor}
+            dialog:show()
         end
     }
 end

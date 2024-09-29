@@ -1,3 +1,5 @@
+local PreviewCanvas = dofile("./PreviewCanvas.lua")
+
 function GetNewBounds(image, directions)
     local x, y = 0, 0
     local w, h = image.width, image.height
@@ -23,13 +25,118 @@ function GetNewBounds(image, directions)
     return {x = x, y = y, width = w, height = h}
 end
 
-function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
-    local sprite = cel.sprite
-    local originalImage = cel.image
-    local newBounds = GetNewBounds(originalImage, directions)
-    local image = Image(newBounds.width, newBounds.height, sprite.colorMode)
-    image:drawImage(cel.image, newBounds.x, newBounds.y)
+function GetOutlinePixels(sprite, cel, originalImage, newBounds, image,
+                          directions)
+    local result = {}
+    local getPixel = image.getPixel
+    local pixelColorCache = {}
 
+    local selection = sprite.selection
+
+    local IsTransparent = (sprite.colorMode == ColorMode.INDEXED or
+                              sprite.colorMode == ColorMode.GRAY) and
+                              function(c) return c.index == 0 end or
+                              function(c) return c.alpha == 0 end
+
+    function GetPixel(x, y)
+        if x < newBounds.x or y < newBounds.y or x > originalImage.width +
+            newBounds.x - 1 or y > originalImage.height + newBounds.y - 1 then
+            return Color(0)
+        end
+
+        if pixelColorCache[x] and pixelColorCache[x][y] then
+            return pixelColorCache[x][y]
+        end
+        if not pixelColorCache[x] then pixelColorCache[x] = {} end
+
+        -- Shift on X and Y to adjust for the additional size of the result image
+        local value = getPixel(originalImage, x - newBounds.x, y - newBounds.y)
+        local pixelColor = Color(value)
+        pixelColorCache[x][y] = pixelColor
+
+        return pixelColor
+    end
+
+    for x = 0, image.width - 1 do
+        for y = 0, image.height - 1 do
+            local originalColor = GetPixel(x, y)
+
+            -- If the pixel has color, then skip it
+            if IsTransparent(originalColor) and
+                (selection.isEmpty or
+                    selection:contains(Point(x + cel.position.x - newBounds.x,
+                                             y + cel.position.y - newBounds.y))) then
+                local pixel = {x = x, y = y}
+
+                for key, direction in pairs(directions) do
+                    pixel[key] = GetPixel(x + direction.dx, y + direction.dy)
+                end
+
+                table.insert(result, pixel)
+            end
+        end
+    end
+
+    return result
+end
+
+function DrawOutlinePixels(image, pixels, directions, color, opacity,
+                           ignoreOutlineColor)
+    local drawPixel = image.drawPixel
+    local colorCache = {}
+
+    local IsTransparent = (image.colorMode == ColorMode.INDEXED or
+                              image.colorMode == ColorMode.GRAY) and
+                              function(c) return c.index == 0 end or
+                              function(c) return c.alpha == 0 end
+
+    function GetOutlineColor(c)
+        local id = tostring(c.rgbaPixel)
+
+        if colorCache[id] then return colorCache[id] end
+
+        local outlineColor = Color {
+            red = c.red + (color.red - c.red) * opacity,
+            green = c.green + (color.green - c.green) * opacity,
+            blue = c.blue + (color.blue - c.blue) * opacity,
+            alpha = c.alpha
+        }
+
+        colorCache[id] = outlineColor
+        return outlineColor
+    end
+
+    for _, pixel in ipairs(pixels) do
+        local colors = {}
+
+        for key, direction in pairs(directions) do
+            if direction.enabled then
+                table.insert(colors, pixel[key])
+            end
+        end
+
+        local c
+
+        for _, directionColor in ipairs(colors) do
+            if not IsTransparent(directionColor) and
+                (not ignoreOutlineColor or directionColor.rgbaPixel ~=
+                    color.rgbaPixel) then
+                if c == nil or directionColor.value > c.value then
+                    c = directionColor
+                end
+            end
+        end
+
+        if c ~= nil then
+            drawPixel(image, pixel.x, pixel.y, GetOutlineColor(c))
+        else
+            drawPixel(image, pixel.x, pixel.y, 0)
+        end
+    end
+end
+
+function XYZ(sprite, cel, originalImage, newBounds, image, directions, color,
+             opacity, ignoreOutlineColor)
     local getPixel, drawPixel = image.getPixel, image.drawPixel
     local pixelColorCache = {}
 
@@ -40,7 +147,7 @@ function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
                               function(c) return c.index == 0 end or
                               function(c) return c.alpha == 0 end
 
-    function GetOriginalPixelColor(x, y)
+    function GetPixel(x, y)
         if x < newBounds.x or y < newBounds.y or x > originalImage.width +
             newBounds.x - 1 or y > originalImage.height + newBounds.y - 1 then
             return Color(0)
@@ -79,7 +186,7 @@ function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
 
     for x = 0, image.width - 1 do
         for y = 0, image.height - 1 do
-            local originalColor = GetOriginalPixelColor(x, y)
+            local originalColor = GetPixel(x, y)
 
             -- If the pixel has color, then skip it
             if IsTransparent(originalColor) and
@@ -92,8 +199,7 @@ function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
                 for _, direction in pairs(directions) do
                     if direction.enabled then
                         local directionColor =
-                            GetOriginalPixelColor(x + direction.dx,
-                                                  y + direction.dy)
+                            GetPixel(x + direction.dx, y + direction.dy)
                         table.insert(colors, directionColor)
                     end
                 end
@@ -119,12 +225,49 @@ function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
     end
 
     cel.image = image
+end
+
+function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
+    local sprite = cel.sprite
+    local originalImage = cel.image
+    local newBounds = GetNewBounds(originalImage, directions)
+    local image = Image(newBounds.width, newBounds.height, sprite.colorMode)
+    image:drawImage(cel.image, newBounds.x, newBounds.y)
+
+    XYZ(sprite, cel, originalImage, newBounds, image, directions, color,
+        opacity, ignoreOutlineColor)
+
     cel.position = Point(cel.position.x - newBounds.x,
                          cel.position.y - newBounds.y)
 end
 
 function ColorOutlineDialog(directions)
+    -- TODO: Calculate for all directions (add directions data to pixel data)
+    local newBounds = GetNewBounds(app.activeCel.image, {
+        left = {enabled = true},
+        right = {enabled = true},
+        top = {enabled = true},
+        bottom = {enabled = true}
+    })
+    local previewImage = Image(newBounds.width, newBounds.height,
+                               app.activeSprite.colorMode)
+    previewImage:drawImage(app.activeCel.image, newBounds.x, newBounds.y)
+
+    local outlinePixels = GetOutlinePixels(app.activeSprite, app.activeCel,
+                                           app.activeCel.image, newBounds,
+                                           previewImage, directions)
+
+    local RepaintPreviewImage
+
     local dialog = Dialog("Color Outline")
+
+    function RefreshPreviewImage()
+        -- TODO: Directions
+        DrawOutlinePixels(previewImage, outlinePixels, directions,
+                          dialog.data.color, dialog.data.opacity / 100,
+                          dialog.data.ignoreOutlineColor)
+        RepaintPreviewImage(previewImage)
+    end
 
     function SetDirection(direction, value)
         direction.enabled = value
@@ -133,8 +276,20 @@ function ColorOutlineDialog(directions)
     end
 
     dialog --
-    :slider{id = "opacity", label = "Opacity:", min = 1, max = 100, value = 50} --
-    :color{id = "color", label = "Color:", color = app.fgColor} --
+    :slider{
+        id = "opacity",
+        label = "Opacity:",
+        min = 1,
+        max = 100,
+        value = 50,
+        onchange = function() RefreshPreviewImage() end
+    } --
+    :color{
+        id = "color",
+        label = "Color:",
+        color = app.fgColor,
+        onchange = function() RefreshPreviewImage() end
+    } --
 
     local ButtonState = {
         normal = {part = "button_normal", color = "button_normal_text"},
@@ -161,6 +316,7 @@ function ColorOutlineDialog(directions)
             SetDirection(directions.bottom, true)
             SetDirection(directions.bottomRight, false)
 
+            RefreshPreviewImage()
             dialog:repaint()
         end
     }
@@ -183,6 +339,7 @@ function ColorOutlineDialog(directions)
             SetDirection(directions.bottom, true)
             SetDirection(directions.bottomRight, true)
 
+            RefreshPreviewImage()
             dialog:repaint()
         end
     }
@@ -205,6 +362,7 @@ function ColorOutlineDialog(directions)
             SetDirection(directions.bottom, false)
             SetDirection(directions.bottomRight, false)
 
+            RefreshPreviewImage()
             dialog:repaint()
         end
     }
@@ -227,6 +385,7 @@ function ColorOutlineDialog(directions)
             SetDirection(directions.bottom, true)
             SetDirection(directions.bottomRight, false)
 
+            RefreshPreviewImage()
             dialog:repaint()
         end
     }
@@ -249,6 +408,7 @@ function ColorOutlineDialog(directions)
             iconSize = Size(5, 5),
             onclick = function()
                 SetDirection(direction, not direction.enabled)
+                RefreshPreviewImage()
                 dialog:repaint()
             end
         }
@@ -356,8 +516,23 @@ function ColorOutlineDialog(directions)
     :check{
         id = "ignoreOutlineColor",
         text = "Ignore pixels in the outline color",
-        selected = false
+        selected = false,
+        onclick = function()
+            RefreshPreviewImage()
+            dialog:repaint()
+
+        end
     } --
+
+    RepaintPreviewImage = PreviewCanvas(dialog, 100, 100, app.activeSprite,
+                                        previewImage, Point(
+                                            app.activeCel.position.x - 1,
+                                            app.activeCel.position.y - 1))
+
+    -- Initialize the preview image
+    RefreshPreviewImage()
+
+    dialog --
     :button{
         text = "&OK",
         focus = true,
