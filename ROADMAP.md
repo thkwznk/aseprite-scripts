@@ -36,6 +36,7 @@ Future:
 Unreleased:
 
 - [Feature] Color Outline
+- [Improvement] Preview for Three Sheer Rotation is now closely resembling the default Aseprite preview
 
 Future:
 

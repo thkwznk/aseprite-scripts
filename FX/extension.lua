@@ -42,15 +42,18 @@ function GetActiveSpritePreview()
     local cels = app.range.cels
 
     local previewImage = Image(sprite.width, sprite.height, sprite.colorMode)
+    local position = Point(sprite.width, sprite.height)
 
     for _, cel in ipairs(cels) do
         if cel.frame == app.activeFrame and cel.layer.isVisible then
             previewImage:drawImage(cel.image, cel.position)
+            position.x = math.min(position.x, cel.position.x)
+            position.y = math.min(position.y, cel.position.y)
         end
     end
 
     local bounds = previewImage:shrinkBounds()
-    return Image(previewImage, bounds)
+    return Image(previewImage, bounds), position
 end
 
 function RotateCel(cel, angle)
@@ -415,7 +418,7 @@ function init(plugin)
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             local sprite = app.activeSprite
-            local previewImage = GetActiveSpritePreview()
+            local previewImage, position = GetActiveSpritePreview()
 
             -- Precalculate a flipped image
             local previewImageFlipped = previewImage:clone()
@@ -426,7 +429,7 @@ function init(plugin)
             local canvasSize = math.max(previewImage.width * Sqrt2,
                                         previewImage.height * Sqrt2)
             local RedrawPreview = PreviewCanvas(dialog, canvasSize, canvasSize,
-                                                sprite, previewImage)
+                                                sprite, previewImage, position)
 
             dialog --
             :separator() --
@@ -442,7 +445,16 @@ function init(plugin)
                                                            previewImageFlipped,
                                                            angle)
 
-                    RedrawPreview(skewedImage)
+                    local bounds = skewedImage:shrinkBounds()
+                    skewedImage = Image(skewedImage, bounds)
+
+                    local newPosition = Point(position.x -
+                                                  (bounds.width -
+                                                      previewImage.width) / 2,
+                                              position.y -
+                                                  (bounds.height -
+                                                      previewImage.height) / 2)
+                    RedrawPreview(skewedImage, newPosition)
                 end
             } --
             :button{

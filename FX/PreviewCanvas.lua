@@ -1,27 +1,29 @@
-local DrawGrid = function(graphicsContext, sprite)
+local AdjustScale = function(scale)
+    if scale < 0 then return 1 / (math.abs(scale) + 1) end
+    return scale
+end
+
+local DrawCanvasGrid = function(sprite, image)
     local docPref = app.preferences.document(sprite)
 
     local color1 = docPref.bg.color1
     local color2 = docPref.bg.color2
     local size = docPref.bg.size
 
-    graphicsContext.color = color1
-    graphicsContext:fillRect(Rectangle(0, 0, graphicsContext.width,
-                                       graphicsContext.height))
+    image:clear(color2)
 
     local startRowGap = false
     local isGap = false
 
-    for x = 0, math.ceil(graphicsContext.width / size.width) do
+    for x = 0, math.ceil(image.width / size.width) do
         isGap = startRowGap
 
-        for y = 0, math.ceil(graphicsContext.height / size.height) do
+        for y = 0, math.ceil(image.height / size.height) do
             if not isGap then
                 local bounds = Rectangle(x * size.width, y * size.height,
                                          size.width, size.height)
 
-                graphicsContext.color = color2
-                graphicsContext:fillRect(bounds)
+                image:clear(bounds, color1)
             end
 
             isGap = not isGap
@@ -31,12 +33,16 @@ local DrawGrid = function(graphicsContext, sprite)
     end
 end
 
-local AdjustScale = function(scale)
-    if scale < 0 then return 1 / (math.abs(scale) + 1) end
-    return scale
+local DrawImageOnCanvas = function(sprite, image, position)
+    local result = Image(sprite.width, sprite.height, sprite.colorMode)
+    DrawCanvasGrid(sprite, result)
+
+    result:drawImage(image, position)
+
+    return result
 end
 
-local PreviewCanvas = function(dialog, width, height, sprite, image)
+local PreviewCanvas = function(dialog, width, height, sprite, image, position)
     local border = 3
     local padding = 8
     local maxCanvasSize = Rectangle(0, 0, 200, 200)
@@ -45,8 +51,10 @@ local PreviewCanvas = function(dialog, width, height, sprite, image)
     local imagePositionDelta = Point(0, 0)
     local scale = 1
 
-    local RepaintImage = function(newImage)
-        image = newImage
+    image = DrawImageOnCanvas(sprite, image, position)
+
+    local RepaintImage = function(newImage, newPosition)
+        image = DrawImageOnCanvas(sprite, newImage, newPosition or position)
         dialog:repaint()
     end
 
@@ -74,19 +82,33 @@ local PreviewCanvas = function(dialog, width, height, sprite, image)
             gc:rect(innerCanvasBounds)
             gc:clip()
 
-            DrawGrid(gc, sprite)
-
             local adjustedScale = AdjustScale(scale)
             local destinationBounds = Rectangle(
                                           imagePositionDelta.x +
-                                              ((gc.width - image.width) / 2) *
-                                              adjustedScale,
+                                              (gc.width - image.width) / 2,
                                           imagePositionDelta.y +
-                                              ((gc.height - image.height) / 2) *
-                                              adjustedScale,
+                                              (gc.height - image.height) / 2,
                                           image.width * adjustedScale,
                                           image.height * adjustedScale)
 
+            -- Fill the canvas with the editor face color
+            gc.color = app.theme.color.editor_face
+            gc:fillRect(Rectangle(0, 0, gc.width, gc.height))
+
+            -- Draw the black border around the canvas
+            gc.color = app.theme.color.editor_sprite_border
+            gc:strokeRect(Rectangle(destinationBounds.x - 1,
+                                    destinationBounds.y - 1,
+                                    destinationBounds.width + 2,
+                                    destinationBounds.height + 2))
+
+            -- Draw the shadow under the canvas
+            gc.color = app.theme.color.editor_sprite_bottom_border
+            gc:fillRect(Rectangle(destinationBounds.x - 1,
+                                  destinationBounds.y + destinationBounds.height +
+                                      1, destinationBounds.width + 2, 1))
+
+            -- Draw the canvas
             gc:drawImage(image, image.bounds, destinationBounds)
         end,
         onmousemove = function(ev)
