@@ -25,7 +25,20 @@ local InitialYOffset = 2
 local FxSession = {}
 local Sqrt2 = math.sqrt(2)
 
-function FxSession:Get(sprite, key)
+function FxSession:Get(sprite, key, defaultValue)
+    if defaultValue ~= nil then
+        if self[sprite.filename] then
+            if self[sprite.filename][key] ~= nil then
+                return self[sprite.filename][key]
+            end
+        else
+            self[sprite.filename] = {}
+        end
+
+        self[sprite.filename][key] = defaultValue
+        return defaultValue
+    end
+
     if not self[sprite.filename] then return nil end
 
     return self[sprite.filename][key]
@@ -491,7 +504,20 @@ function init(plugin)
         group = "edit_fx",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
-            local dialog = ColorOutlineDialog(directions)
+            local sprite = app.activeSprite or app.sprite
+            local dialog
+            dialog = ColorOutlineDialog {
+                opacity = FxSession:Get(sprite, "outline_opacity", 50),
+                ignoreOutlineColor = FxSession:Get(sprite,
+                                                   "outline_ignore_outline_color",
+                                                   true),
+                directions = directions, -- TODO: Use the session
+                onclose = function()
+                    FxSession:Set(sprite, "outline_opacity", dialog.data.opacity)
+                    FxSession:Set(sprite, "outline_ignore_outline_color",
+                                  dialog.data.ignoreOutlineColor)
+                end
+            }
             dialog:modify{id = "color", color = app.fgColor}
             dialog:show()
         end

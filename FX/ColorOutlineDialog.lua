@@ -241,7 +241,7 @@ function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
                          cel.position.y - newBounds.y)
 end
 
-function ColorOutlineDialog(directions)
+function ColorOutlineDialog(options)
     -- TODO: Calculate for all directions (add directions data to pixel data)
     local newBounds = GetNewBounds(app.activeCel.image, {
         left = {enabled = true},
@@ -255,15 +255,15 @@ function ColorOutlineDialog(directions)
 
     local outlinePixels = GetOutlinePixels(app.activeSprite, app.activeCel,
                                            app.activeCel.image, newBounds,
-                                           previewImage, directions)
+                                           previewImage, options.directions)
 
     local RepaintPreviewImage
 
-    local dialog = Dialog("Color Outline")
+    local dialog = Dialog {title = "Color Outline", onclose = options.onclose}
 
     function RefreshPreviewImage()
         -- TODO: Directions
-        DrawOutlinePixels(previewImage, outlinePixels, directions,
+        DrawOutlinePixels(previewImage, outlinePixels, options.directions,
                           dialog.data.color, dialog.data.opacity / 100,
                           dialog.data.ignoreOutlineColor)
         RepaintPreviewImage(previewImage)
@@ -281,7 +281,7 @@ function ColorOutlineDialog(directions)
         label = "Opacity:",
         min = 1,
         max = 100,
-        value = 50,
+        value = options.opacity,
         onchange = function() RefreshPreviewImage() end
     } --
     :color{
@@ -304,17 +304,17 @@ function ColorOutlineDialog(directions)
         icon = "outline_circle",
         iconSize = Size(13, 15),
         onclick = function()
-            SetDirection(directions.topLeft, false)
-            SetDirection(directions.top, true)
-            SetDirection(directions.topRight, false)
+            SetDirection(options.directions.topLeft, false)
+            SetDirection(options.directions.top, true)
+            SetDirection(options.directions.topRight, false)
 
-            SetDirection(directions.left, true)
-            SetDirection(directions.center, false)
-            SetDirection(directions.right, true)
+            SetDirection(options.directions.left, true)
+            SetDirection(options.directions.center, false)
+            SetDirection(options.directions.right, true)
 
-            SetDirection(directions.bottomLeft, false)
-            SetDirection(directions.bottom, true)
-            SetDirection(directions.bottomRight, false)
+            SetDirection(options.directions.bottomLeft, false)
+            SetDirection(options.directions.bottom, true)
+            SetDirection(options.directions.bottomRight, false)
 
             RefreshPreviewImage()
             dialog:repaint()
@@ -327,17 +327,17 @@ function ColorOutlineDialog(directions)
         icon = "outline_square",
         iconSize = Size(13, 15),
         onclick = function()
-            SetDirection(directions.topLeft, true)
-            SetDirection(directions.top, true)
-            SetDirection(directions.topRight, true)
+            SetDirection(options.directions.topLeft, true)
+            SetDirection(options.directions.top, true)
+            SetDirection(options.directions.topRight, true)
 
-            SetDirection(directions.left, true)
-            SetDirection(directions.center, false)
-            SetDirection(directions.right, true)
+            SetDirection(options.directions.left, true)
+            SetDirection(options.directions.center, false)
+            SetDirection(options.directions.right, true)
 
-            SetDirection(directions.bottomLeft, true)
-            SetDirection(directions.bottom, true)
-            SetDirection(directions.bottomRight, true)
+            SetDirection(options.directions.bottomLeft, true)
+            SetDirection(options.directions.bottom, true)
+            SetDirection(options.directions.bottomRight, true)
 
             RefreshPreviewImage()
             dialog:repaint()
@@ -350,17 +350,17 @@ function ColorOutlineDialog(directions)
         icon = "outline_horizontal",
         iconSize = Size(13, 15),
         onclick = function()
-            SetDirection(directions.topLeft, false)
-            SetDirection(directions.top, false)
-            SetDirection(directions.topRight, false)
+            SetDirection(options.directions.topLeft, false)
+            SetDirection(options.directions.top, false)
+            SetDirection(options.directions.topRight, false)
 
-            SetDirection(directions.left, true)
-            SetDirection(directions.center, false)
-            SetDirection(directions.right, true)
+            SetDirection(options.directions.left, true)
+            SetDirection(options.directions.center, false)
+            SetDirection(options.directions.right, true)
 
-            SetDirection(directions.bottomLeft, false)
-            SetDirection(directions.bottom, false)
-            SetDirection(directions.bottomRight, false)
+            SetDirection(options.directions.bottomLeft, false)
+            SetDirection(options.directions.bottom, false)
+            SetDirection(options.directions.bottomRight, false)
 
             RefreshPreviewImage()
             dialog:repaint()
@@ -373,17 +373,17 @@ function ColorOutlineDialog(directions)
         icon = "outline_vertical",
         iconSize = Size(13, 15),
         onclick = function()
-            SetDirection(directions.topLeft, false)
-            SetDirection(directions.top, true)
-            SetDirection(directions.topRight, false)
+            SetDirection(options.directions.topLeft, false)
+            SetDirection(options.directions.top, true)
+            SetDirection(options.directions.topRight, false)
 
-            SetDirection(directions.left, false)
-            SetDirection(directions.center, false)
-            SetDirection(directions.right, false)
+            SetDirection(options.directions.left, false)
+            SetDirection(options.directions.center, false)
+            SetDirection(options.directions.right, false)
 
-            SetDirection(directions.bottomLeft, false)
-            SetDirection(directions.bottom, true)
-            SetDirection(directions.bottomRight, false)
+            SetDirection(options.directions.bottomLeft, false)
+            SetDirection(options.directions.bottom, true)
+            SetDirection(options.directions.bottomRight, false)
 
             RefreshPreviewImage()
             dialog:repaint()
@@ -416,17 +416,17 @@ function ColorOutlineDialog(directions)
         table.insert(customWidgets, direction.button)
     end
 
-    AddDirectionButtton(directions.topLeft, 57, 0)
-    AddDirectionButtton(directions.top, 76, 0)
-    AddDirectionButtton(directions.topRight, 95, 0)
+    AddDirectionButtton(options.directions.topLeft, 57, 0)
+    AddDirectionButtton(options.directions.top, 76, 0)
+    AddDirectionButtton(options.directions.topRight, 95, 0)
 
-    AddDirectionButtton(directions.left, 57, 19)
-    AddDirectionButtton(directions.center, 76, 19)
-    AddDirectionButtton(directions.right, 95, 19)
+    AddDirectionButtton(options.directions.left, 57, 19)
+    AddDirectionButtton(options.directions.center, 76, 19)
+    AddDirectionButtton(options.directions.right, 95, 19)
 
-    AddDirectionButtton(directions.bottomLeft, 57, 38)
-    AddDirectionButtton(directions.bottom, 76, 38)
-    AddDirectionButtton(directions.bottomRight, 95, 38)
+    AddDirectionButtton(options.directions.bottomLeft, 57, 38)
+    AddDirectionButtton(options.directions.bottom, 76, 38)
+    AddDirectionButtton(options.directions.bottomRight, 95, 38)
 
     dialog --
     :newrow() --
@@ -516,7 +516,7 @@ function ColorOutlineDialog(directions)
     :check{
         id = "ignoreOutlineColor",
         text = "Ignore pixels in the outline color",
-        selected = false,
+        selected = options.ignoreOutlineColor,
         onclick = function()
             RefreshPreviewImage()
             dialog:repaint()
@@ -543,7 +543,7 @@ function ColorOutlineDialog(directions)
             app.transaction(function()
                 for _, cel in ipairs(app.range.cels) do
                     if cel.layer.isEditable then
-                        ColorOutline(cel, opacity, color, directions,
+                        ColorOutline(cel, opacity, color, options.directions,
                                      dialog.data.ignoreOutlineColor)
                     end
                 end
@@ -559,3 +559,10 @@ function ColorOutlineDialog(directions)
 end
 
 return ColorOutlineDialog
+
+-- TODO: Restore dialog position when re-opening
+
+-- TODO: Fully testing of the extension
+
+-- FUTURE: Add Outside/Inside options
+-- FUTURE: Add the Background Color
