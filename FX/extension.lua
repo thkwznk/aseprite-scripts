@@ -433,7 +433,9 @@ function init(plugin)
         id = "ThreeShearRotation",
         title = "Three Shear Rotation",
         group = "edit_fx",
-        onenabled = function() return app.activeSprite ~= nil end,
+        onenabled = function()
+            return app.activeSprite ~= nil and #app.range.cels > 0
+        end,
         onclick = function()
             local sprite = app.activeSprite
             local previewImage, position = GetActiveSpritePreview()
@@ -509,7 +511,9 @@ function init(plugin)
         id = "ColorOutline",
         title = "Color Outline",
         group = "edit_fx",
-        onenabled = function() return app.activeSprite ~= nil end,
+        onenabled = function()
+            return app.activeSprite ~= nil and #app.range.cels > 0
+        end,
         onclick = function()
             local sprite = app.activeSprite or app.sprite
             local previewImage, position = GetActiveSpritePreview()
