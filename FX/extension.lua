@@ -516,10 +516,24 @@ function init(plugin)
                     FxSession:Set(sprite, "outline_opacity", dialog.data.opacity)
                     FxSession:Set(sprite, "outline_ignore_outline_color",
                                   dialog.data.ignoreOutlineColor)
+                    FxSession:Set(sprite, "outline_dialog_bounds", dialog.bounds)
                 end
             }
             dialog:modify{id = "color", color = app.fgColor}
-            dialog:show()
+
+            local bounds = FxSession:Get(sprite, "outline_dialog_bounds")
+
+            -- Check if bounds are valid, just in case
+            if app.apiVersion >= 25 and bounds ~= nil then
+                if (bounds.x + bounds.width) < 30 or
+                    (app.window.width - bounds.x) < 30 or bounds.y < 0 or
+                    (app.window.height - bounds.y) < 30 then
+                    bounds = nil
+                    FxSession:Set(sprite, "outline_dialog_bounds", nil)
+                end
+            end
+
+            dialog:show{bounds = bounds}
         end
     }
 end

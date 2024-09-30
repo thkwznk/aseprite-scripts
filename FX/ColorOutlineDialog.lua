@@ -135,8 +135,8 @@ function DrawOutlinePixels(image, pixels, directions, color, opacity,
     end
 end
 
-function XYZ(sprite, cel, originalImage, newBounds, image, directions, color,
-             opacity, ignoreOutlineColor)
+function DrawOutline(sprite, cel, originalImage, newBounds, image, directions,
+                     color, opacity, ignoreOutlineColor)
     local getPixel, drawPixel = image.getPixel, image.drawPixel
     local pixelColorCache = {}
 
@@ -234,15 +234,14 @@ function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
     local image = Image(newBounds.width, newBounds.height, sprite.colorMode)
     image:drawImage(cel.image, newBounds.x, newBounds.y)
 
-    XYZ(sprite, cel, originalImage, newBounds, image, directions, color,
-        opacity, ignoreOutlineColor)
+    DrawOutline(sprite, cel, originalImage, newBounds, image, directions, color,
+                opacity, ignoreOutlineColor)
 
     cel.position = Point(cel.position.x - newBounds.x,
                          cel.position.y - newBounds.y)
 end
 
 function ColorOutlineDialog(options)
-    -- TODO: Calculate for all directions (add directions data to pixel data)
     local newBounds = GetNewBounds(app.activeCel.image, {
         left = {enabled = true},
         right = {enabled = true},
@@ -262,7 +261,6 @@ function ColorOutlineDialog(options)
     local dialog = Dialog {title = "Color Outline", onclose = options.onclose}
 
     function RefreshPreviewImage()
-        -- TODO: Directions
         DrawOutlinePixels(previewImage, outlinePixels, options.directions,
                           dialog.data.color, dialog.data.opacity / 100,
                           dialog.data.ignoreOutlineColor)
@@ -559,10 +557,6 @@ function ColorOutlineDialog(options)
 end
 
 return ColorOutlineDialog
-
--- TODO: Restore dialog position when re-opening
-
--- TODO: Fully testing of the extension
 
 -- FUTURE: Add Outside/Inside options
 -- FUTURE: Add the Background Color
