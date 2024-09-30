@@ -25,7 +25,7 @@ function GetNewBounds(image, directions)
     return {x = x, y = y, width = w, height = h}
 end
 
-function GetOutlinePixels(sprite, cel, originalImage, newBounds, image,
+function GetOutlinePixels(sprite, position, originalImage, newBounds, image,
                           directions)
     local result = {}
     local getPixel = image.getPixel
@@ -64,8 +64,8 @@ function GetOutlinePixels(sprite, cel, originalImage, newBounds, image,
             -- If the pixel has color, then skip it
             if IsTransparent(originalColor) and
                 (selection.isEmpty or
-                    selection:contains(Point(x + cel.position.x - newBounds.x,
-                                             y + cel.position.y - newBounds.y))) then
+                    selection:contains(Point(x + position.x - newBounds.x,
+                                             y + position.y - newBounds.y))) then
                 local pixel = {x = x, y = y}
 
                 for key, direction in pairs(directions) do
@@ -242,7 +242,8 @@ function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
 end
 
 function ColorOutlineDialog(options)
-    local newBounds = GetNewBounds(app.activeCel.image, {
+    local image = options.previewImage
+    local newBounds = GetNewBounds(image, {
         left = {enabled = true},
         right = {enabled = true},
         top = {enabled = true},
@@ -250,11 +251,12 @@ function ColorOutlineDialog(options)
     })
     local previewImage = Image(newBounds.width, newBounds.height,
                                app.activeSprite.colorMode)
-    previewImage:drawImage(app.activeCel.image, newBounds.x, newBounds.y)
+    previewImage:drawImage(image, newBounds.x, newBounds.y)
 
-    local outlinePixels = GetOutlinePixels(app.activeSprite, app.activeCel,
-                                           app.activeCel.image, newBounds,
-                                           previewImage, options.directions)
+    local outlinePixels = GetOutlinePixels(app.activeSprite,
+                                           options.previewPosition, image,
+                                           newBounds, previewImage,
+                                           options.directions)
 
     local RepaintPreviewImage
 
@@ -524,8 +526,8 @@ function ColorOutlineDialog(options)
 
     RepaintPreviewImage = PreviewCanvas(dialog, 100, 100, app.activeSprite,
                                         previewImage, Point(
-                                            app.activeCel.position.x - 1,
-                                            app.activeCel.position.y - 1))
+                                            options.previewPosition.x - 1,
+                                            options.previewPosition.y - 1))
 
     -- Initialize the preview image
     RefreshPreviewImage()

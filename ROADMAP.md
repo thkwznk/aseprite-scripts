@@ -37,6 +37,7 @@ Unreleased:
 
 - [Feature] Color Outline
 - [Improvement] Preview for Three Sheer Rotation is now closely resembling the default Aseprite preview
+- [Fix] Preview for Three Sheer Rotation is now rendering layers in the correct order
 
 Future:
 

@@ -52,7 +52,14 @@ end
 
 function GetActiveSpritePreview()
     local sprite = app.activeSprite
-    local cels = app.range.cels
+    local cels = {}
+
+    -- Copy cels from the range to a table
+    for _, cel in ipairs(app.range.cels) do table.insert(cels, cel) end
+
+    table.sort(cels, function(a, b)
+        return a.layer.stackIndex < b.layer.stackIndex
+    end)
 
     local previewImage = Image(sprite.width, sprite.height, sprite.colorMode)
     local position = Point(sprite.width, sprite.height)
@@ -505,6 +512,8 @@ function init(plugin)
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             local sprite = app.activeSprite or app.sprite
+            local previewImage, position = GetActiveSpritePreview()
+
             local dialog
             dialog = ColorOutlineDialog {
                 opacity = FxSession:Get(sprite, "outline_opacity", 50),
@@ -512,6 +521,8 @@ function init(plugin)
                                                    "outline_ignore_outline_color",
                                                    true),
                 directions = directions, -- TODO: Use the session
+                previewImage = previewImage,
+                previewPosition = position,
                 onclose = function()
                     FxSession:Set(sprite, "outline_opacity", dialog.data.opacity)
                     FxSession:Set(sprite, "outline_ignore_outline_color",
@@ -541,3 +552,5 @@ end
 function exit(plugin)
     -- You don't really need to do anything specific here
 end
+
+-- TODO: Display all visible layers on the preview canvas
