@@ -29,24 +29,18 @@ end
 function Neon:_SelectContent(cel)
     local image = cel.image
     local getPixel = image.getPixel
+    local selection = Selection()
 
     for x = 0, image.width - 1 do
         for y = 0, image.height - 1 do
-            if getPixel(image, x + cel.position.x, y + cel.position.y) == 0 then
-                app.useTool {
-                    tool = "magic_wand",
-                    points = {Point(x, y)},
-                    button = MouseButton.LEFT,
-                    contiguous = false,
-                    selection = SelectionMode.REPLACE
-                }
-
-                app.command.InvertMask()
-
-                return
+            local gx, gy = x + cel.position.x, y + cel.position.y
+            if getPixel(image, x, y) ~= 0 then
+                selection:add(Rectangle(gx, gy, 1, 1))
             end
         end
     end
+
+    cel.sprite.selection = selection
 end
 
 function Neon:_UnpackParameters(parameters)
