@@ -7,17 +7,19 @@ local ImageProcessor = dofile("./ImageProcessor.lua")
 local PreviewCanvas = dofile("./PreviewCanvas.lua")
 local ColorOutlineDialog = dofile("./ColorOutlineDialog.lua")
 
-local directions = {
-    topLeft = {enabled = false, dx = 1, dy = 1},
-    top = {enabled = true, dx = 0, dy = 1},
-    topRight = {enabled = false, dx = -1, dy = 1},
-    left = {enabled = true, dx = 1, dy = 0},
-    center = {enabled = false, dx = 0, dy = 0},
-    right = {enabled = true, dx = -1, dy = 0},
-    bottomLeft = {enabled = false, dx = 1, dy = -1},
-    bottom = {enabled = true, dx = 0, dy = -1},
-    bottomRight = {enabled = false, dx = -1, dy = -1}
-}
+function Directions()
+    return {
+        topLeft = {enabled = false, dx = 1, dy = 1},
+        top = {enabled = true, dx = 0, dy = 1},
+        topRight = {enabled = false, dx = -1, dy = 1},
+        left = {enabled = true, dx = 1, dy = 0},
+        center = {enabled = false, dx = 0, dy = 0},
+        right = {enabled = true, dx = -1, dy = 0},
+        bottomLeft = {enabled = false, dx = 1, dy = -1},
+        bottom = {enabled = true, dx = 0, dy = -1},
+        bottomRight = {enabled = false, dx = -1, dy = -1}
+    }
+end
 
 local InitialXOffset = 2
 local InitialYOffset = 2
@@ -524,7 +526,8 @@ function init(plugin)
                 ignoreOutlineColor = FxSession:Get(sprite,
                                                    "outline_ignore_outline_color",
                                                    true),
-                directions = directions, -- TODO: Use the session
+                directions = FxSession:Get(sprite, "outline_directions",
+                                           Directions()),
                 previewImage = previewImage,
                 previewPosition = position,
                 onclose = function()
