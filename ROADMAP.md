@@ -35,14 +35,11 @@ Future:
 
 Unreleased:
 
-- [Feature] Color Outline
-- [Improvement] Preview for Three Sheer Rotation is now closely resembling the default Aseprite preview
-- [Fix] Preview for Three Sheer Rotation is now rendering layers in the correct order
-- [Fix] Disable Three Sheer Rotation in the menu if there are no cels selected
-- [Fix] Correctly select masks for the color blur layers on all operating systems  
+- ...
 
 Future:
 
+- [Feature] Parallax - a new mode for specifying speed per layer instead of distance + an option or a calculator for a perfect loop
 - [Fix] Parallax doesn't generate correctly if the timeline is closed/hidden - cels aren't linked 
 - [Feature] Parallax - add an options for delaying layers reappearing
 - [Feature] Parallax - add an option to generate only from the selected frames
