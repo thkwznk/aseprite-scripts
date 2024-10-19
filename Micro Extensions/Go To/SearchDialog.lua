@@ -45,7 +45,7 @@ function SearchLayers(sprite, layers, pattern, searchText, exactMatches,
     end
 end
 
-function Search(sprite, searchText, sources)
+function Search(sprite, searchText)
     if #searchText == 0 then return {} end
 
     local pattern = GetPattern(searchText):lower()
@@ -57,7 +57,7 @@ function Search(sprite, searchText, sources)
     local prefixMatches = {}
     local fuzzyMatches = {}
 
-    if sources.frames then
+    if #sprite.frames > 1 then
         for _, frame in ipairs(sprite.frames) do
             local frameNumber = tostring(frame.frameNumber)
 
@@ -74,32 +74,31 @@ function Search(sprite, searchText, sources)
         end
     end
 
-    if sources.layers then
+    -- Search layers recursively
+    if #sprite.layers > 1 then
         SearchLayers(sprite, sprite.layers, pattern, searchText, exactMatches,
                      prefixMatches, fuzzyMatches)
     end
 
-    if sources.tags then
-        for _, tag in ipairs(sprite.tags) do
-            local searchResult = {
-                name = tag.name,
-                tag = tag,
-                type = SearchResultType.Tag
-            };
+    for _, tag in ipairs(sprite.tags) do
+        local searchResult = {
+            name = tag.name,
+            tag = tag,
+            type = SearchResultType.Tag
+        };
 
-            local name = tag.name:lower()
+        local name = tag.name:lower()
 
-            if name == searchText:lower() then
-                table.insert(exactMatches, searchResult)
-            elseif StartsWith(name, searchText:lower()) then
-                table.insert(prefixMatches, searchResult)
-            elseif name:match(pattern) then
-                table.insert(fuzzyMatches, searchResult)
-            end
+        if name == searchText:lower() then
+            table.insert(exactMatches, searchResult)
+        elseif StartsWith(name, searchText:lower()) then
+            table.insert(prefixMatches, searchResult)
+        elseif name:match(pattern) then
+            table.insert(fuzzyMatches, searchResult)
         end
     end
 
-    if sources.sprites then
+    if #app.sprites > 1 then
         for _, openSprite in ipairs(app.sprites) do
             local filename = app.fs.fileName(openSprite.filename)
 
@@ -134,13 +133,6 @@ end
 
 function SearchDialog(options)
     local search = ""
-    local sources = options.sources or
-                        {
-            layers = true,
-            tags = true,
-            frames = false,
-            sprites = false
-        }
     local results = {}
     local currentPage = 1
 
@@ -185,57 +177,17 @@ function SearchDialog(options)
     end
 
     dialog --
-    :label{text = "Frame number, layer name or tag name:   "} --
+    :label{text = "Frame number, layer name, tag name or sprite name:"} --
     :entry{
         id = "search",
         text = search,
         onchange = function()
             search = dialog.data.search
-            results = Search(app.activeSprite, search, sources)
+            results = Search(app.activeSprite, search)
 
             RefreshWidgets()
         end
     } --
-    -- :check{
-    --     id = "search-layers",
-    --     text = "Layers",
-    --     selected = sources.layers,
-    --     onclick = function()
-    --         sources.layers = dialog.data["search-layers"]
-    --         results = Search(app.activeSprite, search, sources)
-    --         RefreshWidgets()
-    --     end
-    -- } --
-    -- :check{
-    --     id = "search-tags",
-    --     text = "Tags",
-    --     selected = sources.tags,
-    --     onclick = function()
-    --         sources.tags = dialog.data["search-tags"]
-    --         results = Search(app.activeSprite, search, sources)
-    --         RefreshWidgets()
-    --     end
-    -- } --
-    -- :check{
-    --     id = "search-frames",
-    --     text = "Frames",
-    --     selected = sources.frames,
-    --     onclick = function()
-    --         sources.frames = dialog.data["search-frames"]
-    --         results = Search(app.activeSprite, search, sources)
-    --         RefreshWidgets()
-    --     end
-    -- } --
-    -- :check{
-    --     id = "search-sprites",
-    --     text = "Sprites",
-    --     selected = sources.sprites,
-    --     onclick = function()
-    --         sources.sprites = dialog.data["search-sprites"]
-    --         results = Search(app.activeSprite, search, sources)
-    --         RefreshWidgets()
-    --     end
-    -- } --
     :separator{text = "Results:"} --
     :label{id = "no-results", text = "No results"} --
     :button{
@@ -297,6 +249,3 @@ function SearchDialog(options)
 end
 
 return SearchDialog
-
--- TODO: Allow for searching scripts (and commands?)
--- TODO: Include a new command "Run..." which would search all reasonable commands + scripts

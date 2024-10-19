@@ -7,10 +7,7 @@ function init(plugin)
         group = "sprite_properties",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
-            local dialog = SearchDialog {
-                title = "Go to",
-                sources = {layers = true, tags = true, frames = true}
-            }
+            local dialog = SearchDialog {title = "Go to"}
             dialog:show()
         end
     }

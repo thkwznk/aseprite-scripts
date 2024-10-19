@@ -142,3 +142,4 @@ Unreleased:
 
 - [Fix] Fix a typo in the search label
 - [Improvement] Improve sorting of the search results
+- [Feature] Allow for searching open files by name
