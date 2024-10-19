@@ -182,7 +182,7 @@ function SearchDialog(options)
 
             if dialog.data.searchAll and result.sprite and
                 result.sprite.filename ~= app.activeSprite.filename then
-                prefix = result.sprite.filename .. " > "
+                prefix = app.fs.fileTitle(result.sprite.filename) .. " > "
             end
 
             dialog:modify{
