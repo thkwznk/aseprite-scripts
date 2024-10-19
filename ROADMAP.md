@@ -143,3 +143,4 @@ Unreleased:
 - [Fix] Fix a typo in the search label
 - [Improvement] Improve sorting of the search results
 - [Feature] Allow for searching open files by name
+- [Feature] Allow for searching for layers and tags within all open files

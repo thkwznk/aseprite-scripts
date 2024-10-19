@@ -29,7 +29,8 @@ function SearchLayers(sprite, layers, pattern, searchText, exactMatches,
             local searchResult = {
                 name = fullName,
                 layer = layer,
-                type = SearchResultType.Layer
+                type = SearchResultType.Layer,
+                sprite = sprite
             };
 
             local name = fullName:lower();
@@ -45,7 +46,29 @@ function SearchLayers(sprite, layers, pattern, searchText, exactMatches,
     end
 end
 
-function Search(sprite, searchText)
+function SearchTags(sprite, searchText, pattern, exactMatches, prefixMatches,
+                    fuzzyMatches)
+    for _, tag in ipairs(sprite.tags) do
+        local searchResult = {
+            name = tag.name,
+            tag = tag,
+            type = SearchResultType.Tag,
+            sprite = sprite
+        };
+
+        local name = tag.name:lower()
+
+        if name == searchText:lower() then
+            table.insert(exactMatches, searchResult)
+        elseif StartsWith(name, searchText:lower()) then
+            table.insert(prefixMatches, searchResult)
+        elseif name:match(pattern) then
+            table.insert(fuzzyMatches, searchResult)
+        end
+    end
+end
+
+function Search(sprite, searchText, searchAll)
     if #searchText == 0 then return {} end
 
     local pattern = GetPattern(searchText):lower()
@@ -57,44 +80,43 @@ function Search(sprite, searchText)
     local prefixMatches = {}
     local fuzzyMatches = {}
 
-    if #sprite.frames > 1 then
-        for _, frame in ipairs(sprite.frames) do
-            local frameNumber = tostring(frame.frameNumber)
+    for _, frame in ipairs(sprite.frames) do
+        local frameNumber = tostring(frame.frameNumber)
 
-            local searchResult = {
-                name = frameNumber,
-                frame = frame,
-                type = SearchResultType.Frame
-            }
+        local searchResult = {
+            name = frameNumber,
+            frame = frame,
+            type = SearchResultType.Frame
+        }
 
-            -- Frames are already in order, no need to sort them
-            if frameNumber:match(pattern) then
-                table.insert(result, searchResult)
-            end
+        -- Frames are already in order, no need to sort them
+        if frameNumber:match(pattern) then
+            table.insert(result, searchResult)
         end
     end
 
     -- Search layers recursively
-    if #sprite.layers > 1 then
-        SearchLayers(sprite, sprite.layers, pattern, searchText, exactMatches,
-                     prefixMatches, fuzzyMatches)
+    SearchLayers(sprite, sprite.layers, pattern, searchText, exactMatches,
+                 prefixMatches, fuzzyMatches)
+
+    if searchAll then
+        for _, openSprite in ipairs(app.sprites) do
+            if openSprite.filename ~= app.activeSprite.filename then
+                SearchLayers(openSprite, openSprite.layers, pattern, searchText,
+                             exactMatches, prefixMatches, fuzzyMatches)
+            end
+        end
     end
 
-    for _, tag in ipairs(sprite.tags) do
-        local searchResult = {
-            name = tag.name,
-            tag = tag,
-            type = SearchResultType.Tag
-        };
+    SearchTags(sprite, searchText, pattern, exactMatches, prefixMatches,
+               fuzzyMatches)
 
-        local name = tag.name:lower()
-
-        if name == searchText:lower() then
-            table.insert(exactMatches, searchResult)
-        elseif StartsWith(name, searchText:lower()) then
-            table.insert(prefixMatches, searchResult)
-        elseif name:match(pattern) then
-            table.insert(fuzzyMatches, searchResult)
+    if searchAll then
+        for _, openSprite in ipairs(app.sprites) do
+            if openSprite.filename ~= app.activeSprite.filename then
+                SearchTags(openSprite, searchText, pattern, exactMatches,
+                           prefixMatches, fuzzyMatches)
+            end
         end
     end
 
@@ -136,7 +158,13 @@ function SearchDialog(options)
     local results = {}
     local currentPage = 1
 
-    local dialog = Dialog(options.title)
+    local dialog
+    dialog = Dialog {
+        title = options.title,
+        onclose = function()
+            if options.onclose then options.onclose(dialog.data) end
+        end
+    }
 
     function RefreshWidgets()
         local numberOfPages = math.max(math.ceil(#results / PageSize), 1)
@@ -150,10 +178,17 @@ function SearchDialog(options)
         for i = 1, resultsOnPage do
             local result = results[skip + i]
 
+            local prefix = ""
+
+            if dialog.data.searchAll and result.sprite and
+                result.sprite.filename ~= app.activeSprite.filename then
+                prefix = result.sprite.filename .. " > "
+            end
+
             dialog:modify{
                 id = "result-" .. tostring(i),
                 visible = true,
-                text = result.name .. " (" .. result.type .. ")"
+                text = prefix .. result.name .. " (" .. result.type .. ")"
             }
         end
 
@@ -183,7 +218,7 @@ function SearchDialog(options)
         text = search,
         onchange = function()
             search = dialog.data.search
-            results = Search(app.activeSprite, search)
+            results = Search(app.activeSprite, search, dialog.data.searchAll)
 
             RefreshWidgets()
         end
@@ -212,6 +247,11 @@ function SearchDialog(options)
                 local skip = (currentPage - 1) * PageSize
                 local result = results[i + skip]
 
+                -- Switch to the sprite first as the search result could be from another file
+                if result.sprite then
+                    app.activeSprite = result.sprite
+                end
+
                 if result.type == SearchResultType.Layer then
                     app.activeLayer = result.layer
                 elseif result.type == SearchResultType.Tag then
@@ -221,7 +261,7 @@ function SearchDialog(options)
                 elseif result.type == SearchResultType.Frame then
                     app.activeFrame = result.frame
                 elseif result.type == SearchResultType.Sprite then
-                    app.activeSprite = result.sprite
+                    -- Already changed if variable exists
                 end
 
                 dialog:close()
@@ -243,6 +283,15 @@ function SearchDialog(options)
         end
     } --
     :separator() --
+    :check{
+        id = "searchAll",
+        text = "Search within all open sprites",
+        selected = options.searchAll,
+        onclick = function()
+            results = Search(app.activeSprite, search, dialog.data.searchAll)
+            RefreshWidgets()
+        end
+    } --
     :button{text = "Cancel"}
 
     return dialog
