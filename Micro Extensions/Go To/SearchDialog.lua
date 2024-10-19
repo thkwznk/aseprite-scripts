@@ -14,12 +14,14 @@ function GetPattern(text)
     return pattern;
 end
 
-function SearchLayers(sprite, layers, pattern, searchText, results, prefix)
+function SearchLayers(sprite, layers, pattern, searchText, exactMatches,
+                      startsWith, results, prefix)
     prefix = prefix or ""
 
     for _, layer in ipairs(layers) do
         if layer.isGroup then
-            SearchLayers(sprite, layer.layers, pattern, searchText, results,
+            SearchLayers(sprite, layer.layers, pattern, searchText,
+                         exactMatches, startsWith, results,
                          prefix .. layer.name .. " > ")
         else
             local fullName = prefix .. layer.name
@@ -27,19 +29,16 @@ function SearchLayers(sprite, layers, pattern, searchText, results, prefix)
             local searchResult = {
                 name = fullName,
                 layer = layer,
-                weight = 0,
                 type = SearchResultType.Layer
             };
 
             local name = fullName:lower();
 
-            if StartsWith(name, searchText:lower()) then
-                searchResult.weight = 1;
+            if name == searchText:lower() then
+                table.insert(exactMatches, searchResult)
+            elseif StartsWith(name, searchText:lower()) then
+                table.insert(startsWith, searchResult)
             elseif name:match(pattern) then
-                searchResult.weight = searchText:len() / name:len()
-            end
-
-            if searchResult.weight > 0 then
                 table.insert(results, searchResult)
             end
         end
@@ -50,34 +49,13 @@ function Search(sprite, searchText, sources)
     if #searchText == 0 then return {} end
 
     local pattern = GetPattern(searchText):lower()
-    local results = {}
 
-    if sources.layers then
-        SearchLayers(sprite, sprite.layers, pattern, searchText, results)
-    end
+    local result = {}
 
-    if sources.tags then
-        for _, tag in ipairs(sprite.tags) do
-            local searchResult = {
-                name = tag.name,
-                tag = tag,
-                weight = 0,
-                type = SearchResultType.Tag
-            };
-
-            local name = tag.name:lower()
-
-            if StartsWith(name, searchText:lower()) then
-                searchResult.weight = 1;
-            elseif name:match(pattern) then
-                searchResult.weight = searchText:len() / name:len()
-            end
-
-            if searchResult.weight > 0 then
-                table.insert(results, searchResult)
-            end
-        end
-    end
+    -- Split the results into three priority groups
+    local exactMatches = {}
+    local prefixMatches = {}
+    local fuzzyMatches = {}
 
     if sources.frames then
         for _, frame in ipairs(sprite.frames) do
@@ -86,18 +64,37 @@ function Search(sprite, searchText, sources)
             local searchResult = {
                 name = frameNumber,
                 frame = frame,
-                weight = 0,
                 type = SearchResultType.Frame
             }
 
-            if StartsWith(frameNumber, searchText:lower()) then
-                searchResult.weight = 1;
-            elseif frameNumber:match(pattern) then
-                searchResult.weight = searchText:len() / frameNumber:len()
+            -- Frames are already in order, no need to sort them
+            if frameNumber:match(pattern) then
+                table.insert(result, searchResult)
             end
+        end
+    end
 
-            if searchResult.weight > 0 then
-                table.insert(results, searchResult)
+    if sources.layers then
+        SearchLayers(sprite, sprite.layers, pattern, searchText, exactMatches,
+                     prefixMatches, fuzzyMatches)
+    end
+
+    if sources.tags then
+        for _, tag in ipairs(sprite.tags) do
+            local searchResult = {
+                name = tag.name,
+                tag = tag,
+                type = SearchResultType.Tag
+            };
+
+            local name = tag.name:lower()
+
+            if name == searchText:lower() then
+                table.insert(exactMatches, searchResult)
+            elseif StartsWith(name, searchText:lower()) then
+                table.insert(prefixMatches, searchResult)
+            elseif name:match(pattern) then
+                table.insert(fuzzyMatches, searchResult)
             end
         end
     end
@@ -109,27 +106,30 @@ function Search(sprite, searchText, sources)
             local searchResult = {
                 name = filename,
                 sprite = openSprite,
-                weight = 0,
                 type = SearchResultType.Sprite
             };
 
             local name = filename:lower()
 
-            if StartsWith(name, searchText:lower()) then
-                searchResult.weight = 1;
+            if name == searchText:lower() then
+                table.insert(exactMatches, searchResult)
+            elseif StartsWith(name, searchText:lower()) then
+                table.insert(prefixMatches, searchResult)
             elseif name:match(pattern) then
-                searchResult.weight = searchText:len() / name:len()
-            end
-
-            if searchResult.weight > 0 then
-                table.insert(results, searchResult)
+                table.insert(fuzzyMatches, searchResult)
             end
         end
     end
 
-    table.sort(results, function(a, b) return a.weight > b.weight end)
+    table.sort(exactMatches, function(a, b) return a.name < b.name end)
+    table.sort(prefixMatches, function(a, b) return a.name < b.name end)
+    table.sort(fuzzyMatches, function(a, b) return a.name < b.name end)
 
-    return results
+    for _, match in ipairs(exactMatches) do table.insert(result, match) end
+    for _, match in ipairs(prefixMatches) do table.insert(result, match) end
+    for _, match in ipairs(fuzzyMatches) do table.insert(result, match) end
+
+    return result
 end
 
 function SearchDialog(options)
@@ -297,3 +297,6 @@ function SearchDialog(options)
 end
 
 return SearchDialog
+
+-- TODO: Allow for searching scripts (and commands?)
+-- TODO: Include a new command "Run..." which would search all reasonable commands + scripts

@@ -141,3 +141,4 @@ Update v2.0.0:
 Unreleased:
 
 - [Fix] Fix a typo in the search label
+- [Improvement] Improve sorting of the search results
