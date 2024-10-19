@@ -136,11 +136,14 @@ Update v2.0.0:
 
 - [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Brush Transformations options
 
-## Go To
+## Run
 
 Unreleased:
 
-- [Fix] Fix a typo in the search label
-- [Improvement] Improve sorting of the search results
-- [Feature] Allow for searching open files by name
-- [Feature] Allow for searching for layers and tags within all open files
+- ...
+
+Release v1.0.0:
+
+- [Feature] Allow for searching scripts through a new menu option under _File > Run..._
+- [Feature] Allow for searching commands
+- [Feature] Add a keyboard shortcut for running the last searched script or command
