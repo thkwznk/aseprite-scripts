@@ -181,7 +181,8 @@ function SearchDialog(options)
             local prefix = ""
 
             if dialog.data.searchAll and result.sprite and
-                result.sprite.filename ~= app.activeSprite.filename then
+                result.sprite.filename ~= app.activeSprite.filename and
+                result.type ~= SourceType.Sprite then
                 prefix = app.fs.fileTitle(result.sprite.filename) .. " > "
             end
 
