@@ -4,7 +4,38 @@ function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
 
 local RunScriptPageSize = 6
 
-function SearchScripts(searchText)
+function SearchScriptsRecursively(searchText, pattern, directory, prefix,
+                                  exactMatches, prefixMatches, fuzzyMatches)
+    for _, filename in ipairs(app.fs.listFiles(directory)) do
+        local fullFilename = app.fs.joinPath(directory, filename)
+
+        if app.fs.isDirectory(fullFilename) then
+            SearchScriptsRecursively(searchText, pattern, fullFilename,
+                                     prefix .. filename .. " > ", exactMatches,
+                                     prefixMatches, fuzzyMatches)
+        elseif app.fs.isFile(fullFilename) and app.fs.fileExtension(filename) ==
+            "lua" then
+            local entry = {
+                name = prefix .. app.fs.fileTitle(filename),
+                filename = filename,
+                path = fullFilename
+            }
+            local name = filename:lower()
+
+            if name == searchText then
+                table.insert(exactMatches, entry)
+            elseif StartsWith(name, searchText) then
+                table.insert(prefixMatches, entry)
+            elseif name:match(pattern) then
+                table.insert(fuzzyMatches, entry)
+            end
+        end
+    end
+end
+
+function SearchScripts(searchText, directory)
+    local exactMatches, prefixMatches, fuzzyMatches, results = {}, {}, {}, {}
+
     -- Use lowercase for case-insensitive search
     searchText = searchText:lower()
 
@@ -13,30 +44,16 @@ function SearchScripts(searchText)
         pattern = pattern .. searchText:sub(i, i) .. ".*"
     end
 
-    local results = {}
+    SearchScriptsRecursively(searchText, pattern, directory, "", exactMatches,
+                             prefixMatches, fuzzyMatches)
 
-    for _, filename in ipairs(app.fs.listFiles(SCRIPTS_DIRECTORY)) do
-        local fullFilename = app.fs.joinPath(SCRIPTS_DIRECTORY, filename)
+    table.sort(exactMatches, function(a, b) return a.filename < b.filename end)
+    table.sort(prefixMatches, function(a, b) return a.filename < b.filename end)
+    table.sort(fuzzyMatches, function(a, b) return a.filename < b.filename end)
 
-        if app.fs.isFile(fullFilename) then
-            -- TODO: Search recursively in folders as well
-
-            local searchResult = {name = filename, weight = 0}
-            local name = filename:lower()
-
-            if StartsWith(name, searchText) then
-                searchResult.weight = 1;
-            elseif name:match(pattern) then
-                searchResult.weight = searchText:len() / name:len()
-            end
-
-            if searchResult.weight > 0 then
-                table.insert(results, searchResult)
-            end
-        end
-    end
-
-    table.sort(results, function(a, b) return a.weight > b.weight end)
+    for _, match in ipairs(exactMatches) do table.insert(results, match) end
+    for _, match in ipairs(prefixMatches) do table.insert(results, match) end
+    for _, match in ipairs(fuzzyMatches) do table.insert(results, match) end
 
     return results
 end
@@ -87,7 +104,7 @@ function RunScriptDialog(options)
     end
 
     dialog --
-    :label{text = "Script name:"} --
+    :label{text = "Search a script by filename:"} --
     :entry{
         id = "search",
         text = search,
@@ -97,7 +114,7 @@ function RunScriptDialog(options)
             if #search == 0 then
                 results = {}
             else
-                results = SearchScripts(search)
+                results = SearchScripts(search, SCRIPTS_DIRECTORY)
             end
 
             refreshWidgets()
@@ -130,16 +147,13 @@ function RunScriptDialog(options)
                 local skip = (currentPage - 1) * RunScriptPageSize
                 local result = results[i + skip]
 
-                local scriptPath = app.fs.joinPath(SCRIPTS_DIRECTORY,
-                                                   result.name)
-
                 -- Close the dialog first to avoid having it left open if the scripts opens it's own dialog with option `wait=true`
                 dialog:close()
 
                 -- Execute the selected script
-                dofile(scriptPath)
+                dofile(result.path)
 
-                if options.onrun then options.onrun(scriptPath) end
+                if options.onrun then options.onrun(result.path) end
             end
         } --
         :newrow()
