@@ -4,36 +4,58 @@ function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
 
 local RunScriptPageSize = 6
 
-function SearchScriptsRecursively(searchText, pattern, directory, prefix,
-                                  exactMatches, prefixMatches, fuzzyMatches)
+function CreateFileStructure(directory, prefix, structure)
+    structure = structure or {}
+    prefix = prefix or ""
+
     for _, filename in ipairs(app.fs.listFiles(directory)) do
         local fullFilename = app.fs.joinPath(directory, filename)
 
         if app.fs.isDirectory(fullFilename) then
-            SearchScriptsRecursively(searchText, pattern, fullFilename,
-                                     prefix .. filename .. " > ", exactMatches,
-                                     prefixMatches, fuzzyMatches)
+            local entry = {
+                filename = filename,
+                path = fullFilename,
+                children = CreateFileStructure(fullFilename,
+                                               prefix .. filename .. " > ", {})
+            }
+            table.insert(structure, entry)
+
         elseif app.fs.isFile(fullFilename) and app.fs.fileExtension(filename) ==
             "lua" then
-            local entry = {
-                name = prefix .. app.fs.fileTitle(filename),
+            table.insert(structure, {
                 filename = filename,
+                name = prefix .. app.fs.fileTitle(filename),
+                title = app.fs.fileTitle(filename),
                 path = fullFilename
-            }
-            local name = filename:lower()
+            })
+        end
+    end
+
+    return structure
+end
+
+function SearchScriptsRecursively(fileStructure, searchText, pattern, prefix,
+                                  exactMatches, prefixMatches, fuzzyMatches)
+    for _, fileEntry in ipairs(fileStructure) do
+        if fileEntry.children then
+            SearchScriptsRecursively(fileEntry.children, searchText, pattern,
+                                     prefix .. fileEntry.filename .. " > ",
+                                     exactMatches, prefixMatches, fuzzyMatches)
+        else
+            local name = fileEntry.filename:lower()
 
             if name == searchText then
-                table.insert(exactMatches, entry)
+                table.insert(exactMatches, fileEntry)
             elseif StartsWith(name, searchText) then
-                table.insert(prefixMatches, entry)
+                table.insert(prefixMatches, fileEntry)
             elseif name:match(pattern) then
-                table.insert(fuzzyMatches, entry)
+                table.insert(fuzzyMatches, fileEntry)
             end
         end
     end
 end
 
-function SearchScripts(searchText, directory)
+function SearchScripts(searchText, fileStructure)
     local exactMatches, prefixMatches, fuzzyMatches, results = {}, {}, {}, {}
 
     -- Use lowercase for case-insensitive search
@@ -44,8 +66,8 @@ function SearchScripts(searchText, directory)
         pattern = pattern .. searchText:sub(i, i) .. ".*"
     end
 
-    SearchScriptsRecursively(searchText, pattern, directory, "", exactMatches,
-                             prefixMatches, fuzzyMatches)
+    SearchScriptsRecursively(fileStructure, searchText, pattern, "",
+                             exactMatches, prefixMatches, fuzzyMatches)
 
     table.sort(exactMatches, function(a, b) return a.filename < b.filename end)
     table.sort(prefixMatches, function(a, b) return a.filename < b.filename end)
@@ -63,6 +85,8 @@ function RunScriptDialog(options)
     local dialog = Dialog(options.title)
     local results = {}
     local currentPage = 1
+
+    local fileStructure = CreateFileStructure(SCRIPTS_DIRECTORY)
 
     local refreshWidgets = function()
         local numberOfPages = math.max(math.ceil(#results / RunScriptPageSize),
@@ -114,7 +138,7 @@ function RunScriptDialog(options)
             if #search == 0 then
                 results = {}
             else
-                results = SearchScripts(search, SCRIPTS_DIRECTORY)
+                results = SearchScripts(search, fileStructure)
             end
 
             refreshWidgets()
