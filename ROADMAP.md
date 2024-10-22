@@ -91,6 +91,7 @@ Unreleased:
 
 Update v2.0.0:
 
+- [Improvement] Always import into a new layer
 - [Improvement] New UI - animation steps preview in the dialog with interactive UI
 
 ## On-Screen Controls
@@ -114,17 +115,15 @@ Update v2.0.0:
 
 Unreleased:
 
-- 
+- ...
+
+Next:
+
+- [Improvement] Move inbetween frames by the center instead of the top-left anchor for better results (+refactor code)
 
 Update v3.0.0:
 
 - [Improvement] Rebuild the *Analyze Colors* using the canvas widget
-
-## Center Image
-
-Unreleased:
-
-- ...
 
 ## Brush Transformations
 
