@@ -122,22 +122,24 @@ function Search(sprite, searchText, searchAll)
 
     if #app.sprites > 1 then
         for _, openSprite in ipairs(app.sprites) do
-            local filename = app.fs.fileName(openSprite.filename)
+            if openSprite.filename ~= app.activeSprite.filename then
+                local filename = app.fs.fileName(openSprite.filename)
 
-            local searchResult = {
-                name = filename,
-                sprite = openSprite,
-                type = SearchResultType.Sprite
-            };
+                local searchResult = {
+                    name = filename,
+                    sprite = openSprite,
+                    type = SearchResultType.Sprite
+                };
 
-            local name = filename:lower()
+                local name = filename:lower()
 
-            if name == searchText:lower() then
-                table.insert(exactMatches, searchResult)
-            elseif StartsWith(name, searchText:lower()) then
-                table.insert(prefixMatches, searchResult)
-            elseif name:match(pattern) then
-                table.insert(fuzzyMatches, searchResult)
+                if name == searchText:lower() then
+                    table.insert(exactMatches, searchResult)
+                elseif StartsWith(name, searchText:lower()) then
+                    table.insert(prefixMatches, searchResult)
+                elseif name:match(pattern) then
+                    table.insert(fuzzyMatches, searchResult)
+                end
             end
         end
     end
@@ -182,7 +184,7 @@ function SearchDialog(options)
 
             if dialog.data.searchAll and result.sprite and
                 result.sprite.filename ~= app.activeSprite.filename and
-                result.type ~= SourceType.Sprite then
+                result.type ~= SearchResultType.Sprite then
                 prefix = app.fs.fileTitle(result.sprite.filename) .. " > "
             end
 
