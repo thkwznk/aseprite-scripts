@@ -15,8 +15,6 @@ function init(plugin)
                 end
             }
             dialog:show()
-
-            -- TODO: Add an option to "Import Script" that copies a script from a given location to the APP_DATA directory of Aseprite
         end
     }
 
