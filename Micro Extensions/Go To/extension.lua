@@ -2,6 +2,7 @@ local SearchDialog = dofile("./SearchDialog.lua")
 
 function init(plugin)
     local searchAll = false
+    local autoZoomOnSlice = false
 
     plugin:newCommand{
         id = "GoTo",
@@ -12,8 +13,10 @@ function init(plugin)
             local dialog = SearchDialog {
                 title = "Go to",
                 searchAll = searchAll,
+                autoZoomOnSlice = autoZoomOnSlice,
                 onclose = function(data)
                     searchAll = data.searchAll
+                    autoZoomOnSlice = data.autoZoomOnSlice
                 end
             }
             dialog:show()

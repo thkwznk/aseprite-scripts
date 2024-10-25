@@ -3,7 +3,8 @@ local SearchResultType = {
     Layer = "layer",
     Tag = "tag",
     Frame = "frame",
-    Sprite = "sprite"
+    Sprite = "sprite",
+    Slice = "slice"
 }
 
 function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
@@ -68,6 +69,28 @@ function SearchTags(sprite, searchText, pattern, exactMatches, prefixMatches,
     end
 end
 
+function SearchSlices(sprite, searchText, pattern, exactMatches, prefixMatches,
+                      fuzzyMatches)
+    for _, slice in ipairs(sprite.slices) do
+        local searchResult = {
+            name = slice.name,
+            slice = slice,
+            type = SearchResultType.Slice,
+            sprite = sprite
+        };
+
+        local name = slice.name:lower()
+
+        if name == searchText:lower() then
+            table.insert(exactMatches, searchResult)
+        elseif StartsWith(name, searchText:lower()) then
+            table.insert(prefixMatches, searchResult)
+        elseif name:match(pattern) then
+            table.insert(fuzzyMatches, searchResult)
+        end
+    end
+end
+
 function Search(sprite, searchText, searchAll)
     if #searchText == 0 then return {} end
 
@@ -120,6 +143,18 @@ function Search(sprite, searchText, searchAll)
         end
     end
 
+    SearchSlices(sprite, searchText, pattern, exactMatches, prefixMatches,
+                 fuzzyMatches)
+
+    if searchAll then
+        for _, openSprite in ipairs(app.sprites) do
+            if openSprite.filename ~= app.activeSprite.filename then
+                SearchSlices(openSprite, searchText, pattern, exactMatches,
+                             prefixMatches, fuzzyMatches)
+            end
+        end
+    end
+
     if #app.sprites > 1 then
         for _, openSprite in ipairs(app.sprites) do
             if openSprite.filename ~= app.activeSprite.filename then
@@ -153,6 +188,64 @@ function Search(sprite, searchText, searchAll)
     for _, match in ipairs(fuzzyMatches) do table.insert(result, match) end
 
     return result
+end
+
+function ScrollToSlice(slice, autoZoom)
+    -- Center the canvas first
+    app.command.ScrollCenter()
+    app.command.Zoom {percentage = "100", focus = "center"}
+
+    local sliceCenterX = slice.bounds.x + slice.bounds.width / 2
+    local sliceCenterY = slice.bounds.y + slice.bounds.height / 2
+
+    local centerX = slice.sprite.width / 2
+    local centerY = slice.sprite.height / 2
+
+    if sliceCenterX < centerX then
+        app.command.Scroll {
+            direction = "left",
+            units = "zoomed-pixel",
+            quantity = tostring(centerX - sliceCenterX)
+        }
+    else
+        app.command.Scroll {
+            direction = "right",
+            units = "zoomed-pixel",
+            quantity = tostring(sliceCenterX - centerX)
+        }
+    end
+
+    if sliceCenterY < centerY then
+        app.command.Scroll {
+            direction = "up",
+            units = "zoomed-pixel",
+            quantity = tostring(centerY - sliceCenterY)
+        }
+    else
+        app.command.Scroll {
+            direction = "down",
+            units = "zoomed-pixel",
+            quantity = tostring(sliceCenterY - centerY)
+        }
+    end
+
+    if autoZoom then
+        local sizes = {
+            64, 48, 32, 24, 16, 12, 8, 6, 5, 4, 3, 2, 1, 0.5, 0.333, 0.25, 0.20,
+            0.167, 0.125
+        }
+
+        for _, size in ipairs(sizes) do
+            if slice.bounds.width * size < app.window.width * 0.8 and
+                slice.bounds.height * size < app.window.height * 0.6 then
+                app.command.Zoom {
+                    percentage = tostring(size * 100),
+                    focus = "center"
+                }
+                break
+            end
+        end
+    end
 end
 
 function SearchDialog(options)
@@ -263,6 +356,10 @@ function SearchDialog(options)
                     app.activeFrame = result.tag.fromFrame
                 elseif result.type == SearchResultType.Frame then
                     app.activeFrame = result.frame
+                elseif result.type == SearchResultType.Slice then
+                    ScrollToSlice(result.slice, dialog.data.autoZoomOnSlice)
+                    app.range.slices = {result.slice}
+
                 elseif result.type == SearchResultType.Sprite then
                     -- Already changed if variable exists
                 end
@@ -294,6 +391,12 @@ function SearchDialog(options)
             results = Search(app.activeSprite, search, dialog.data.searchAll)
             RefreshWidgets()
         end
+    } --
+    :newrow() --
+    :check{
+        id = "autoZoomOnSlice",
+        text = "Auto-zoom on slices",
+        selected = options.autoZoomOnSlice
     } --
     :button{text = "Cancel"}
 

@@ -135,6 +135,13 @@ Update v2.0.0:
 
 - [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Brush Transformations options
 
+## Go To
+
+Unreleased:
+
+- [Feature] Extend search capabilities to include slices in search results
+- [Feature] Add an option to auto-zoom on found slices
+
 ## Run
 
 Unreleased:
