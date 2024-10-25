@@ -193,7 +193,6 @@ end
 function ScrollToSlice(slice, autoZoom)
     -- Center the canvas first
     app.command.ScrollCenter()
-    app.command.Zoom {percentage = "100", focus = "center"}
 
     local sliceCenterX = slice.bounds.x + slice.bounds.width / 2
     local sliceCenterY = slice.bounds.y + slice.bounds.height / 2
