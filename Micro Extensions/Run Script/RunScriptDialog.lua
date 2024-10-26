@@ -1,3 +1,5 @@
+local commands = dofile("./Commands.lua")
+
 local SCRIPTS_DIRECTORY = app.fs.joinPath(app.fs.userConfigPath, "scripts")
 
 function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
@@ -80,6 +82,40 @@ function SearchScripts(searchText, fileStructure)
     return results
 end
 
+function SearchCommands(searchText)
+    local exactMatches, prefixMatches, fuzzyMatches, results = {}, {}, {}, {}
+
+    -- Use lowercase for case-insensitive search
+    searchText = searchText:lower()
+
+    local pattern = ""
+    for i = 1, #searchText do
+        pattern = pattern .. searchText:sub(i, i) .. ".*"
+    end
+
+    for _, command in ipairs(commands) do
+        local name = command.name:lower()
+
+        if name == searchText then
+            table.insert(exactMatches, command)
+        elseif StartsWith(name, searchText) then
+            table.insert(prefixMatches, command)
+        elseif name:match(pattern) then
+            table.insert(fuzzyMatches, command)
+        end
+    end
+
+    table.sort(exactMatches, function(a, b) return a.name < b.name end)
+    table.sort(prefixMatches, function(a, b) return a.name < b.name end)
+    table.sort(fuzzyMatches, function(a, b) return a.name < b.name end)
+
+    for _, match in ipairs(exactMatches) do table.insert(results, match) end
+    for _, match in ipairs(prefixMatches) do table.insert(results, match) end
+    for _, match in ipairs(fuzzyMatches) do table.insert(results, match) end
+
+    return results
+end
+
 function RunScriptDialog(options)
     local search = ""
     local dialog = Dialog(options.title)
@@ -128,17 +164,24 @@ function RunScriptDialog(options)
     end
 
     dialog --
-    :label{text = "Search a script by filename:"} --
+    :label{text = "Search a command or script by name:"} --
     :entry{
         id = "search",
         text = search,
         onchange = function()
             search = dialog.data.search
+            results = {}
+            if #search > 0 then
+                local commands2 = SearchCommands(search)
+                local scripts = SearchScripts(search, fileStructure)
 
-            if #search == 0 then
-                results = {}
-            else
-                results = SearchScripts(search, fileStructure)
+                for _, command in ipairs(commands2) do
+                    table.insert(results, command)
+                end
+
+                for _, script in ipairs(scripts) do
+                    table.insert(results, script)
+                end
             end
 
             refreshWidgets()
@@ -174,10 +217,14 @@ function RunScriptDialog(options)
                 -- Close the dialog first to avoid having it left open if the scripts opens it's own dialog with option `wait=true`
                 dialog:close()
 
-                -- Execute the selected script
-                dofile(result.path)
+                if result.command then
+                    app.command[result.command]()
+                else
+                    -- Execute the selected script
+                    dofile(result.path)
+                end
 
-                if options.onrun then options.onrun(result.path) end
+                if options.onrun then options.onrun(result) end
             end
         } --
         :newrow()

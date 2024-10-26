@@ -141,7 +141,4 @@ Unreleased:
 
 - [Feature] Allow for searching scripts through a new menu option under _File > Run..._
 - [Feature] Add a keyboard shortcut for running the last searched script or command
-
-Release v1.0.0:
-
 - [Feature] Allow for searching commands

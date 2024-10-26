@@ -1,17 +1,25 @@
 local RunScriptDialog = dofile("./RunScriptDialog.lua")
 
 function init(plugin)
-    local lastScriptPath
+    local lastScriptPath, lastCommand
 
     plugin:newCommand{
         id = "RunScriptAdvanced", -- RunScript is already a native command
-        title = "Run Script",
+        title = "Run...",
         group = "file_scripts",
         onclick = function()
             local dialog = RunScriptDialog {
-                title = "Run Script",
-                onrun = function(filePath)
-                    lastScriptPath = filePath
+                title = "Run",
+                onrun = function(option)
+                    if option.path then
+                        lastScriptPath = option.path
+                        lastCommand = nil
+                    end
+
+                    if option.command then
+                        lastScriptPath = nil
+                        lastCommand = option.command
+                    end
                 end
             }
             dialog:show()
@@ -22,9 +30,11 @@ function init(plugin)
         id = "RepeatScriptAdvanced",
         title = "Run Last Script",
         onclick = function()
-            if app.fs.isFile(lastScriptPath) then
+            if lastScriptPath and app.fs.isFile(lastScriptPath) then
                 dofile(lastScriptPath)
             end
+
+            if lastCommand then app.command[lastCommand]() end
         end
     }
 end
