@@ -1,6 +1,7 @@
 local RunScriptDialog = dofile("./RunScriptDialog.lua")
 
 function init(plugin)
+    local searchCommands, searchScripts = true, true
     local lastScriptPath, lastCommand
 
     plugin:newCommand{
@@ -10,7 +11,12 @@ function init(plugin)
         onclick = function()
             local dialog = RunScriptDialog {
                 title = "Run",
-                onrun = function(option)
+                searchCommands = searchCommands,
+                searchScripts = searchScripts,
+                onrun = function(option, data)
+                    searchCommands = data.searchCommands
+                    searchScripts = data.searchScripts
+
                     if option.path then
                         lastScriptPath = option.path
                         lastCommand = nil
@@ -20,6 +26,10 @@ function init(plugin)
                         lastScriptPath = nil
                         lastCommand = option.command
                     end
+                end,
+                onclose = function(data)
+                    searchCommands = data.searchCommands
+                    searchScripts = data.searchScripts
                 end
             }
             dialog:show()

@@ -118,7 +118,13 @@ end
 
 function RunScriptDialog(options)
     local search = ""
-    local dialog = Dialog(options.title)
+    local dialog
+    dialog = Dialog {
+        title = options.title,
+        onclose = function()
+            if options.onclose then options.onclose(dialog.data) end
+        end
+    }
     local results = {}
     local currentPage = 1
 
@@ -132,7 +138,14 @@ function RunScriptDialog(options)
         local skip = (currentPage - 1) * RunScriptPageSize
         local resultsOnPage = math.min(RunScriptPageSize, #results - skip)
 
-        dialog:modify{id = "no-results", visible = resultsOnPage == 0}
+        dialog:modify{
+            id = "resultsSeparator",
+            visible = #dialog.data.search > 0
+        }
+        dialog:modify{
+            id = "noResults",
+            visible = #dialog.data.search > 0 and resultsOnPage == 0
+        }
 
         for i = 1, resultsOnPage do
             local result = results[skip + i]
@@ -163,32 +176,31 @@ function RunScriptDialog(options)
         }
     end
 
-    dialog --
-    :label{text = "Search a command or script by name:"} --
-    :entry{
-        id = "search",
-        text = search,
-        onchange = function()
-            search = dialog.data.search
-            results = {}
-            if #search > 0 then
-                local commands2 = SearchCommands(search)
-                local scripts = SearchScripts(search, fileStructure)
-
-                for _, command in ipairs(commands2) do
+    local searchAll = function()
+        search = dialog.data.search
+        results = {}
+        if #search > 0 then
+            if dialog.data.searchCommands then
+                for _, command in ipairs(SearchCommands(search)) do
                     table.insert(results, command)
-                end
-
-                for _, script in ipairs(scripts) do
-                    table.insert(results, script)
                 end
             end
 
-            refreshWidgets()
+            if dialog.data.searchScripts then
+                for _, script in ipairs(SearchScripts(search, fileStructure)) do
+                    table.insert(results, script)
+                end
+            end
         end
-    } --
-    :separator{text = "Results:"} --
-    :label{id = "no-results", text = "No results"} --
+
+        refreshWidgets()
+    end
+
+    dialog --
+    :label{text = "Search a command or script by name:"} --
+    :entry{id = "search", text = search, onchange = function() searchAll() end} --
+    :separator{id = "resultsSeparator", text = "Results:"} --
+    :label{id = "noResults", text = "No results"} --
     :button{
         id = "prev-page",
         text = "...",
@@ -224,7 +236,9 @@ function RunScriptDialog(options)
                     dofile(result.path)
                 end
 
-                if options.onrun then options.onrun(result) end
+                if options.onrun then
+                    options.onrun(result, dialog.data)
+                end
             end
         } --
         :newrow()
@@ -242,11 +256,25 @@ function RunScriptDialog(options)
             dialog:modify{id = "result-1", focus = true}
         end
     } --
-    :separator() --
+    :separator{text = "Sources:"} --
+    :check{
+        id = "searchCommands",
+        text = "Commands",
+        selected = options.searchCommands,
+        onclick = function() searchAll() end
+    } --
+    :check{
+        id = "searchScripts",
+        text = "Scripts",
+        selected = options.searchScripts,
+        onclick = function() searchAll() end
+    } --
     :button{text = "Cancel"}
 
     -- Open and close to initialize the dialog bounds
     dialog:show{wait = false}
+    dialog:modify{id = "resultsSeparator", visible = false}
+    dialog:modify{id = "noResults", visible = false}
     dialog:close()
 
     local defaultWidth = 200
