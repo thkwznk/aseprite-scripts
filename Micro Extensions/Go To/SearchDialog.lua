@@ -267,8 +267,14 @@ function SearchDialog(options)
         local skip = (currentPage - 1) * PageSize
         local resultsOnPage = math.min(PageSize, #results - skip)
 
-        dialog:modify{id = "no-results", visible = resultsOnPage == 0}
-
+        dialog:modify{
+            id = "resultsSeparator",
+            visible = #dialog.data.search > 0
+        }
+        dialog:modify{
+            id = "noResults",
+            visible = #dialog.data.search > 0 and resultsOnPage == 0
+        }
         for i = 1, resultsOnPage do
             local result = results[skip + i]
 
@@ -318,8 +324,8 @@ function SearchDialog(options)
             RefreshWidgets()
         end
     } --
-    :separator{text = "Results:"} --
-    :label{id = "no-results", text = "No results"} --
+    :separator{id = "resultsSeparator", text = "Results:"} --
+    :label{id = "noResults", text = "No results"} --
     :button{
         id = "prev-page",
         text = "...",
@@ -381,7 +387,7 @@ function SearchDialog(options)
             dialog:modify{id = "result-1", focus = true}
         end
     } --
-    :separator() --
+    :separator{text = "Options:"} --
     :check{
         id = "searchAll",
         text = "Search within all open sprites",
@@ -398,6 +404,14 @@ function SearchDialog(options)
         selected = options.autoZoomOnSlice
     } --
     :button{text = "Cancel"}
+
+    dialog:modify{id = "resultsSeparator", visible = false}
+    dialog:modify{id = "noResults", visible = false}
+
+    dialog:show{wait = false}
+    dialog:modify{id = "resultsSeparator", visible = false}
+    dialog:modify{id = "noResults", visible = false}
+    dialog:close()
 
     return dialog
 end

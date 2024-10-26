@@ -135,6 +135,13 @@ Update v2.0.0:
 
 - [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Brush Transformations options
 
+## Go TO
+
+Unreleased:
+
+- [Improvement] Hide the empty results label when the search input is empty
+- [Improvement] Add a label for the options separator
+
 ## Run
 
 Unreleased:
