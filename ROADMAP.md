@@ -129,13 +129,13 @@ Update v3.0.0:
 
 Unreleased:
 
-- ...
+- [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Brush Transformations options
 
 Update v2.0.0:
 
-- [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Brush Transformations options
+- [Feature] Add options to scale the brush
 
-## Go TO
+## Go To
 
 Unreleased:
 

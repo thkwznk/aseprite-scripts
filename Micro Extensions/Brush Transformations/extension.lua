@@ -56,10 +56,22 @@ local function TransformBrush(options)
 end
 
 function init(plugin)
+    local parentGroup = "edit_transform"
+
+    if app.apiVersion >= 22 then
+        parentGroup = "edit_brush_transformations"
+
+        plugin:newMenuGroup{
+            id = parentGroup,
+            title = "Brush Transformations",
+            group = "edit_transform"
+        }
+    end
+
     plugin:newCommand{
         id = "BrushRotateCW",
         title = "Brush Rotate 90 CW",
-        group = "edit_transform",
+        group = parentGroup,
         onenabled = CanTransformBrush,
         onclick = function() TransformBrush {rotateCw = true} end
     }
@@ -67,7 +79,7 @@ function init(plugin)
     plugin:newCommand{
         id = "BrushRotateCCW",
         title = "Brush Rotate 90 CCW",
-        group = "edit_transform",
+        group = parentGroup,
         onenabled = CanTransformBrush,
         onclick = function() TransformBrush {rotateCcw = true} end
     }
@@ -75,7 +87,7 @@ function init(plugin)
     plugin:newCommand{
         id = "BrushFlipHorizontal",
         title = "Brush Flip Horizontal",
-        group = "edit_transform",
+        group = parentGroup,
         onenabled = CanTransformBrush,
         onclick = function() TransformBrush {flipHorizontal = true} end
     }
@@ -83,7 +95,7 @@ function init(plugin)
     plugin:newCommand{
         id = "BrushFlipVertical",
         title = "Brush Flip Vertical",
-        group = "edit_transform",
+        group = parentGroup,
         onenabled = CanTransformBrush,
         onclick = function() TransformBrush {flipVertical = true} end
     }
