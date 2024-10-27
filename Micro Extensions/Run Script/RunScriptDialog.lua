@@ -105,10 +105,6 @@ function SearchCommands(searchText)
         end
     end
 
-    table.sort(exactMatches, function(a, b) return a.name < b.name end)
-    table.sort(prefixMatches, function(a, b) return a.name < b.name end)
-    table.sort(fuzzyMatches, function(a, b) return a.name < b.name end)
-
     for _, match in ipairs(exactMatches) do table.insert(results, match) end
     for _, match in ipairs(prefixMatches) do table.insert(results, match) end
     for _, match in ipairs(fuzzyMatches) do table.insert(results, match) end
