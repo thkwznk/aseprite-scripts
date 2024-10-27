@@ -11,7 +11,19 @@ return {
     {command = "CelProperties", name = "Cel Properties"},
     -- {command = "ChangeBrush", name = ""}, -- Skipped, requires parameters
     -- {command = "ChangeColor", name = ""}, -- Skipped, requires parameters
-    -- {command = "ChangePixelFormat", name = ""}, -- Skipped, requires parameters -- TODO: Maybe handle this with parameters
+    {
+        command = "ChangePixelFormat",
+        name = "Set Color Mode to RGB",
+        parameters = {format = "rgb"}
+    }, {
+        command = "ChangePixelFormat",
+        name = "Set Color Mode to Grayscale",
+        parameters = {format = "gray"}
+    }, {
+        command = "ChangePixelFormat",
+        name = "Set Color Mode to Indexed",
+        parameters = {format = "indexed"}
+    },
     -- {command = "ClearCel", name = ""}, -- Skipped, already can be achieved with a single key
     -- {command = "Clear", name = ""}, -- Skipped, already can be achieved with a single key
     {command = "CloseAllFiles", name = "Close All Files"},
@@ -76,8 +88,19 @@ return {
     {command = "MaskByColor", name = "Select Color Range"},
     {command = "MaskContent", name = "Transform"},
     -- {command = "MergeDownLayer", name = ""},
-    -- {command = "ModifySelection", name = ""}, -- TODO: Consider this with parameters
-    -- {command = "MoveCel", name = ""}, 
+    {
+        command = "ModifySelection",
+        name = "Border Selection",
+        parameters = {modifier = "border"}
+    }, {
+        command = "ModifySelection",
+        name = "Expand Selection",
+        parameters = {modifier = "expand"}
+    }, {
+        command = "ModifySelection",
+        name = "Contract Selection",
+        parameters = {modifier = "contract"}
+    }, -- {command = "MoveCel", name = ""}, 
     -- {command = "MoveColors", name = ""},
     -- {command = "MoveMask", name = ""},
     -- {command = "NewBrush", name = ""},
@@ -111,8 +134,32 @@ return {
     {command = "ReplaceColor", name = "Replace Color"},
     -- {command = "ReselectMask", name = ""},
     -- {command = "ReverseFrames", name = ""},
-    -- {command = "Rotate", name = ""}, -- TODO: Consider adding this with parameters
-    -- {command = "RunScript", name = ""}, 
+    {
+        command = "Rotate",
+        name = "Rotate Canvas 90 CW",
+        parameters = {angle = "90"}
+    }, {
+        command = "Rotate",
+        name = "Rotate Canvas 90 CCW",
+        parameters = {angle = "-90"}
+    },
+    {
+        command = "Rotate",
+        name = "Rotate Canvas 180",
+        parameters = {angle = "180"}
+    }, {
+        command = "Rotate",
+        name = "Rotate 90 CW",
+        parameters = {target = "mask", angle = "90"}
+    }, {
+        command = "Rotate",
+        name = "Rotate 90 CCW",
+        parameters = {target = "mask", angle = "-90"}
+    }, {
+        command = "Rotate",
+        name = "Rotate 180",
+        parameters = {target = "mask", angle = "180"}
+    }, -- {command = "RunScript", name = ""}, 
     -- {command = "SaveFile", name = ""},
     -- {command = "SaveFileAs", name = ""},
     -- {command = "SaveFileCopyAs", name = ""}, 
@@ -144,8 +191,23 @@ return {
     -- {command = "Stroke", name = ""},
     -- {command = "SwitchColors", name = ""},
     -- {command = "SymmetryMode", name = ""},
-    -- {command = "TiledMode", name = ""}, -- TODO: Consider with parameters
-    -- {command = "Timeline", name = ""},
+    {
+        command = "TiledMode",
+        name = "View Tiled in None Axes",
+        parameters = {axis = "none"}
+    }, {
+        command = "TiledMode",
+        name = "View Tiled in Both Axes",
+        parameters = {axis = "both"}
+    }, {
+        command = "TiledMode",
+        name = "View Tiled in X Axis",
+        parameters = {axis = "x"}
+    }, {
+        command = "TiledMode",
+        name = "View Tiled in Y Axis",
+        parameters = {axis = "y"}
+    }, -- {command = "Timeline", name = ""},
     -- {command = "TogglePreview", name = ""},
     {command = "ToggleTimelineThumbnails", name = "Toggle Timeline Thumbnails"},
     {command = "UndoHistory", name = "Undo History"}

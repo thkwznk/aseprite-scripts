@@ -230,7 +230,7 @@ function RunScriptDialog(options)
                 dialog:close()
 
                 if result.command then
-                    app.command[result.command]()
+                    app.command[result.command](result.parameters)
                 else
                     -- Execute the selected script
                     dofile(result.path)
