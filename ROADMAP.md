@@ -140,7 +140,8 @@ Update v2.0.0:
 Unreleased:
 
 - [Improvement] Hide the empty results label when the search input is empty
-- [Improvement] Add a label for the options separator
+- [Improvement] Save Go To options between sessions
+- [Fix] Add a missing label for the options separator
 
 ## Run
 
