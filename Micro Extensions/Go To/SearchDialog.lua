@@ -1,3 +1,5 @@
+local ScrollToSlice = dofile("./ScrollToSlice.lua")
+
 local PageSize = 6
 local SearchResultType = {
     Layer = "layer",
@@ -7,16 +9,16 @@ local SearchResultType = {
     Slice = "slice"
 }
 
-function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
+local function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
 
-function GetPattern(text)
+local function GetPattern(text)
     local pattern = "";
     for i = 1, #text do pattern = pattern .. text:sub(i, i) .. ".*" end
     return pattern;
 end
 
-function SearchLayers(sprite, layers, pattern, searchText, exactMatches,
-                      startsWith, results, prefix)
+local function SearchLayers(sprite, layers, pattern, searchText, exactMatches,
+                            startsWith, results, prefix)
     prefix = prefix or ""
 
     for _, layer in ipairs(layers) do
@@ -47,8 +49,8 @@ function SearchLayers(sprite, layers, pattern, searchText, exactMatches,
     end
 end
 
-function SearchTags(sprite, searchText, pattern, exactMatches, prefixMatches,
-                    fuzzyMatches)
+local function SearchTags(sprite, searchText, pattern, exactMatches,
+                          prefixMatches, fuzzyMatches)
     for _, tag in ipairs(sprite.tags) do
         local searchResult = {
             name = tag.name,
@@ -69,8 +71,8 @@ function SearchTags(sprite, searchText, pattern, exactMatches, prefixMatches,
     end
 end
 
-function SearchSlices(sprite, searchText, pattern, exactMatches, prefixMatches,
-                      fuzzyMatches)
+local function SearchSlices(sprite, searchText, pattern, exactMatches,
+                            prefixMatches, fuzzyMatches)
     for _, slice in ipairs(sprite.slices) do
         local searchResult = {
             name = slice.name,
@@ -91,7 +93,7 @@ function SearchSlices(sprite, searchText, pattern, exactMatches, prefixMatches,
     end
 end
 
-function Search(sprite, searchText, searchAll)
+local function Search(sprite, searchText, searchAll)
     if #searchText == 0 then return {} end
 
     local pattern = GetPattern(searchText):lower()
@@ -190,64 +192,7 @@ function Search(sprite, searchText, searchAll)
     return result
 end
 
-function ScrollToSlice(slice, autoZoom)
-    -- Center the canvas first
-    app.command.ScrollCenter()
-
-    local sliceCenterX = slice.bounds.x + slice.bounds.width / 2
-    local sliceCenterY = slice.bounds.y + slice.bounds.height / 2
-
-    local centerX = slice.sprite.width / 2
-    local centerY = slice.sprite.height / 2
-
-    if sliceCenterX < centerX then
-        app.command.Scroll {
-            direction = "left",
-            units = "zoomed-pixel",
-            quantity = tostring(centerX - sliceCenterX)
-        }
-    else
-        app.command.Scroll {
-            direction = "right",
-            units = "zoomed-pixel",
-            quantity = tostring(sliceCenterX - centerX)
-        }
-    end
-
-    if sliceCenterY < centerY then
-        app.command.Scroll {
-            direction = "up",
-            units = "zoomed-pixel",
-            quantity = tostring(centerY - sliceCenterY)
-        }
-    else
-        app.command.Scroll {
-            direction = "down",
-            units = "zoomed-pixel",
-            quantity = tostring(sliceCenterY - centerY)
-        }
-    end
-
-    if autoZoom then
-        local sizes = {
-            64, 48, 32, 24, 16, 12, 8, 6, 5, 4, 3, 2, 1, 0.5, 0.333, 0.25, 0.20,
-            0.167, 0.125
-        }
-
-        for _, size in ipairs(sizes) do
-            if slice.bounds.width * size < app.window.width * 0.8 and
-                slice.bounds.height * size < app.window.height * 0.6 then
-                app.command.Zoom {
-                    percentage = tostring(size * 100),
-                    focus = "center"
-                }
-                break
-            end
-        end
-    end
-end
-
-function SearchDialog(options)
+local function SearchDialog(options)
     local search = ""
     local results = {}
     local currentPage = 1
