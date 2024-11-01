@@ -70,7 +70,7 @@ function init(plugin)
 
     plugin:newCommand{
         id = "BrushRotateCW",
-        title = "Brush Rotate 90 CW",
+        title = app.apiVersion >= 22 and "Rotate 90 CW" or "Brush Rotate 90 CW",
         group = parentGroup,
         onenabled = CanTransformBrush,
         onclick = function() TransformBrush {rotateCw = true} end
@@ -78,7 +78,8 @@ function init(plugin)
 
     plugin:newCommand{
         id = "BrushRotateCCW",
-        title = "Brush Rotate 90 CCW",
+        title = app.apiVersion >= 22 and "Rotate 90 CCW" or
+            "Brush Rotate 90 CCW",
         group = parentGroup,
         onenabled = CanTransformBrush,
         onclick = function() TransformBrush {rotateCcw = true} end
@@ -86,7 +87,8 @@ function init(plugin)
 
     plugin:newCommand{
         id = "BrushFlipHorizontal",
-        title = "Brush Flip Horizontal",
+        title = app.apiVersion >= 22 and "Flip Horizontal" or
+            "Brush Flip Horizontal",
         group = parentGroup,
         onenabled = CanTransformBrush,
         onclick = function() TransformBrush {flipHorizontal = true} end
@@ -94,7 +96,8 @@ function init(plugin)
 
     plugin:newCommand{
         id = "BrushFlipVertical",
-        title = "Brush Flip Vertical",
+        title = app.apiVersion >= 22 and "Flip Vertical" or
+            "Brush Flip Vertical",
         group = parentGroup,
         onenabled = CanTransformBrush,
         onclick = function() TransformBrush {flipVertical = true} end
