@@ -2,11 +2,11 @@ local commands = dofile("./Commands.lua")
 
 local SCRIPTS_DIRECTORY = app.fs.joinPath(app.fs.userConfigPath, "scripts")
 
-function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
+local function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
 
 local RunScriptPageSize = 6
 
-function CreateFileStructure(directory, prefix, structure)
+local function CreateFileStructure(directory, prefix, structure)
     structure = structure or {}
     prefix = prefix or ""
 
@@ -36,8 +36,9 @@ function CreateFileStructure(directory, prefix, structure)
     return structure
 end
 
-function SearchScriptsRecursively(fileStructure, searchText, pattern, prefix,
-                                  exactMatches, prefixMatches, fuzzyMatches)
+local function SearchScriptsRecursively(fileStructure, searchText, pattern,
+                                        prefix, exactMatches, prefixMatches,
+                                        fuzzyMatches)
     for _, fileEntry in ipairs(fileStructure) do
         if fileEntry.children then
             SearchScriptsRecursively(fileEntry.children, searchText, pattern,
@@ -57,7 +58,7 @@ function SearchScriptsRecursively(fileStructure, searchText, pattern, prefix,
     end
 end
 
-function SearchScripts(searchText, fileStructure)
+local function SearchScripts(searchText, fileStructure)
     local exactMatches, prefixMatches, fuzzyMatches, results = {}, {}, {}, {}
 
     -- Use lowercase for case-insensitive search
@@ -82,7 +83,7 @@ function SearchScripts(searchText, fileStructure)
     return results
 end
 
-function SearchCommands(searchText)
+local function SearchCommands(searchText)
     local exactMatches, prefixMatches, fuzzyMatches, results = {}, {}, {}, {}
 
     -- Use lowercase for case-insensitive search
@@ -112,7 +113,7 @@ function SearchCommands(searchText)
     return results
 end
 
-function RunScriptDialog(options)
+local function RunScriptDialog(options)
     local search = ""
     local dialog
     dialog = Dialog {
