@@ -3,6 +3,7 @@ local commands = dofile("./Commands.lua")
 local SCRIPTS_DIRECTORY = app.fs.joinPath(app.fs.userConfigPath, "scripts")
 
 local function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
+local function Trim(s) return (s:gsub("^%s*(.-)%s*$", "%1")) end
 
 local RunScriptPageSize = 6
 
@@ -96,12 +97,19 @@ local function SearchCommands(searchText)
 
     for _, command in ipairs(commands) do
         local name = command.name:lower()
+        local path = command.path:lower()
 
         if name == searchText then
             table.insert(exactMatches, command)
+        elseif path == searchText then
+            table.insert(exactMatches, command)
         elseif StartsWith(name, searchText) then
             table.insert(prefixMatches, command)
+        elseif StartsWith(path, searchText) then
+            table.insert(prefixMatches, command)
         elseif name:match(pattern) then
+            table.insert(fuzzyMatches, command)
+        elseif path:match(pattern) then
             table.insert(fuzzyMatches, command)
         end
     end
@@ -147,10 +155,16 @@ local function RunScriptDialog(options)
         for i = 1, resultsOnPage do
             local result = results[skip + i]
 
+            local name = result.name
+
+            if dialog.data.showCommandPaths and result.path then
+                name = result.path
+            end
+
             dialog:modify{
                 id = "result-" .. tostring(i),
                 visible = true,
-                text = result.name
+                text = name
             }
         end
 
@@ -174,7 +188,7 @@ local function RunScriptDialog(options)
     end
 
     local searchAll = function()
-        search = dialog.data.search
+        search = Trim(dialog.data.search)
         results = {}
         if #search > 0 then
             if dialog.data.searchCommands then
@@ -266,6 +280,13 @@ local function RunScriptDialog(options)
         selected = options.searchScripts,
         onclick = function() searchAll() end
     } --
+    :separator{text = "Options:"} -- TODO: Disable if commands are not selected as a source
+    :check{
+        id = "showCommandPaths",
+        text = "Show Command Paths",
+        selected = options.searchCommands,
+        onclick = function() searchAll() end
+    } --
     :button{text = "Cancel"}
 
     -- Open and close to initialize the dialog bounds
@@ -286,3 +307,10 @@ local function RunScriptDialog(options)
 end
 
 return RunScriptDialog
+
+-- TODO: Scan the extensions directory for extensions that add menu options
+-- 1. Scan for package.json files
+-- 2. Parse JSON to object and get the path to the extension Lua code
+-- 3. Scan for the menu options (with their parent)
+-- OR
+-- 1. Scan all Lua files for menu options (but only when starting Aseprite, perhaps try using a coroutine to not block the UI?)
