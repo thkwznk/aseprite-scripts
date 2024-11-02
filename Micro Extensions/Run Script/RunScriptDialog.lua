@@ -272,7 +272,14 @@ local function RunScriptDialog(options)
         id = "searchCommands",
         text = "Commands",
         selected = options.searchCommands,
-        onclick = function() searchAll() end
+        onclick = function()
+            searchAll()
+
+            dialog:modify{
+                id = "showCommandPaths",
+                enabled = dialog.data.searchCommands
+            }
+        end
     } --
     :check{
         id = "searchScripts",
@@ -280,11 +287,11 @@ local function RunScriptDialog(options)
         selected = options.searchScripts,
         onclick = function() searchAll() end
     } --
-    :separator{text = "Options:"} -- TODO: Disable if commands are not selected as a source
-    :check{
+    :separator{text = "Options:"}:check{
         id = "showCommandPaths",
         text = "Show Command Paths",
-        selected = options.searchCommands,
+        selected = options.showCommandPaths,
+        enabled = options.searchCommands,
         onclick = function() searchAll() end
     } --
     :button{text = "Cancel"}
