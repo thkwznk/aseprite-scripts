@@ -10,7 +10,7 @@ local SearchResultType = {
 }
 
 local function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
-local function Trim(s) return (s:gsub("^%s*(.-)%s*$", "%1")) end
+local function RemoveSpaces(s) return (s:gsub(" ", "")) end
 
 local function GetPattern(text)
     local pattern = "";
@@ -264,7 +264,7 @@ local function SearchDialog(options)
         id = "search",
         text = search,
         onchange = function()
-            search = Trim(dialog.data.search)
+            search = RemoveSpaces(dialog.data.search)
             results = Search(app.activeSprite, search, dialog.data.searchAll)
 
             RefreshWidgets()
