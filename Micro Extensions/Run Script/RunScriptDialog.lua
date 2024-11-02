@@ -3,7 +3,7 @@ local commands = dofile("./Commands.lua")
 local SCRIPTS_DIRECTORY = app.fs.joinPath(app.fs.userConfigPath, "scripts")
 
 local function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
-local function Trim(s) return (s:gsub("^%s*(.-)%s*$", "%1")) end
+local function RemoveSpaces(s) return (s:gsub(" ", "")) end
 
 local RunScriptPageSize = 6
 
@@ -15,21 +15,20 @@ local function CreateFileStructure(directory, prefix, structure)
         local fullFilename = app.fs.joinPath(directory, filename)
 
         if app.fs.isDirectory(fullFilename) then
-            local entry = {
-                filename = filename,
-                path = fullFilename,
-                children = CreateFileStructure(fullFilename,
-                                               prefix .. filename .. " > ", {})
-            }
-            table.insert(structure, entry)
-
-        elseif app.fs.isFile(fullFilename) and app.fs.fileExtension(filename) ==
-            "lua" then
             table.insert(structure, {
                 filename = filename,
-                name = prefix .. app.fs.fileTitle(filename),
-                title = app.fs.fileTitle(filename),
-                path = fullFilename
+                filepath = fullFilename,
+                children = CreateFileStructure(fullFilename,
+                                               prefix .. filename .. " > ", {})
+            })
+        elseif app.fs.isFile(fullFilename) and app.fs.fileExtension(filename) ==
+            "lua" then
+            local title = app.fs.fileTitle(filename)
+            table.insert(structure, {
+                filename = filename,
+                name = title,
+                path = "File > Scripts > " .. prefix .. title,
+                filepath = fullFilename
             })
         end
     end
@@ -157,9 +156,7 @@ local function RunScriptDialog(options)
 
             local name = result.name
 
-            if dialog.data.showCommandPaths and result.path then
-                name = result.path
-            end
+            if dialog.data.showPaths then name = result.path end
 
             dialog:modify{
                 id = "result-" .. tostring(i),
@@ -188,7 +185,7 @@ local function RunScriptDialog(options)
     end
 
     local searchAll = function()
-        search = Trim(dialog.data.search)
+        search = RemoveSpaces(dialog.data.search)
         results = {}
         if #search > 0 then
             if dialog.data.searchCommands then
@@ -244,7 +241,7 @@ local function RunScriptDialog(options)
                     app.command[result.command](result.parameters)
                 else
                     -- Execute the selected script
-                    dofile(result.path)
+                    dofile(result.filepath)
                 end
 
                 if options.onrun then
@@ -272,14 +269,7 @@ local function RunScriptDialog(options)
         id = "searchCommands",
         text = "Commands",
         selected = options.searchCommands,
-        onclick = function()
-            searchAll()
-
-            dialog:modify{
-                id = "showCommandPaths",
-                enabled = dialog.data.searchCommands
-            }
-        end
+        onclick = function() searchAll() end
     } --
     :check{
         id = "searchScripts",
@@ -288,10 +278,9 @@ local function RunScriptDialog(options)
         onclick = function() searchAll() end
     } --
     :separator{text = "Options:"}:check{
-        id = "showCommandPaths",
-        text = "Show Command Paths",
-        selected = options.showCommandPaths,
-        enabled = options.searchCommands,
+        id = "showPaths",
+        text = "Show paths",
+        selected = options.showPaths,
         onclick = function() searchAll() end
     } --
     :button{text = "Cancel"}
@@ -302,7 +291,7 @@ local function RunScriptDialog(options)
     dialog:modify{id = "noResults", visible = false}
     dialog:close()
 
-    local defaultWidth = 200
+    local defaultWidth = 280
 
     -- Set an initial width of the dialog
     local newBounds = dialog.bounds

@@ -4,7 +4,7 @@ function init(plugin)
     local preferences = plugin.preferences
     preferences.searchCommands = preferences.searchCommands or true
     preferences.searchScripts = preferences.searchScripts or true
-    preferences.showCommandPaths = preferences.showCommandPaths or false
+    preferences.showPaths = preferences.showPaths or false
 
     local lastRunOption
 
@@ -17,18 +17,18 @@ function init(plugin)
                 title = "Run",
                 searchCommands = preferences.searchCommands,
                 searchScripts = preferences.searchScripts,
-                showCommandPaths = preferences.showCommandPaths,
+                showPaths = preferences.showPaths,
                 onrun = function(option, data)
                     preferences.searchCommands = data.searchCommands
                     preferences.searchScripts = data.searchScripts
-                    preferences.showCommandPaths = data.showCommandPaths
+                    preferences.showPaths = data.showPaths
 
                     lastRunOption = option
                 end,
                 onclose = function(data)
                     preferences.searchCommands = data.searchCommands
                     preferences.searchScripts = data.searchScripts
-                    preferences.showCommandPaths = data.showCommandPaths
+                    preferences.showPaths = data.showPaths
                 end
             }
             dialog:show()
@@ -38,9 +38,10 @@ function init(plugin)
     plugin:newCommand{
         id = "RepeatScriptAdvanced",
         title = "Run Last Script",
+        onenabled = function() return lastRunOption ~= nil end,
         onclick = function()
-            if lastRunOption.path and app.fs.isFile(lastRunOption.path) then
-                dofile(lastRunOption.path)
+            if lastRunOption.filepath and app.fs.isFile(lastRunOption.filepath) then
+                dofile(lastRunOption.filepath)
             end
 
             if lastRunOption.command then
