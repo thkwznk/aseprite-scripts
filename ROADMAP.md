@@ -131,10 +131,6 @@ Unreleased:
 
 - [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Brush Transformations options
 
-Update v2.0.0:
-
-- [Feature] Add options to scale the brush
-
 ## Go To
 
 Unreleased:
@@ -142,6 +138,7 @@ Unreleased:
 - [Improvement] Hide the empty results label when the search input is empty
 - [Improvement] Save Go To options between sessions
 - [Fix] Add a missing label for the options separator
+- [Fix] Ignore leading and trailing spaces in the search input  
 
 ## Run
 
