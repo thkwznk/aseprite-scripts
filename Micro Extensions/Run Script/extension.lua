@@ -2,8 +2,10 @@ local RunScriptDialog = dofile("./RunScriptDialog.lua")
 
 function init(plugin)
     local preferences = plugin.preferences
-    preferences.searchCommands = preferences.searchCommands or true
-    preferences.searchScripts = preferences.searchScripts or true
+    preferences.searchCommands = preferences.searchCommands == nil and true or
+                                     preferences.searchCommands
+    preferences.searchScripts = preferences.searchScripts == nil and true or
+                                    preferences.searchScripts
     preferences.showPaths = preferences.showPaths or false
 
     local lastRunOption

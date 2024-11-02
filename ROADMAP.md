@@ -129,7 +129,7 @@ Update v3.0.0:
 
 Unreleased:
 
-- [Improvement] From Aseprite v1.3-rc2 - add a new menu group for the Brush Transformations options
+- [Improvement] Add a new menu group (from Aseprite v1.3-rc2) for the Brush Transformations options
 
 ## Go To
 
@@ -144,6 +144,5 @@ Unreleased:
 
 Unreleased:
 
-- [Feature] Allow for searching scripts through a new menu option under _File > Run..._
+- [Feature] Add a new option under _File > Run..._ that allows for searching and running scripts and commands 
 - [Feature] Add a keyboard shortcut for running the last searched script or command
-- [Feature] Allow for searching commands
