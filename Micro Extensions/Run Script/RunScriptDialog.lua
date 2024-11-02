@@ -155,13 +155,16 @@ local function RunScriptDialog(options)
             local result = results[skip + i]
 
             local name = result.name
-
             if dialog.data.showPaths then name = result.path end
+
+            local enabled = true
+            if result.onenable then enabled = result.onenable() end
 
             dialog:modify{
                 id = "result-" .. tostring(i),
                 visible = true,
-                text = name
+                text = name,
+                enabled = enabled
             }
         end
 
@@ -304,9 +307,4 @@ end
 
 return RunScriptDialog
 
--- TODO: Scan the extensions directory for extensions that add menu options
--- 1. Scan for package.json files
--- 2. Parse JSON to object and get the path to the extension Lua code
--- 3. Scan for the menu options (with their parent)
--- OR
--- 1. Scan all Lua files for menu options (but only when starting Aseprite, perhaps try using a coroutine to not block the UI?)
+-- TODO: Add a simple map with commands from extensions

@@ -44,7 +44,8 @@ function init(plugin)
                 dofile(lastRunOption.filepath)
             end
 
-            if lastRunOption.command then
+            if lastRunOption.command and
+                (lastRunOption.onenable == nil or lastRunOption.onenable()) then
                 app.command[lastRunOption.command](lastRunOption.parameters)
             end
         end
