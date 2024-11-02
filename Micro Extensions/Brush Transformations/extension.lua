@@ -63,7 +63,7 @@ function init(plugin)
 
         plugin:newMenuGroup{
             id = parentGroup,
-            title = "Brush Transformations",
+            title = "Brush",
             group = "edit_transform"
         }
     end
