@@ -58,6 +58,17 @@ local function SearchScriptsRecursively(fileStructure, searchText, pattern,
     end
 end
 
+local function CopyToResults(matches, results, showDisabled)
+    for _, match in ipairs(matches) do
+        match.enabled = true
+        if match.onenable ~= nil then match.enabled = match.onenable() end
+
+        if showDisabled or match.enabled then
+            table.insert(results, match)
+        end
+    end
+end
+
 local function SearchScripts(searchText, fileStructure)
     local exactMatches, prefixMatches, fuzzyMatches, results = {}, {}, {}, {}
 
@@ -76,14 +87,14 @@ local function SearchScripts(searchText, fileStructure)
     table.sort(prefixMatches, function(a, b) return a.filename < b.filename end)
     table.sort(fuzzyMatches, function(a, b) return a.filename < b.filename end)
 
-    for _, match in ipairs(exactMatches) do table.insert(results, match) end
-    for _, match in ipairs(prefixMatches) do table.insert(results, match) end
-    for _, match in ipairs(fuzzyMatches) do table.insert(results, match) end
+    CopyToResults(exactMatches, results)
+    CopyToResults(prefixMatches, results)
+    CopyToResults(fuzzyMatches, results)
 
     return results
 end
 
-local function SearchCommands(searchText)
+local function SearchCommands(searchText, showDisabled)
     local exactMatches, prefixMatches, fuzzyMatches, results = {}, {}, {}, {}
 
     -- Use lowercase for case-insensitive search
@@ -113,9 +124,9 @@ local function SearchCommands(searchText)
         end
     end
 
-    for _, match in ipairs(exactMatches) do table.insert(results, match) end
-    for _, match in ipairs(prefixMatches) do table.insert(results, match) end
-    for _, match in ipairs(fuzzyMatches) do table.insert(results, match) end
+    CopyToResults(exactMatches, results, showDisabled)
+    CopyToResults(prefixMatches, results, showDisabled)
+    CopyToResults(fuzzyMatches, results, showDisabled)
 
     return results
 end
@@ -134,7 +145,7 @@ local function RunScriptDialog(options)
 
     local fileStructure = CreateFileStructure(SCRIPTS_DIRECTORY)
 
-    local refreshWidgets = function()
+    local function RefreshWidgets()
         local numberOfPages = math.max(math.ceil(#results / RunScriptPageSize),
                                        1)
         currentPage = math.min(currentPage or 1, numberOfPages)
@@ -157,14 +168,11 @@ local function RunScriptDialog(options)
             local name = result.name
             if dialog.data.showPaths then name = result.path end
 
-            local enabled = true
-            if result.onenable then enabled = result.onenable() end
-
             dialog:modify{
                 id = "result-" .. tostring(i),
                 visible = true,
                 text = name,
-                enabled = enabled
+                enabled = result.enabled
             }
         end
 
@@ -187,12 +195,14 @@ local function RunScriptDialog(options)
         }
     end
 
-    local searchAll = function()
+    local function SearchAll()
         search = RemoveSpaces(dialog.data.search)
         results = {}
         if #search > 0 then
             if dialog.data.searchCommands then
-                for _, command in ipairs(SearchCommands(search)) do
+                for _, command in ipairs(
+                                      SearchCommands(search,
+                                                     dialog.data.showDisabled)) do
                     table.insert(results, command)
                 end
             end
@@ -204,12 +214,12 @@ local function RunScriptDialog(options)
             end
         end
 
-        refreshWidgets()
+        RefreshWidgets()
     end
 
     dialog --
     :label{text = "Search a command or script by name:"} --
-    :entry{id = "search", text = search, onchange = function() searchAll() end} --
+    :entry{id = "search", text = search, onchange = function() SearchAll() end} --
     :separator{id = "resultsSeparator", text = "Results:"} --
     :label{id = "noResults", text = "No results"} --
     :button{
@@ -219,7 +229,7 @@ local function RunScriptDialog(options)
         enabled = false,
         onclick = function()
             currentPage = currentPage - 1
-            refreshWidgets()
+            RefreshWidgets()
             dialog:modify{
                 id = "result-" .. tostring(RunScriptPageSize),
                 focus = true
@@ -263,7 +273,7 @@ local function RunScriptDialog(options)
         enabled = false,
         onclick = function()
             currentPage = currentPage + 1
-            refreshWidgets()
+            RefreshWidgets()
             dialog:modify{id = "result-1", focus = true}
         end
     } --
@@ -272,19 +282,26 @@ local function RunScriptDialog(options)
         id = "searchCommands",
         text = "Commands",
         selected = options.searchCommands,
-        onclick = function() searchAll() end
+        onclick = function() SearchAll() end
     } --
     :check{
         id = "searchScripts",
         text = "Scripts",
         selected = options.searchScripts,
-        onclick = function() searchAll() end
+        onclick = function() SearchAll() end
     } --
-    :separator{text = "Options:"}:check{
+    :separator{text = "Options:"} -- 
+    :check{
         id = "showPaths",
         text = "Show paths",
         selected = options.showPaths,
-        onclick = function() searchAll() end
+        onclick = function() SearchAll() end
+    } --
+    :check{
+        id = "showDisabled",
+        text = "Show disabled",
+        selected = options.showDisabled,
+        onclick = function() SearchAll() end
     } --
     :button{text = "Cancel"}
 
@@ -306,5 +323,3 @@ local function RunScriptDialog(options)
 end
 
 return RunScriptDialog
-
--- TODO: Add a simple map with commands from extensions

@@ -2,11 +2,19 @@ local RunScriptDialog = dofile("./RunScriptDialog.lua")
 
 function init(plugin)
     local preferences = plugin.preferences
-    preferences.searchCommands = preferences.searchCommands == nil and true or
-                                     preferences.searchCommands
-    preferences.searchScripts = preferences.searchScripts == nil and true or
-                                    preferences.searchScripts
-    preferences.showPaths = preferences.showPaths or false
+
+    local function CopyPrefernces(data)
+        -- "data" can be either plugin.preferences or dialog.data
+        preferences.searchCommands = data.searchCommands == nil and true or
+                                         data.searchCommands
+        preferences.searchScripts = data.searchScripts == nil and true or
+                                        data.searchScripts
+        preferences.showPaths = data.showPaths or false
+        preferences.showDisabled = data.showDisabled == nil and true or
+                                       data.showDisabled
+    end
+
+    CopyPrefernces(preferences)
 
     local lastRunOption
 
@@ -20,18 +28,12 @@ function init(plugin)
                 searchCommands = preferences.searchCommands,
                 searchScripts = preferences.searchScripts,
                 showPaths = preferences.showPaths,
+                showDisabled = preferences.showDisabled,
                 onrun = function(option, data)
-                    preferences.searchCommands = data.searchCommands
-                    preferences.searchScripts = data.searchScripts
-                    preferences.showPaths = data.showPaths
-
+                    CopyPrefernces(data)
                     lastRunOption = option
                 end,
-                onclose = function(data)
-                    preferences.searchCommands = data.searchCommands
-                    preferences.searchScripts = data.searchScripts
-                    preferences.showPaths = data.showPaths
-                end
+                onclose = function(data) CopyPrefernces(data) end
             }
             dialog:show()
         end
