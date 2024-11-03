@@ -99,14 +99,14 @@ Update v2.0.0:
 Unreleased:
 
 - [Improvement] Rework dialog to use nested menus
+- [Feature] Add separate keypad controls dialog with buttons for switching layers up/down, changing their visibility, locking them and changing frames
 
 Update v2.0.0:
 
 - [Fix] After changing displays a dialog can be stuck out of screen
 - [Fix] Opening a submenu too close to the bottom of the screen the subdialog is clipped
-- [Improvement] Add sliders to resize color in the palette and thumbnails on the timeline
 - [Improvement] Add a button to make a new brush from selection
-- [Improvement] Add buttons for switching layers up/down, changing their visibility, locking them, and selecting layer content
+- [Improvement] Add a button for selecting layer content
 - [Improvement] Deselect? Invert selection?
 - [Fix] Clear can delete a layer, it shouldn't
 - [Change] Remove the Command button

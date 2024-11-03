@@ -1,6 +1,7 @@
 KeyboardDialog = dofile("./KeyboardDialog.lua")
 MenuEntryType = dofile("./NestedMenuEntryType.lua")
 NestedMenuDialog = dofile("./NestedMenuDialog.lua")
+local KeypadDialog = dofile("./KeypadDialog.lua")
 
 local gridSubmenu = {
     {
@@ -106,6 +107,13 @@ local controlsDialogConfig = {
         onclick = function()
             KeyboardDialog:Create()
             KeyboardDialog:Show()
+        end
+    }, {type = MenuEntryType.Separator}, {
+        text = "Keypad",
+        type = MenuEntryType.Action,
+        onclick = function()
+            local dialog = KeypadDialog {title = "Keypad"}
+            dialog:show{wait = false}
         end
     }
 }
