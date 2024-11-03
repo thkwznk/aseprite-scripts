@@ -125,12 +125,6 @@ Update v3.0.0:
 
 - [Improvement] Rebuild the *Analyze Colors* using the canvas widget
 
-## Brush Transformations
-
-Unreleased:
-
-- [Improvement] Add a new menu group (from Aseprite v1.3-rc2) for the Brush Transformations options
-
 ## Go To
 
 Unreleased:
