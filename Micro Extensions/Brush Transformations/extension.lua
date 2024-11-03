@@ -85,6 +85,8 @@ function init(plugin)
         onclick = function() TransformBrush {rotateCcw = true} end
     }
 
+    if app.apiVersion >= 22 then plugin:newMenuSeparator{group = parentGroup} end
+
     plugin:newCommand{
         id = "BrushFlipHorizontal",
         title = app.apiVersion >= 22 and "Flip Horizontal" or
