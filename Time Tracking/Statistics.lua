@@ -92,20 +92,6 @@ function Statistics:GetSessionData(filename)
     }
 end
 
-function Statistics:GetFilenames()
-    local filenames = {""}
-
-    for _, dataEntry in pairs(self.dataStorage) do
-        if type(dataEntry) == "table" then
-            table.insert(filenames, dataEntry.filename)
-        end
-    end
-
-    table.sort(filenames)
-
-    return filenames
-end
-
 function Statistics:_GetUnsavedTime(spriteData, time)
     -- If there's is no start time - sprite is closed
     if not spriteData.startTime then return 0 end

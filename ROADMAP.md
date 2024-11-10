@@ -4,21 +4,22 @@
 
 Unreleased:
 
-- ...
+- [Improvement] Live update the Sprite Statistics dialog window
 
-Update v1.1.0:
+Update v2.0.0:
 
 - [Feature] Milestone trackers
+- [Improvement] New UI - use tabs to change between Session/Today/Total (remove Basic/Advanced view)
 
-Update v1.2.0:
+Update v2.1.0:
 
 - [Feature] Stopwatch
 
-Update v1.3.0:
+Update v2.2.0:
 
 - [Improvement] Add a mechanism that flushes time data into a temp file that is not the "_pref" file, in case Aseprite crashes
 
-Update v2.0.0:
+Update v2.3.0:
 
 - [Feature] Add a Graph data view with a canvas render
 

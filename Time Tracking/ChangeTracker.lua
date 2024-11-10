@@ -24,16 +24,6 @@ end
 
 function ChangeTracker:Stop() app.events:off(self.siteChangeListener) end
 
-function ChangeTracker:Pause()
-    -- Close the current sprite
-    self:CloseCurrentSprite()
-end
-
-function ChangeTracker:Unpause()
-    -- Simulate a site change
-    self:OnSiteChange()
-end
-
 function ChangeTracker:OnSiteChange()
     local sprite = app.activeSprite
 

@@ -14,8 +14,6 @@ function init(plugin)
         end
     }
 
-    local isDebug = false
-
     -- Initialize the view
     plugin.preferences.view = plugin.preferences.view or View.Basic
 
@@ -23,20 +21,9 @@ function init(plugin)
         id = "SpriteStatistics",
         title = "Statistics...",
         group = "sprite_color",
-        onenabled = function() return app.activeSprite or isDebug end,
         onclick = function()
-            if not isDebug then ChangeTracker:Pause() end
-
-            local dialog = StatisticsDialog {
-                isDebug = isDebug,
-                preferences = plugin.preferences,
-                onclose = function()
-                    if not isDebug then
-                        ChangeTracker:Unpause()
-                    end
-                end
-            }
-            dialog:show{wait = not isDebug}
+            local dialog = StatisticsDialog {preferences = plugin.preferences}
+            dialog:show{wait = false}
         end
     }
 end

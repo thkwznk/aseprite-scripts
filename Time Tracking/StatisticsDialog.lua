@@ -1,7 +1,8 @@
 local Statistics = dofile("./Statistics.lua")
 local View = dofile("./View.lua")
+local DefaultData = dofile("./DefaultData.lua")
 
-local ParseTime = function(time)
+local function ParseTime(time)
     local seconds = time % 60
     local hours = math.floor(time / 3600)
     local minutes = math.floor((time - (hours * 3600)) / 60)
@@ -9,16 +10,30 @@ local ParseTime = function(time)
     return string.format("%02d:%02d:%02d", hours, minutes, seconds)
 end
 
-return function(options)
-    local sprite = app.activeSprite
-    local currentFilename = sprite and sprite.filename or ""
+local function SumData(a, b)
+    return {
+        totalTime = a.totalTime + b.totalTime,
+        changeTime = a.changeTime + b.changeTime,
+        changes = a.changes + b.changes,
+        saves = a.saves + b.saves
+    }
+end
 
+return function(options)
+    local timer, lastFilename, totalData, todayData
     Statistics:Init(options.preferences)
-    local filenames = Statistics:GetFilenames()
+
+    local function GetDialogTitle(sprite)
+        return "Sprite Statistics: " ..
+                   (sprite and app.fs.fileName(sprite.filename) or "None")
+    end
 
     local dialog = Dialog {
-        title = "Sprite Statistics",
-        onclose = options.onclose
+        title = GetDialogTitle(),
+        onclose = function()
+            if options.onclose then options.onclose() end
+            timer:stop()
+        end
     }
 
     local updateSection = function(id, data, prefix, suffix)
@@ -49,15 +64,33 @@ return function(options)
         } --
     end
 
-    local updateDialog = function(filename)
-        dialog --
-        :modify{id = "name", text = app.fs.fileName(filename)} --
-        :modify{id = "directory", text = app.fs.filePath(filename)} --
-        :modify{id = "refreshButton", enabled = filename and #filename > 0} --
+    local updateDialog = function(sprite)
+        if sprite == nil then
+            dialog:modify{title = GetDialogTitle(sprite)}
 
-        updateSection("total", Statistics:GetTotalData(filename))
-        updateSection("today", Statistics:GetTodayData(filename))
-        updateSection("session", Statistics:GetSessionData(filename), "(", ")")
+            local data = DefaultData()
+            updateSection("total", data)
+            updateSection("today", data)
+            updateSection("session", data, "(", ")")
+            return
+        end
+
+        local filename = sprite.filename
+
+        if filename ~= lastFilename then
+            dialog:modify{title = GetDialogTitle(sprite)}
+
+            totalData = Statistics:GetTotalData(filename)
+            todayData = Statistics:GetTodayData(filename)
+        end
+
+        local sessionData = Statistics:GetSessionData(filename)
+
+        updateSection("total", SumData(totalData, sessionData))
+        updateSection("today", SumData(todayData, sessionData))
+        updateSection("session", sessionData, "(", ")")
+
+        lastFilename = filename
     end
 
     local updateView = function(view)
@@ -72,14 +105,12 @@ return function(options)
         :modify{id = "session-sessions", visible = view == View.Detailed} --
     end
 
+    timer = Timer {
+        interval = 0.5,
+        ontick = function() updateDialog(app.activeSprite) end
+    }
+
     dialog --
-    :combobox{
-        id = "selectedFilename",
-        options = filenames,
-        option = currentFilename,
-        onchange = function() updateDialog(dialog.data.selectedFilename) end,
-        visible = options.isDebug
-    } --
     :radio{
         id = "basic-view",
         label = "View:",
@@ -93,32 +124,17 @@ return function(options)
         selected = options.preferences.view == View.Detailed,
         onclick = function() updateView(View.Detailed) end
     } --
-    :separator{text = "File:"} --
-    :label{id = "name", label = "Name:"} --
-    :label{id = "directory", label = "Directory:"} --
     :separator{text = "Total:"} --
     :label{id = "total-time", label = "Time:"} --
-    :label{
-        id = "total-change-time",
-        label = "Change Time:",
-        visible = options.isDebug
-    } --
+    :label{id = "total-change-time", label = "Change Time:"} --
     :label{id = "total-changes", label = "Changes:"} --
     :label{id = "total-saves", label = "Saves:"} --
     :label{id = "total-sessions", label = "Sessions:"} --
     :separator{text = "Today (Current Session):"} --
     :label{id = "today-time", label = "Time:"} --
     :label{id = "session-time", enabled = false} --
-    :label{
-        id = "today-change-time",
-        label = "Change Time:",
-        visible = options.isDebug
-    } --
-    :label{
-        id = "session-change-time",
-        enabled = false,
-        visible = options.isDebug
-    } --
+    :label{id = "today-change-time", label = "Change Time:"} --
+    :label{id = "session-change-time", enabled = false} --
     :label{id = "today-changes", label = "Changes:"} --
     :label{id = "session-changes", enabled = false} --
     :label{id = "today-saves", label = "Saves:"} --
@@ -126,18 +142,13 @@ return function(options)
     :label{id = "today-sessions", label = "Sessions:"} --
     :label{id = "session-sessions", enabled = false} --
     :separator() --
-    :button{
-        id = "refreshButton",
-        text = "Refresh",
-        enabled = false,
-        visible = options.isDebug,
-        onclick = function() updateDialog(dialog.data.selectedFilename) end
-    } --
     :button{text = "Close", focus = true}
 
     -- Initialize dialog for the current sprite
-    updateDialog(currentFilename)
+    updateDialog(app.activeSprite)
     updateView(options.preferences.view)
+
+    timer:start()
 
     return dialog
 end
