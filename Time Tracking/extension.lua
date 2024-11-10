@@ -40,7 +40,7 @@ function init(plugin)
 
     plugin:newCommand{
         id = "WorkTime",
-        title = "Work Time",
+        title = "Sprite Work Time",
         group = "view_controls",
         onclick = function()
             local dialog = TimeDialog {
