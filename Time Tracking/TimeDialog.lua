@@ -1,5 +1,6 @@
 local Statistics = dofile("./Statistics.lua")
 local DefaultData = dofile("./DefaultData.lua")
+local View = dofile("./View.lua")
 
 local function ParseTime(time)
     local seconds = time % 60
@@ -59,6 +60,14 @@ return function(options)
         if filename ~= lastFilename then
             totalData = Statistics:GetTotalData(filename)
             todayData = Statistics:GetTodayData(filename)
+
+            if totalData.totalDays <= 1 then
+                dialog:modify{id = "total-tab", enabled = false}
+
+                if dialog.data.tab == View.Total then
+                    dialog:modify{id = "tab", selected = View.Today}
+                end
+            end
         end
 
         local sessionData = Statistics:GetSessionData(filename)
@@ -126,4 +135,3 @@ return function(options)
 end
 
 -- TODO: Add an option to minimize the dialog
--- TODO: Hide either "Today" or "Total" if there's no data from multiple days

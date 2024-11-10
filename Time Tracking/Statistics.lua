@@ -15,6 +15,7 @@ function Statistics:GetTotalData(filename)
     if not data then return DefaultData() end
 
     local totalTime, changeTime, changes, saves, sessions = 0, 0, 0, 0, 0
+    local totalDays = 0
 
     for _, yearData in pairs(data.details) do
         for _, monthData in pairs(yearData) do
@@ -27,6 +28,7 @@ function Statistics:GetTotalData(filename)
                 end
 
                 sessions = sessions + #dayData
+                totalDays = totalDays + 1
             end
         end
     end
@@ -38,7 +40,8 @@ function Statistics:GetTotalData(filename)
         changeTime = changeTime,
         changes = changes,
         saves = saves,
-        sessions = sessions
+        sessions = sessions,
+        totalDays = totalDays
     }
 end
 
