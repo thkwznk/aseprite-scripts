@@ -1,39 +1,25 @@
-local sha1 = dofile("./sha1.lua")
+local Hash = dofile("./Hash.lua")
 local PreferencesConverter = dofile("./PreferencesConverter.lua")
-
--- TODO: Integrate hashing into the new SHA1 class/method
-
-local hash, cached, hashCache = nil, nil, {}
-
-local GetHash = function(text)
-    cached = hashCache[text]
-    if cached then return cached end
-
-    -- Add a "_" as the first character to always make it a valid table key
-    hash = "_" .. sha1.hex(text)
-    hashCache[text] = hash
-
-    return hash
-end
 
 local DefaultData = function()
     return {totalTime = 0, changeTime = 0, changes = 0, saves = 0}
 end
 
 local TimeTracker = {
-    GetClock = os.clock,
-    GetTime = os.time,
     dataStorage = {},
     currentSprite = nil,
     lastSpriteId = nil,
+
     -- Event Callbacks
     siteChangeCallback = nil,
     spriteChangeCallback = nil,
     filenameChangeCallback = nil
 }
 
-function TimeTracker:GetDate()
-    local time = self.GetTime()
+function TimeTracker:Now() return os.clock() end
+
+function TimeTracker:Date()
+    local time = os.time()
     return os.date("*t", time)
 end
 
@@ -112,14 +98,14 @@ function TimeTracker:IsSpriteOpen(filename)
 end
 
 function TimeTracker:OnSpriteChange()
-    local id = GetHash(self.currentSprite.filename)
-    local now = self.GetClock()
+    local id = Hash(self.currentSprite.filename)
+    local now = self:Now()
 
     self:UpdateSpriteData(id, now)
 end
 
 function TimeTracker:OnSpriteFilenameChange()
-    local id = GetHash(self.currentSprite.filename)
+    local id = Hash(self.currentSprite.filename)
     local lastData = self.dataStorage[self.lastSpriteId]
 
     local lastSpriteSessionData = lastData.currentSession
@@ -128,8 +114,8 @@ function TimeTracker:OnSpriteFilenameChange()
     -- If the current and last IDs are the same it's a regular file save
     if id == self.lastSpriteId then return end
 
-    local now = self.GetClock()
-    local today = self:GetDate()
+    local now = self:Now()
+    local today = self:Date()
 
     local detailsCopy = self:_Deepcopy(lastData.details)
     local todayCopy = self:GetDetailsForDate(detailsCopy, today)
@@ -154,7 +140,7 @@ end
 function TimeTracker:CloseCurrentSprite(time)
     if self.currentSprite == nil then return end
 
-    local id = GetHash(self.currentSprite.filename)
+    local id = Hash(self.currentSprite.filename)
 
     self:CloseSpriteData(id, time)
 
@@ -175,7 +161,7 @@ function TimeTracker:OnSiteChange()
     -- If sprite didn't change, do nothing
     if sprite == self.currentSprite then return end
 
-    local now = self.GetClock()
+    local now = self:Now()
 
     -- Save the total time and close the current sprite
     if self.currentSprite ~= nil then self:CloseCurrentSprite(now) end
@@ -186,7 +172,7 @@ function TimeTracker:OnSiteChange()
 
     -- Open a new sprite
     if self.currentSprite ~= nil then
-        local id = GetHash(self.currentSprite.filename)
+        local id = Hash(self.currentSprite.filename)
         self.lastSpriteId = id
 
         -- Create a new entry if there is none OR if the sprite is only a temporary file that is not already open (e.g. Sprite-001, Sprite-002...)
@@ -204,7 +190,7 @@ function TimeTracker:OnSiteChange()
         data.lastUpdateTime = nil
 
         if not data.currentSession then
-            local today = self:GetDate()
+            local today = self:Date()
             local todayData = self:GetDetailsForDate(data.details, today)
 
             local newSession = DefaultData()
@@ -226,7 +212,7 @@ function TimeTracker:OnSiteChange()
 end
 
 function TimeTracker:Pause()
-    local now = self.GetClock()
+    local now = self:Now()
 
     self:CloseCurrentSprite(now)
 end
@@ -263,7 +249,7 @@ end
 function TimeTracker:GetTotalData(filename)
     if not filename then return DefaultData() end
 
-    local spriteId = GetHash(filename)
+    local spriteId = Hash(filename)
     local data = self.dataStorage[spriteId]
 
     if not data then return DefaultData() end
@@ -285,7 +271,7 @@ function TimeTracker:GetTotalData(filename)
         end
     end
 
-    local now = self.GetClock()
+    local now = self:Now()
 
     return {
         totalTime = totalTime + self:_GetUnsavedTime(data, now),
@@ -299,8 +285,8 @@ end
 function TimeTracker:GetTodayData(filename)
     if not filename then return DefaultData() end
 
-    local date = self:GetDate()
-    local spriteId = GetHash(filename)
+    local date = self:Date()
+    local spriteId = Hash(filename)
     local data = self.dataStorage[spriteId]
 
     if not data then return DefaultData() end
@@ -316,7 +302,7 @@ function TimeTracker:GetTodayData(filename)
         saves = saves + sessionData.saves
     end
 
-    local now = self.GetClock()
+    local now = self:Now()
 
     return {
         totalTime = totalTime + self:_GetUnsavedTime(data, now),
@@ -330,12 +316,12 @@ end
 function TimeTracker:GetSessionData(filename)
     if not filename then return DefaultData() end
 
-    local spriteId = GetHash(filename)
+    local spriteId = Hash(filename)
     local data = self.dataStorage[spriteId]
 
     if not data or not data.currentSession then return DefaultData() end
 
-    local now = self.GetClock()
+    local now = self:Now()
 
     return {
         totalTime = data.currentSession.totalTime +
