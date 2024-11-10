@@ -43,7 +43,11 @@ function init(plugin)
         title = "Work Time",
         group = "view_controls",
         onclick = function()
-            local dialog = TimeDialog {preferences = plugin.preferences}
+            local dialog = TimeDialog {
+                preferences = plugin.preferences,
+                onpause = function() ChangeTracker:Stop() end,
+                onresume = function() ChangeTracker:Resume() end
+            }
             dialog:show{wait = false}
         end
     }

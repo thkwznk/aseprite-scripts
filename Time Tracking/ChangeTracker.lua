@@ -22,7 +22,17 @@ function ChangeTracker:Start(options)
                                             function() self:OnSiteChange() end)
 end
 
-function ChangeTracker:Stop() app.events:off(self.siteChangeListener) end
+function ChangeTracker:Stop()
+    self:CloseCurrentSprite()
+    app.events:off(self.siteChangeListener)
+end
+
+function ChangeTracker:Resume()
+    self.siteChangeListener = app.events:on("sitechange",
+                                            function() self:OnSiteChange() end)
+
+    self:OnSiteChange()
+end
 
 function ChangeTracker:OnSiteChange()
     local sprite = app.activeSprite

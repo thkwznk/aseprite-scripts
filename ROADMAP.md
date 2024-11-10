@@ -4,12 +4,11 @@
 
 Unreleased:
 
-- [Feature] Work Time
+- [Feature] Sprite Work Time
 
 Update v2.0.0:
 
 - [Feature] Milestone trackers
-- [Improvement] New UI - use tabs to change between Session/Today/Total (remove Basic/Advanced view)
 
 Update v2.1.0:
 

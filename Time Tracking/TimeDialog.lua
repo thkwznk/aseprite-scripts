@@ -20,13 +20,12 @@ local function SumData(a, b)
 end
 
 return function(options)
+    local isRunning = true
     local timer, lastFilename, totalData, todayData
     Statistics:Init(options.preferences)
 
-    -- TODO: Update dialog title
-
     local dialog = Dialog {
-        title = "Work Time",
+        title = "Sprite Work Time",
         onclose = function()
             if options.onclose then options.onclose() end
             timer:stop()
@@ -97,6 +96,24 @@ return function(options)
         id = "tab",
         selected = options.preferences.view,
         onchange = function() options.preferences.view = dialog.data.tab end
+    } --
+    :button{
+        id = "start-stop",
+        text = "Stop",
+        onclick = function()
+            if isRunning then
+                options.onpause()
+            else
+                options.onresume()
+            end
+
+            isRunning = not isRunning
+
+            dialog:modify{
+                id = "start-stop",
+                text = isRunning and "Stop" or "Start"
+            }
+        end
     }
 
     timer = Timer {
@@ -108,4 +125,5 @@ return function(options)
     return dialog
 end
 
--- TODO: Add a counter of the overall session time (Aseprite session) + option to fully pause
+-- TODO: Add an option to minimize the dialog
+-- TODO: Hide either "Today" or "Total" if there's no data from multiple days
