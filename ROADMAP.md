@@ -4,7 +4,7 @@
 
 Unreleased:
 
-- [Improvement] Live update the Sprite Statistics dialog window
+- [Feature] Work Time
 
 Update v2.0.0:
 
