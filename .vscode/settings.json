@@ -20,6 +20,7 @@
         "Align",
         "init",
         "exit",
-        "Size"
+        "Size",
+        "json"
     ]
 }
