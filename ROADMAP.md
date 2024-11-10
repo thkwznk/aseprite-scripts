@@ -6,10 +6,21 @@ Unreleased:
 
 - ...
 
-Update v1.0.3.
+Update v1.1.0:
+
 - [Feature] Milestone trackers
-- [Feature] Actual Timer
-- [Improvement] Remember data using the new `properties`
+
+Update v1.2.0:
+
+- [Feature] Stopwatch
+
+Update v1.3.0:
+
+- [Improvement] Add a mechanism that flushes time data into a temp file that is not the "_pref" file, in case Aseprite crashes
+
+Update v2.0.0:
+
+- [Feature] Add a Graph data view with a canvas render
 
 ## Theme Preferences
 
