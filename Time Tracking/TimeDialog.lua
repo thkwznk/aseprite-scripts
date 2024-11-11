@@ -1,5 +1,5 @@
 local Statistics = dofile("./Statistics.lua")
-local DefaultData = dofile("./DefaultData.lua")
+local Tracking = dofile("./Tracking.lua")
 local View = dofile("./View.lua")
 
 local function ParseTime(time)
@@ -16,7 +16,7 @@ local function SumData(a, b)
         changeTime = a.changeTime + b.changeTime,
         changes = a.changes + b.changes,
         saves = a.saves + b.saves,
-        sessions = (a.sessions or 0) + (b.sessions or 0)
+        sessions = (a.sessions or 0) + (b.sessions or 0) + 1 -- Increment the number of sessions to account for the current one
     }
 end
 
@@ -48,7 +48,8 @@ return function(options)
 
     local updateDialog = function(sprite)
         if sprite == nil then
-            local data = DefaultData()
+            lastFilename = nil
+            local data = Tracking.Data()
             updateSection("total", data)
             updateSection("today", data)
             updateSection("session", data)
@@ -58,8 +59,8 @@ return function(options)
         local filename = sprite.filename
 
         if filename ~= lastFilename then
-            totalData = Statistics:GetTotalData(filename)
-            todayData = Statistics:GetTodayData(filename)
+            totalData = Statistics:GetTotalData(filename, true)
+            todayData = Statistics:GetTodayData(filename, true)
 
             if totalData.totalDays <= 1 then
                 dialog:modify{id = "total-tab", enabled = false}
@@ -135,3 +136,6 @@ return function(options)
 end
 
 -- TODO: Add an option to minimize the dialog
+
+-- TODO: Write test scenarios and test the extension thoroughly, there are bugs in how time is counted currently - session doesn't seem to be added when closing a sprite
+-- TODO: Report a bug where hiding a tab renders them incorrectly?

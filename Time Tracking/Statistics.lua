@@ -1,18 +1,19 @@
 local Hash = dofile("./Hash.lua")
-local DefaultData = dofile("./DefaultData.lua")
+local Tracking = dofile("./Tracking.lua")
 local Time = dofile("./Time.lua")
 
 local Statistics = {dataStorage = nil}
 
 function Statistics:Init(pluginPreferences) self.dataStorage = pluginPreferences end
 
-function Statistics:GetTotalData(filename)
-    if not filename then return DefaultData() end
+function Statistics:GetTotalData(filename, skipUnsavedTime)
+    if not filename then return Tracking.Data() end
 
+    local now = Time.Now()
     local spriteId = Hash(filename)
     local data = self.dataStorage[spriteId]
 
-    if not data then return DefaultData() end
+    if not data then return Tracking.Data() end
 
     local totalTime, changeTime, changes, saves, sessions = 0, 0, 0, 0, 0
     local totalDays = 0
@@ -33,10 +34,24 @@ function Statistics:GetTotalData(filename)
         end
     end
 
-    local now = Time.Now()
+    local unsavedTime = 0
+    if not skipUnsavedTime then
+        local currentSession = data.currentSession
+        if currentSession then
+            totalTime = totalTime + currentSession.totalTime
+            changeTime = changeTime + currentSession.changeTime
+            changes = changes + currentSession.changes
+            saves = saves + currentSession.saves
+            sessions = sessions + 1
+
+            -- TODO: What if it's the first session of the day an only one day before that this file was worked on? How to handle the totalDays in this case?
+        end
+
+        unsavedTime = self:_GetUnsavedTime(data, now)
+    end
 
     return {
-        totalTime = totalTime + self:_GetUnsavedTime(data, now),
+        totalTime = totalTime + unsavedTime,
         changeTime = changeTime,
         changes = changes,
         saves = saves,
@@ -45,16 +60,17 @@ function Statistics:GetTotalData(filename)
     }
 end
 
-function Statistics:GetTodayData(filename)
-    if not filename then return DefaultData() end
+function Statistics:GetTodayData(filename, skipUnsavedTime)
+    if not filename then return Tracking.Data() end
 
+    local now = Time.Now()
     local date = Time.Date()
     local spriteId = Hash(filename)
     local data = self.dataStorage[spriteId]
 
-    if not data then return DefaultData() end
+    if not data then return Tracking.Data() end
 
-    local dayData = self:GetDetailsForDate(data.details, date)
+    local dayData = self:_GetDetailsForDate(data.details, date)
     local totalTime, changeTime, changes, saves = 0, 0, 0, 0
     local sessions = #dayData
 
@@ -65,10 +81,24 @@ function Statistics:GetTodayData(filename)
         saves = saves + sessionData.saves
     end
 
-    local now = Time.Now()
+    local unsavedTime = 0
+    if not skipUnsavedTime then
+        local currentSession = data.currentSession
+        if currentSession then
+            totalTime = totalTime + currentSession.totalTime
+            changeTime = changeTime + currentSession.changeTime
+            changes = changes + currentSession.changes
+            saves = saves + currentSession.saves
+            sessions = sessions + 1
+
+            -- TODO: What if it's the first session of the day an only one day before that this file was worked on? How to handle the totalDays in this case?
+        end
+
+        unsavedTime = self:_GetUnsavedTime(data, now)
+    end
 
     return {
-        totalTime = totalTime + self:_GetUnsavedTime(data, now),
+        totalTime = totalTime + unsavedTime,
         changeTime = changeTime,
         changes = changes,
         saves = saves,
@@ -77,12 +107,12 @@ function Statistics:GetTodayData(filename)
 end
 
 function Statistics:GetSessionData(filename)
-    if not filename then return DefaultData() end
+    if not filename then return Tracking.Data() end
 
     local spriteId = Hash(filename)
     local data = self.dataStorage[spriteId]
 
-    if not data or not data.currentSession then return DefaultData() end
+    if not data or not data.currentSession then return Tracking.Data() end
 
     local now = Time.Now()
 
@@ -105,7 +135,7 @@ function Statistics:_GetUnsavedTime(spriteData, time)
     return time - spriteData.startTime
 end
 
-function Statistics:GetDetailsForDate(details, date)
+function Statistics:_GetDetailsForDate(details, date)
     local y, m, d = "_" .. tostring(date.year), "_" .. tostring(date.month),
                     "_" .. tostring(date.day)
 
@@ -117,3 +147,5 @@ function Statistics:GetDetailsForDate(details, date)
 end
 
 return Statistics
+
+-- TODO: Start/Stop should start counting again if you close the dialog?

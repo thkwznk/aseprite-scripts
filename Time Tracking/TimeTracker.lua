@@ -1,6 +1,6 @@
 local Hash = dofile("./Hash.lua")
 local PreferencesConverter = dofile("./PreferencesConverter.lua")
-local DefaultData = dofile("./DefaultData.lua")
+local Tracking = dofile("./Tracking.lua")
 local Time = dofile("./Time.lua")
 
 local TimeTracker = {dataStorage = {}}
@@ -23,16 +23,7 @@ function TimeTracker:OnSiteEnter(sprite)
     local data = self.dataStorage[id]
     data.startTime = now
     data.lastUpdateTime = nil
-
-    if not data.currentSession then
-        local today = Time.Date()
-        local todayData = self:_GetDetailsForDate(data.details, today)
-
-        local newSession = DefaultData()
-        data.currentSession = newSession
-
-        table.insert(todayData, data.currentSession)
-    end
+    data.currentSession = data.currentSession or Tracking.Session()
 end
 
 function TimeTracker:OnSiteLeave(sprite)
@@ -54,7 +45,13 @@ function TimeTracker:OnSiteLeave(sprite)
     data.startTime = nil
     data.lastUpdateTime = nil
 
-    if isTrueClose then data.currentSession = nil end
+    if isTrueClose then
+        local today = Time.Date()
+        local todayData = self:_GetDetailsForDate(data.details, today)
+        table.insert(todayData, data.currentSession)
+
+        data.currentSession = nil
+    end
 end
 
 function TimeTracker:OnChange(sprite)
@@ -88,18 +85,14 @@ function TimeTracker:OnFilenameChange(sprite, previousFilename)
     -- If the current and last IDs are the same it's a regular file save
     if id == previousId then return end
 
-    local today = Time.Date()
-
     local detailsCopy = self:_Deepcopy(lastData.details)
-    local todayCopy = self:_GetDetailsForDate(detailsCopy, today)
 
     self.dataStorage[id] = {
         filename = sprite.filename,
         startTime = lastData.startTime,
         lastUpdateTime = lastData.lastUpdateTime,
         details = detailsCopy,
-        -- Overwrite the current session to not leave a reference to the old sprite's session
-        currentSession = todayCopy[#todayCopy]
+        currentSession = lastSpriteSessionData
     }
 end
 
