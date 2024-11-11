@@ -21,7 +21,8 @@ local function SumData(a, b)
 end
 
 return function(options)
-    local isRunning, isMinimized = true, false -- TODO: Get these as parameters?
+    local isRunning = true
+    local isMinimized = options.preferences.isMinimized
     local timer, lastFilename, totalData, todayData
     Statistics:Init(options.preferences)
 
@@ -30,10 +31,13 @@ return function(options)
         onclose = function()
             if options.onclose then options.onclose() end
             timer:stop()
+
+            -- Resume when the dialog is closed
+            if not isRunning then options.onresume() end
         end
     }
 
-    local updateSection = function(id, data)
+    local function UpdateSection(id, data)
         dialog --
         :modify{id = id .. "-time", text = ParseTime(data.totalTime)} --
         :modify{id = id .. "-change-time", text = ParseTime(data.changeTime)} --
@@ -46,13 +50,13 @@ return function(options)
         } --
     end
 
-    local updateDialog = function(sprite)
+    local function UpdateDialog(sprite)
         if sprite == nil then
             lastFilename = nil
             local data = Tracking.Data()
-            updateSection("total", data)
-            updateSection("today", data)
-            updateSection("session", data)
+            UpdateSection("total", data)
+            UpdateSection("today", data)
+            UpdateSection("session", data)
             return
         end
 
@@ -76,23 +80,26 @@ return function(options)
         local totalDataUpdated = SumData(totalData, sessionData)
         local todayDataUpdated = SumData(todayData, sessionData)
 
-        updateSection("total", totalDataUpdated)
-        updateSection("today", todayDataUpdated)
-        updateSection("session", sessionData)
+        UpdateSection("total", totalDataUpdated)
+        UpdateSection("today", todayDataUpdated)
+        UpdateSection("session", sessionData)
 
         if dialog.data.tab == View.Session .. "-tab" then
             dialog:modify{
                 id = "minimized-time",
+                label = "Session:",
                 text = ParseTime(sessionData.totalTime)
             }
         elseif dialog.data.tab == View.Today .. "-tab" then
             dialog:modify{
                 id = "minimized-time",
+                label = "Today:",
                 text = ParseTime(todayDataUpdated.totalTime)
             }
         elseif dialog.data.tab == View.Total .. "-tab" then
             dialog:modify{
                 id = "minimized-time",
+                label = "Total:",
                 text = ParseTime(totalDataUpdated.totalTime)
             }
         end
@@ -101,7 +108,12 @@ return function(options)
     end
 
     dialog --
-    :label{id = "minimized-time", label = "Time:", visible = isMinimized} --
+    :label{
+        id = "minimized-time",
+        label = "Time:",
+        text = "00:00:00",
+        visible = isMinimized
+    } --
     :tab{id = "session-tab", text = "Session", onclick = function() end} --
     :label{id = "session-time", label = "Time:"} --
     :label{id = "session-change-time", label = "Change Time:"} --
@@ -126,31 +138,22 @@ return function(options)
     :endtabs{
         id = "tab",
         selected = options.preferences.view .. "-tab",
-        onchange = function() options.preferences.view = dialog.data.tab end
+        onchange = function() options.preferences.view = dialog.data.tab end,
+        visible = not isMinimized
     } --
     :button{
         id = "minimize",
-        text = "^",
+        text = isMinimized and "v" or "^",
         onclick = function()
-            if isMinimized then
-                dialog:modify{id = "minimize", text = "^"}
-
-            else
-                dialog:modify{id = "minimize", text = "v"}
-                if dialog.data.tab == View.Session .. "-tab" then
-                    dialog:modify{id = "minimized-time", label = "Session:"}
-                elseif dialog.data.tab == View.Today .. "-tab" then
-                    dialog:modify{id = "minimized-time", label = "Today:"}
-                elseif dialog.data.tab == View.Total .. "-tab" then
-                    dialog:modify{id = "minimized-time", label = "Total:"}
-                end
-            end
-
             isMinimized = not isMinimized
 
             dialog --
+            :modify{id = "minimize", text = isMinimized and "v" or "^"} --
+            :modify{id = "minimized-time", visible = isMinimized} --
             :modify{id = "tab", visible = not isMinimized} --
-            :modify{id = "minimized-time", visible = isMinimized}
+
+            -- Update plugin preferences
+            options.preferences.isMinimized = isMinimized
         end
     } --
     :button{
@@ -171,9 +174,11 @@ return function(options)
 
     timer = Timer {
         interval = 0.5,
-        ontick = function() updateDialog(app.activeSprite) end
+        ontick = function() UpdateDialog(app.activeSprite) end
     }
     timer:start()
 
     return dialog
 end
+
+-- TODO: Use the canvas to render buttons with icons

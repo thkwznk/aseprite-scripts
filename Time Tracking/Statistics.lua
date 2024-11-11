@@ -147,5 +147,3 @@ function Statistics:_GetDetailsForDate(details, date)
 end
 
 return Statistics
-
--- TODO: Start/Stop should start counting again if you close the dialog?
