@@ -39,7 +39,7 @@ function init(plugin)
     }
 
     plugin:newCommand{
-        id = "WorkTime",
+        id = "SpriteWorkTime",
         title = "Sprite Work Time",
         group = "view_controls",
         onclick = function()
