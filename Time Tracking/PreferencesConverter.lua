@@ -29,17 +29,20 @@ end
 function PreferencesConverter:_ConvertToV2(storedData)
     -- V2 introduces work session and counting the number of saves
 
-    for _, data in pairs(storedData) do
-        for _, yearData in pairs(data.details) do
-            for _, monthData in pairs(yearData) do
-                for day, dayData in pairs(monthData) do
-                    -- Move the day entry into an array - treating it as a single work session
-                    local copy = self:_ShallowCopy(dayData)
+    for key, data in pairs(storedData) do
+        -- Skip the view entry
+        if key ~= "view" then
+            for _, yearData in pairs(data.details) do
+                for _, monthData in pairs(yearData) do
+                    for day, dayData in pairs(monthData) do
+                        -- Move the day entry into an array - treating it as a single work session
+                        local copy = self:_ShallowCopy(dayData)
 
-                    -- Add the saves counter
-                    copy.saves = 0
+                        -- Add the saves counter
+                        copy.saves = 0
 
-                    monthData[day] = {copy}
+                        monthData[day] = {copy}
+                    end
                 end
             end
         end
