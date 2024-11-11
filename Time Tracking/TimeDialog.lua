@@ -21,7 +21,7 @@ local function SumData(a, b)
 end
 
 return function(options)
-    local isRunning = true
+    local isRunning, isMinimized = true, false -- TODO: Get these as parameters?
     local timer, lastFilename, totalData, todayData
     Statistics:Init(options.preferences)
 
@@ -73,14 +73,35 @@ return function(options)
 
         local sessionData = Statistics:GetSessionData(filename)
 
-        updateSection("total", SumData(totalData, sessionData))
-        updateSection("today", SumData(todayData, sessionData))
+        local totalDataUpdated = SumData(totalData, sessionData)
+        local todayDataUpdated = SumData(todayData, sessionData)
+
+        updateSection("total", totalDataUpdated)
+        updateSection("today", todayDataUpdated)
         updateSection("session", sessionData)
+
+        if dialog.data.tab == View.Session .. "-tab" then
+            dialog:modify{
+                id = "minimized-time",
+                text = ParseTime(sessionData.totalTime)
+            }
+        elseif dialog.data.tab == View.Today .. "-tab" then
+            dialog:modify{
+                id = "minimized-time",
+                text = ParseTime(todayDataUpdated.totalTime)
+            }
+        elseif dialog.data.tab == View.Total .. "-tab" then
+            dialog:modify{
+                id = "minimized-time",
+                text = ParseTime(totalDataUpdated.totalTime)
+            }
+        end
 
         lastFilename = filename
     end
 
     dialog --
+    :label{id = "minimized-time", label = "Time:", visible = isMinimized} --
     :tab{id = "session-tab", text = "Session", onclick = function() end} --
     :label{id = "session-time", label = "Time:"} --
     :label{id = "session-change-time", label = "Change Time:"} --
@@ -104,12 +125,37 @@ return function(options)
     --
     :endtabs{
         id = "tab",
-        selected = options.preferences.view,
+        selected = options.preferences.view .. "-tab",
         onchange = function() options.preferences.view = dialog.data.tab end
     } --
     :button{
+        id = "minimize",
+        text = "^",
+        onclick = function()
+            if isMinimized then
+                dialog:modify{id = "minimize", text = "^"}
+
+            else
+                dialog:modify{id = "minimize", text = "v"}
+                if dialog.data.tab == View.Session .. "-tab" then
+                    dialog:modify{id = "minimized-time", label = "Session:"}
+                elseif dialog.data.tab == View.Today .. "-tab" then
+                    dialog:modify{id = "minimized-time", label = "Today:"}
+                elseif dialog.data.tab == View.Total .. "-tab" then
+                    dialog:modify{id = "minimized-time", label = "Total:"}
+                end
+            end
+
+            isMinimized = not isMinimized
+
+            dialog --
+            :modify{id = "tab", visible = not isMinimized} --
+            :modify{id = "minimized-time", visible = isMinimized}
+        end
+    } --
+    :button{
         id = "start-stop",
-        text = "Stop",
+        text = "||",
         onclick = function()
             if isRunning then
                 options.onpause()
@@ -119,10 +165,7 @@ return function(options)
 
             isRunning = not isRunning
 
-            dialog:modify{
-                id = "start-stop",
-                text = isRunning and "Stop" or "Start"
-            }
+            dialog:modify{id = "start-stop", text = isRunning and "||" or "|>"}
         end
     }
 
@@ -134,8 +177,3 @@ return function(options)
 
     return dialog
 end
-
--- TODO: Add an option to minimize the dialog
-
--- TODO: Write test scenarios and test the extension thoroughly, there are bugs in how time is counted currently - session doesn't seem to be added when closing a sprite
--- TODO: Report a bug where hiding a tab renders them incorrectly?
