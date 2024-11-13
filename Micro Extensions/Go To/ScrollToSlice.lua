@@ -1,23 +1,36 @@
+local Sizes = {
+    6400, 4800, 3200, 2400, 1600, 1200, 800, 600, 500, 400, 300, 200, 100, 50,
+    33.3, 25, 20, 16.7, 12.5
+}
+
 return function(slice, autoZoom)
+    local bounds = slice.bounds
+
+    -- If auto zooming reset the zoom first to avoid using "zoomed-pixel" units
+    if autoZoom then app.command.Zoom {percentage = "100", focus = "center"} end
+
     -- Center the canvas first
     app.command.ScrollCenter()
 
-    local sliceCenterX = slice.bounds.x + slice.bounds.width / 2
-    local sliceCenterY = slice.bounds.y + slice.bounds.height / 2
+    local sliceCenterX = bounds.x + bounds.width / 2
+    local sliceCenterY = bounds.y + bounds.height / 2
 
     local centerX = slice.sprite.width / 2
     local centerY = slice.sprite.height / 2
 
+    -- "zoomed-pixel" don't work if zoom is less than 100% 
+    local units = autoZoom and "pixel" or "zoomed-pixel"
+
     if sliceCenterX < centerX then
         app.command.Scroll {
             direction = "left",
-            units = "zoomed-pixel",
+            units = units,
             quantity = tostring(centerX - sliceCenterX)
         }
     else
         app.command.Scroll {
             direction = "right",
-            units = "zoomed-pixel",
+            units = units,
             quantity = tostring(sliceCenterX - centerX)
         }
     end
@@ -25,30 +38,27 @@ return function(slice, autoZoom)
     if sliceCenterY < centerY then
         app.command.Scroll {
             direction = "up",
-            units = "zoomed-pixel",
+            units = units,
             quantity = tostring(centerY - sliceCenterY)
         }
     else
         app.command.Scroll {
             direction = "down",
-            units = "zoomed-pixel",
+            units = units,
             quantity = tostring(sliceCenterY - centerY)
         }
     end
 
     if autoZoom then
-        local sizes = {
-            64, 48, 32, 24, 16, 12, 8, 6, 5, 4, 3, 2, 1, 0.5, 0.333, 0.25, 0.20,
-            0.167, 0.125
-        }
+        local maxWidth, maxHeight = app.window.width * 0.8,
+                                    app.window.height * 0.6
 
-        for _, size in ipairs(sizes) do
-            if slice.bounds.width * size < app.window.width * 0.8 and
-                slice.bounds.height * size < app.window.height * 0.6 then
-                app.command.Zoom {
-                    percentage = tostring(size * 100),
-                    focus = "center"
-                }
+        for _, size in ipairs(Sizes) do
+            local sizeFraction = size / 100
+
+            if (bounds.width * sizeFraction < maxWidth) and
+                (bounds.height * sizeFraction < maxHeight) then
+                app.command.Zoom {percentage = tostring(size), focus = "center"}
                 break
             end
         end

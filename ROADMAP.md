@@ -143,7 +143,8 @@ Unreleased:
 - [Improvement] Hide the empty results label when the search input is empty
 - [Improvement] Save Go To options between sessions
 - [Fix] Add a missing label for the options separator
-- [Fix] Ignore leading and trailing spaces in the search input  
+- [Fix] Ignore leading and trailing spaces in the search input
+- [Fix] Correctly zoom in on slices when zoom is set to less than 100%
 
 ## Run
 
