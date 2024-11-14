@@ -144,7 +144,7 @@ Unreleased:
 - [Improvement] Save Go To options between sessions
 - [Fix] Add a missing label for the options separator
 - [Fix] Ignore leading and trailing spaces in the search input
-- [Fix] Correctly zoom in on slices when zoom is set to less than 100%
+- [Fix] Correctly zoom in on slices that require less than 100% zoom to be fully in view
 
 ## Run
 

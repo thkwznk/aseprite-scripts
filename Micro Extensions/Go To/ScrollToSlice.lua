@@ -7,6 +7,7 @@ return function(slice, autoZoom)
     local bounds = slice.bounds
 
     -- If auto zooming reset the zoom first to avoid using "zoomed-pixel" units
+    -- TODO: When API will allow for getting information about the zoom do this for every attempt and restore zoom level
     if autoZoom then app.command.Zoom {percentage = "100", focus = "center"} end
 
     -- Center the canvas first
