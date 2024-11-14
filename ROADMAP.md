@@ -136,16 +136,6 @@ Update v3.0.0:
 
 - [Improvement] Rebuild the *Analyze Colors* using the canvas widget
 
-## Go To
-
-Unreleased:
-
-- [Improvement] Hide the empty results label when the search input is empty
-- [Improvement] Save Go To options between sessions
-- [Fix] Add a missing label for the options separator
-- [Fix] Ignore leading and trailing spaces in the search input
-- [Fix] Correctly zoom in on slices that require less than 100% zoom to be fully in view
-
 ## Run
 
 Unreleased:
