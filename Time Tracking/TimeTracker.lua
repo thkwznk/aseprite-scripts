@@ -14,9 +14,7 @@ function TimeTracker:OnSiteEnter(sprite)
     local filename = sprite.filename
     local id = Hash(filename)
 
-    -- Create a new entry if there is none OR if the sprite is only a temporary file that is not already open (e.g. Sprite-001, Sprite-002...)
-    if self.dataStorage[id] == nil or
-        (self:_IsTemporaryFile(filename) and not self:_IsSpriteOpen(filename)) then
+    if self.dataStorage[id] == nil then
         self.dataStorage[id] = {filename = filename, details = {}}
     end
 
@@ -26,32 +24,33 @@ function TimeTracker:OnSiteEnter(sprite)
     data.currentSession = data.currentSession or Tracking.Session()
 end
 
-function TimeTracker:OnSiteLeave(sprite)
+function TimeTracker:OnSiteLeave(sprite, forceClose)
     local now = Time.Now()
     local id = Hash(sprite.filename)
     local data = self.dataStorage[id]
-    local isTrueClose = not self:_IsSpriteOpen(data.filename)
+    local isTrueClose = forceClose or not self:_IsSpriteOpen(data.filename)
 
     -- Data for temporary files isn't saved
-    if self:_IsTemporaryFile(data.filename) and isTrueClose then
+    if isTrueClose and self:_IsTemporaryFile(data.filename) then
         self.dataStorage[id] = nil
         return
     end
 
-    local sessionData = data.currentSession
-    sessionData.totalTime = sessionData.totalTime +
-                                self:_GetUnsavedTime(data, now)
+    local currentSession = data.currentSession
+    if currentSession then
+        currentSession.totalTime = currentSession.totalTime +
+                                       self:_GetUnsavedTime(data, now)
+
+        if isTrueClose then
+            local todayData = self:_GetDetailsForDate(data.details, Time.Date())
+            table.insert(todayData, currentSession)
+
+            data.currentSession = nil
+        end
+    end
 
     data.startTime = nil
     data.lastUpdateTime = nil
-
-    if isTrueClose then
-        local today = Time.Date()
-        local todayData = self:_GetDetailsForDate(data.details, today)
-        table.insert(todayData, data.currentSession)
-
-        data.currentSession = nil
-    end
 end
 
 function TimeTracker:OnChange(sprite)

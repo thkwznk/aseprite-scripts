@@ -5,6 +5,7 @@
 Unreleased:
 
 - [Feature] Sprite Work Time
+- [Fix] Correctly save time when closing Aseprite with multiple files open
 
 Update v2.0.0:
 

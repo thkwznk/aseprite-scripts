@@ -128,4 +128,11 @@ function init(plugin)
     }
 end
 
-function exit(plugin) ChangeTracker:Stop() end
+function exit(plugin)
+    for _, sprite in ipairs(app.sprites) do
+        -- Simulate a true close of the file
+        TimeTracker:OnSiteLeave(sprite, true)
+    end
+
+    ChangeTracker:Stop()
+end
