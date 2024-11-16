@@ -23,8 +23,8 @@ end
 
 return function(options)
     local isRunning = true
-    local isMinimized = options.preferences.isMinimized
-    local timer, lastFilename, totalData, todayData
+    local isMinimized = true
+    local timer, lastFilename, totalData, todayData, lastMilestone
     Statistics:Init(options.preferences)
 
     local dialog = Dialog {
@@ -51,6 +51,35 @@ return function(options)
         } --
     end
 
+    local function UpdateLastMilestone(filename)
+        if filename == nil then
+            dialog:modify{id = "last-milestone", visible = false}
+            return
+        end
+
+        local id = Hash(filename)
+        local milestones = options.preferences.milestones[id]
+        lastMilestone = milestones and milestones[#milestones]
+
+        dialog:modify{id = "last-milestone", visible = lastMilestone ~= nil}
+
+        if lastMilestone then
+            local time = lastMilestone.totalTime
+
+            if dialog.data.tab == "session-tab" then
+                time = time - totalData.totalTime
+            elseif dialog.data.tab == "today-tab" then
+                time = time - totalData.totalTime + todayData.totalTime
+            end
+
+            dialog:modify{
+                id = "last-milestone",
+                text = lastMilestone.title .. ": " .. ParseTime(time),
+                visible = time > 0
+            }
+        end
+    end
+
     local function UpdateDialog(sprite)
         if sprite == nil then
             lastFilename = nil
@@ -58,6 +87,7 @@ return function(options)
             UpdateSection("total", data)
             UpdateSection("today", data)
             UpdateSection("session", data)
+            UpdateLastMilestone()
             return
         end
 
@@ -84,74 +114,87 @@ return function(options)
         UpdateSection("total", totalDataUpdated)
         UpdateSection("today", todayDataUpdated)
         UpdateSection("session", sessionData)
-
-        if dialog.data.tab == View.Session .. "-tab" then
-            dialog:modify{
-                id = "minimized-time",
-                label = "Session:",
-                text = ParseTime(sessionData.totalTime)
-            }
-        elseif dialog.data.tab == View.Today .. "-tab" then
-            dialog:modify{
-                id = "minimized-time",
-                label = "Today:",
-                text = ParseTime(todayDataUpdated.totalTime)
-            }
-        elseif dialog.data.tab == View.Total .. "-tab" then
-            dialog:modify{
-                id = "minimized-time",
-                label = "Total:",
-                text = ParseTime(totalDataUpdated.totalTime)
-            }
-        end
+        UpdateLastMilestone(filename)
 
         lastFilename = filename
     end
 
     dialog --
-    :label{
-        id = "minimized-time",
-        label = "Time:",
-        text = "00:00:00",
-        visible = isMinimized
-    } --
     :tab{id = "session-tab", text = "Session", onclick = function() end} --
     :label{id = "session-time", label = "Time:"} --
-    :label{id = "session-change-time", label = "Change Time:"} --
-    :label{id = "session-changes", label = "Changes:"} --
-    :label{id = "session-saves", label = "Saves:"} --
-    :label{id = "session-sessions", label = "Sessions:"} --
+    :label{
+        id = "session-change-time",
+        label = "Change Time:",
+        visible = not isMinimized
+    } --
+    :label{
+        id = "session-changes",
+        label = "Changes:",
+        visible = not isMinimized
+    } --
+    :label{id = "session-saves", label = "Saves:", visible = not isMinimized} --
+    :label{
+        id = "session-sessions",
+        label = "Sessions:",
+        visible = not isMinimized
+    } --
     --
     :tab{id = "today-tab", text = "Today", onclick = function() end} --
     :label{id = "today-time", label = "Time:"} --
-    :label{id = "today-change-time", label = "Change Time:"} --
-    :label{id = "today-changes", label = "Changes:"} --
-    :label{id = "today-saves", label = "Saves:"} --
-    :label{id = "today-sessions", label = "Sessions:"} --
+    :label{
+        id = "today-change-time",
+        label = "Change Time:",
+        visible = not isMinimized
+    } --
+    :label{id = "today-changes", label = "Changes:", visible = not isMinimized} --
+    :label{id = "today-saves", label = "Saves:", visible = not isMinimized} --
+    :label{
+        id = "today-sessions",
+        label = "Sessions:",
+        visible = not isMinimized
+    } --
     --
     :tab{id = "total-tab", text = "Total", onclick = function() end} --
     :label{id = "total-time", label = "Time:"} --
-    :label{id = "total-change-time", label = "Change Time:"} --
-    :label{id = "total-changes", label = "Changes:"} --
-    :label{id = "total-saves", label = "Saves:"} --
-    :label{id = "total-sessions", label = "Sessions:"} --
+    :label{
+        id = "total-change-time",
+        label = "Change Time:",
+        visible = not isMinimized
+    } --
+    :label{id = "total-changes", label = "Changes:", visible = not isMinimized} --
+    :label{id = "total-saves", label = "Saves:", visible = not isMinimized} --
+    :label{
+        id = "total-sessions",
+        label = "Sessions:",
+        visible = not isMinimized
+    } --
     --
     :endtabs{
         id = "tab",
         selected = options.preferences.view .. "-tab",
-        onchange = function() options.preferences.view = dialog.data.tab end,
-        visible = not isMinimized
+        onchange = function() options.preferences.view = dialog.data.tab end
     } --
+    :label{id = "last-milestone", text = "", enabled = false} --
     :button{
         id = "minimize",
         text = isMinimized and "v" or "^",
+        visible = false,
         onclick = function()
             isMinimized = not isMinimized
 
             dialog --
-            :modify{id = "minimize", text = isMinimized and "v" or "^"} --
-            :modify{id = "minimized-time", visible = isMinimized} --
-            :modify{id = "tab", visible = not isMinimized} --
+            :modify{id = "minimize", text = isMinimized and "v" or "^"}
+
+            for _, prefix in ipairs({"session", "today", "total"}) do
+                for _, suffix in ipairs({
+                    "change-time", "changes", "saves", "sessions"
+                }) do
+                    dialog:modify{
+                        id = prefix .. "-" .. suffix,
+                        visible = not isMinimized
+                    }
+                end
+            end
 
             -- Update plugin preferences
             options.preferences.isMinimized = isMinimized
