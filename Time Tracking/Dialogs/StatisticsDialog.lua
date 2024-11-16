@@ -1,12 +1,5 @@
-local Statistics = dofile("./Statistics.lua")
-
-local function ParseTime(time)
-    local seconds = time % 60
-    local hours = math.floor(time / 3600)
-    local minutes = math.floor((time - (hours * 3600)) / 60)
-
-    return string.format("%02d:%02d:%02d", hours, minutes, seconds)
-end
+local Statistics = dofile("../Statistics.lua")
+local Time = dofile("../Time.lua")
 
 return function(options)
     local filename = options.sprite.filename
@@ -25,12 +18,12 @@ return function(options)
     :label{
         id = "total-time",
         label = "Time:",
-        text = ParseTime(totalData.totalTime)
+        text = Time.Parse(totalData.totalTime)
     } --
     :label{
         id = "total-change-time",
         label = "Change Time:",
-        text = ParseTime(totalData.changeTime)
+        text = Time.Parse(totalData.changeTime)
     } --
     :label{
         id = "total-changes",
@@ -51,12 +44,12 @@ return function(options)
     :label{
         id = "today-time",
         label = "Time:",
-        text = ParseTime(todayData.totalTime)
+        text = Time.Parse(todayData.totalTime)
     } --
     :label{
         id = "today-change-time",
         label = "Change Time:",
-        text = ParseTime(todayData.changeTime)
+        text = Time.Parse(todayData.changeTime)
     } --
     :label{
         id = "today-changes",

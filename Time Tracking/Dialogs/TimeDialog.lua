@@ -1,25 +1,9 @@
-local Statistics = dofile("./Statistics.lua")
-local Tracking = dofile("./Tracking.lua")
-local View = dofile("./View.lua")
-local Hash = dofile("./Hash.lua")
-
-local function ParseTime(time)
-    local seconds = time % 60
-    local hours = math.floor(time / 3600)
-    local minutes = math.floor((time - (hours * 3600)) / 60)
-
-    return string.format("%02d:%02d:%02d", hours, minutes, seconds)
-end
-
-local function SumData(a, b)
-    return {
-        totalTime = a.totalTime + b.totalTime,
-        changeTime = a.changeTime + b.changeTime,
-        changes = a.changes + b.changes,
-        saves = a.saves + b.saves,
-        sessions = (a.sessions or 0) + (b.sessions or 0) + 1 -- Increment the number of sessions to account for the current one
-    }
-end
+local Statistics = dofile("../Statistics.lua")
+local Tracking = dofile("../Tracking.lua")
+local View = dofile("../View.lua")
+local Hash = dofile("../Hash.lua")
+local Time = dofile("../Time.lua")
+local AddMilestoneDialog = dofile("./AddMilestoneDialog.lua")
 
 return function(options)
     local isRunning = true
@@ -40,8 +24,8 @@ return function(options)
 
     local function UpdateSection(id, data)
         dialog --
-        :modify{id = id .. "-time", text = ParseTime(data.totalTime)} --
-        :modify{id = id .. "-change-time", text = ParseTime(data.changeTime)} --
+        :modify{id = id .. "-time", text = Time.Parse(data.totalTime)} --
+        :modify{id = id .. "-change-time", text = Time.Parse(data.changeTime)} --
         :modify{id = id .. "-changes", text = tostring(data.changes)} --
         :modify{id = id .. "-saves", text = tostring(data.saves)} --
         :modify{
@@ -74,7 +58,7 @@ return function(options)
 
             dialog:modify{
                 id = "last-milestone",
-                text = lastMilestone.title .. ": " .. ParseTime(time),
+                text = lastMilestone.title .. ": " .. Time.Parse(time),
                 visible = time > 0
             }
         end
@@ -108,8 +92,8 @@ return function(options)
 
         local sessionData = Statistics:GetSessionData(filename)
 
-        local totalDataUpdated = SumData(totalData, sessionData)
-        local todayDataUpdated = SumData(todayData, sessionData)
+        local totalDataUpdated = Tracking.Sum(totalData, sessionData)
+        local todayDataUpdated = Tracking.Sum(todayData, sessionData)
 
         UpdateSection("total", totalDataUpdated)
         UpdateSection("today", todayDataUpdated)
@@ -219,38 +203,10 @@ return function(options)
         id = "add-milestone",
         text = "+",
         onclick = function()
-            local addMilestoneDialog = Dialog {title = "Add Milestone"}
-
-            addMilestoneDialog:entry{id = "title", label = "Title:"} --
-            :separator() --
-            :button{
-                text = "&OK",
-                onclick = function()
-                    local preferences = options.preferences
-                    local sprite = app.activeSprite
-                    local filename = sprite.filename
-                    local id = Hash(filename)
-
-                    local sessionData = Statistics:GetSessionData(filename)
-                    local milestone = SumData(totalData, sessionData)
-                    milestone.title = addMilestoneDialog.data.title
-
-                    preferences.milestones[id] =
-                        preferences.milestones[id] or {}
-
-                    table.insert(preferences.milestones[id], milestone)
-
-                    for _, m in ipairs(preferences.milestones[id]) do
-                        print(m.title, ParseTime(m.totalTime),
-                              ParseTime(m.changeTime), m.changes, m.saves,
-                              m.sessions)
-                    end
-
-                    addMilestoneDialog:close()
-                end
-            } --
-            :button{text = "&Cancel"}
-
+            local addMilestoneDialog = AddMilestoneDialog {
+                sprite = app.activeSprite,
+                preferences = options.preferences
+            }
             addMilestoneDialog:show()
         end
     }

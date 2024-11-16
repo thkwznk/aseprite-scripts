@@ -1,19 +1,9 @@
 local View = dofile("./View.lua")
 local TimeTracker = dofile("./TimeTracker.lua")
 local ChangeTracker = dofile("./ChangeTracker.lua")
-local StatisticsDialog = dofile("./StatisticsDialog.lua")
-local TimeDialog = dofile("./TimeDialog.lua")
-local Hash = dofile("./Hash.lua")
-
--- TODO: Organize these Lua files into folders
-
-local function ParseTime(time) -- TODO: Extract to it's own file
-    local seconds = time % 60
-    local hours = math.floor(time / 3600)
-    local minutes = math.floor((time - (hours * 3600)) / 60)
-
-    return string.format("%02d:%02d:%02d", hours, minutes, seconds)
-end
+local StatisticsDialog = dofile("./Dialogs/StatisticsDialog.lua")
+local TimeDialog = dofile("./Dialogs/TimeDialog.lua")
+local MilestonesDialog = dofile("./Dialogs/MilestonesDialog.lua")
 
 function init(plugin)
     -- Reset view if it has a deprecated value
@@ -37,6 +27,8 @@ function init(plugin)
         end
     }
 
+    -- TODO: Live update Sprite Statistics
+
     -- Register commands
     plugin:newCommand{
         id = "SpriteStatistics",
@@ -58,57 +50,10 @@ function init(plugin)
         group = "sprite_color",
         onenable = function() return app.activeSprite ~= nil end,
         onclick = function()
-            local sprite = app.activeSprite
-            local id = Hash(sprite.filename)
-
-            -- TODO: Move this dialog to a separate file
-            local dialog = Dialog {title = "Milestones"}
-
-            local milestones = plugin.preferences.milestones[id]
-
-            -- TODO: Reverse order - newest on top
-            for i, milestone in ipairs(milestones) do
-                local milestoneId = "milestone-" .. tostring(i)
-                dialog:button{
-                    id = milestoneId,
-                    label = ParseTime(milestone.totalTime) .. " - " ..
-                        milestone.title,
-                    text = "Edit",
-                    onclick = function()
-                        local editMilestoneDialog
-                        editMilestoneDialog = Dialog {
-                            title = "Edit Milestone: " .. milestone.title
-                        }
-
-                        editMilestoneDialog:entry{
-                            id = "title",
-                            label = "Title:",
-                            text = milestone.title
-                        }:entry{
-                            id = "totalTime",
-                            label = "Time:",
-                            text = ParseTime(milestone.totalTime)
-                        }:button{
-                            text = "&OK",
-                            onclick = function()
-                                milestone.title = editMilestoneDialog.data.title
-                                -- TODO: time
-                                dialog:modify{
-                                    id = milestoneId,
-                                    label = ParseTime(milestone.totalTime) ..
-                                        " - " .. milestone.title
-                                }
-                                editMilestoneDialog:close()
-
-                                -- TODO: Make the entire milestones dialog scrollable, with default width and height and refresh when editings milestones
-                            end
-                        }:button{text = "&Cancel"}
-
-                        editMilestoneDialog:show()
-                    end
-                }
-            end
-
+            local dialog = MilestonesDialog {
+                sprite = app.activeSprite,
+                preferences = plugin.preferences
+            }
             dialog:show()
         end
     }

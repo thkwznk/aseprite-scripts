@@ -125,6 +125,15 @@ function Statistics:GetSessionData(filename)
     }
 end
 
+function Statistics:AddMilestone(filename, title)
+    local id = Hash(filename)
+    self.dataStorage.milestones[id] = self.dataStorage.milestones[id] or {}
+
+    local totalData = self:GetTotalData(filename)
+    local milestone = Tracking.Milestone(title, totalData)
+    table.insert(self.dataStorage.milestones[id], milestone)
+end
+
 function Statistics:_GetUnsavedTime(spriteData, time)
     -- If there's is no start time - sprite is closed
     if not spriteData.startTime then return 0 end

@@ -144,8 +144,3 @@ function TimeTracker:_GetUnsavedTime(spriteData, time)
 end
 
 return TimeTracker
-
--- TimeTracker really needs to only know about the current session
-
--- TimeTracker - monitors site changes, starts and stops current sessions
--- Statistics - contains and provides historic data
