@@ -1,6 +1,7 @@
 local Statistics = dofile("./Statistics.lua")
 local Tracking = dofile("./Tracking.lua")
 local View = dofile("./View.lua")
+local Hash = dofile("./Hash.lua")
 
 local function ParseTime(time)
     local seconds = time % 60
@@ -169,6 +170,45 @@ return function(options)
             isRunning = not isRunning
 
             dialog:modify{id = "start-stop", text = isRunning and "||" or "|>"}
+        end
+    } --
+    :button{
+        id = "add-milestone",
+        text = "+",
+        onclick = function()
+            local addMilestoneDialog = Dialog {title = "Add Milestone"}
+
+            addMilestoneDialog:entry{id = "title", label = "Title:"} --
+            :separator() --
+            :button{
+                text = "&OK",
+                onclick = function()
+                    local preferences = options.preferences
+                    local sprite = app.activeSprite
+                    local filename = sprite.filename
+                    local id = Hash(filename)
+
+                    local sessionData = Statistics:GetSessionData(filename)
+                    local milestone = SumData(totalData, sessionData)
+                    milestone.title = addMilestoneDialog.data.title
+
+                    preferences.milestones[id] =
+                        preferences.milestones[id] or {}
+
+                    table.insert(preferences.milestones[id], milestone)
+
+                    for _, m in ipairs(preferences.milestones[id]) do
+                        print(m.title, ParseTime(m.totalTime),
+                              ParseTime(m.changeTime), m.changes, m.saves,
+                              m.sessions)
+                    end
+
+                    addMilestoneDialog:close()
+                end
+            } --
+            :button{text = "&Cancel"}
+
+            addMilestoneDialog:show()
         end
     }
 
