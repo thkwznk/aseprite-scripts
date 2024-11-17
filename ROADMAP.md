@@ -4,6 +4,8 @@
 
 Unreleased:
 
+- [Change] No longer pause tracking when Sprite Statistics dialog window is open, **INSTEAD** > Live update time in the Sprite Statistics dialog window
+- [Change] Hide the current session data and always display all information
 - [Feature] Sprite Work Time
 - [Fix] Correctly save time when closing Aseprite with multiple files open
 

@@ -31,20 +31,18 @@ function init(plugin)
     -- This fixes time tracking being stopped after updating the extension
     if app.activeSprite then TimeTracker:OnSiteEnter(app.activeSprite) end
 
-    -- TODO: Live update Sprite Statistics
-
     -- Register commands
     plugin:newCommand{
         id = "SpriteStatistics",
         title = "Statistics...",
         group = "sprite_color",
-        onenable = function() return app.activeSprite ~= nil end,
+        onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             local dialog = StatisticsDialog {
                 sprite = app.activeSprite,
                 preferences = plugin.preferences
             }
-            dialog:show{wait = false}
+            dialog:show()
         end
     }
 
@@ -52,7 +50,7 @@ function init(plugin)
         id = "SpriteMilestones",
         title = "Milestones",
         group = "sprite_color",
-        onenable = function() return app.activeSprite ~= nil end,
+        onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             local dialog = MilestonesDialog {
                 sprite = app.activeSprite,
