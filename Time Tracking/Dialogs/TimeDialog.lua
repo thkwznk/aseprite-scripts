@@ -5,14 +5,21 @@ local Hash = dofile("../Hash.lua")
 local Time = dofile("../Time.lua")
 local AddMilestoneDialog = dofile("./AddMilestoneDialog.lua")
 
+local ButtonState = {
+    normal = {part = "toolbutton_last", color = "button_normal_text"},
+    hot = {part = "toolbutton_hot", color = "button_hot_text"},
+    selected = {part = "toolbutton_pushed", color = "button_selected_text"}
+}
+
 return function(options)
     local isRunning = true
-    local isMinimized = true
+    local isDebug = options.isDebug ~= nil and options.isDebug or false
     local timer, lastFilename, totalData, todayData, lastMilestone
     Statistics:Init(options.preferences)
 
     local dialog = Dialog {
         title = "Sprite Work Time",
+        notitlebar = options.notitlebar,
         onclose = function()
             if options.onclose then options.onclose() end
             timer:stop()
@@ -109,49 +116,25 @@ return function(options)
     :label{
         id = "session-change-time",
         label = "Change Time:",
-        visible = not isMinimized
+        visible = isDebug
     } --
-    :label{
-        id = "session-changes",
-        label = "Changes:",
-        visible = not isMinimized
-    } --
-    :label{id = "session-saves", label = "Saves:", visible = not isMinimized} --
-    :label{
-        id = "session-sessions",
-        label = "Sessions:",
-        visible = not isMinimized
-    } --
+    :label{id = "session-changes", label = "Changes:", visible = isDebug} --
+    :label{id = "session-saves", label = "Saves:", visible = isDebug} --
+    :label{id = "session-sessions", label = "Sessions:", visible = isDebug} --
     --
     :tab{id = "today-tab", text = "Today", onclick = function() end} --
     :label{id = "today-time", label = "Time:"} --
-    :label{
-        id = "today-change-time",
-        label = "Change Time:",
-        visible = not isMinimized
-    } --
-    :label{id = "today-changes", label = "Changes:", visible = not isMinimized} --
-    :label{id = "today-saves", label = "Saves:", visible = not isMinimized} --
-    :label{
-        id = "today-sessions",
-        label = "Sessions:",
-        visible = not isMinimized
-    } --
+    :label{id = "today-change-time", label = "Change Time:", visible = isDebug} --
+    :label{id = "today-changes", label = "Changes:", visible = isDebug} --
+    :label{id = "today-saves", label = "Saves:", visible = isDebug} --
+    :label{id = "today-sessions", label = "Sessions:", visible = isDebug} --
     --
     :tab{id = "total-tab", text = "Total", onclick = function() end} --
     :label{id = "total-time", label = "Time:"} --
-    :label{
-        id = "total-change-time",
-        label = "Change Time:",
-        visible = not isMinimized
-    } --
-    :label{id = "total-changes", label = "Changes:", visible = not isMinimized} --
-    :label{id = "total-saves", label = "Saves:", visible = not isMinimized} --
-    :label{
-        id = "total-sessions",
-        label = "Sessions:",
-        visible = not isMinimized
-    } --
+    :label{id = "total-change-time", label = "Change Time:", visible = isDebug} --
+    :label{id = "total-changes", label = "Changes:", visible = isDebug} --
+    :label{id = "total-saves", label = "Saves:", visible = isDebug} --
+    :label{id = "total-sessions", label = "Sessions:", visible = isDebug} --
     --
     :endtabs{
         id = "tab",
@@ -159,55 +142,144 @@ return function(options)
         onchange = function() options.preferences.view = dialog.data.tab end
     } --
     :label{id = "last-milestone", text = "", enabled = false} --
-    :button{
-        id = "minimize",
-        text = isMinimized and "v" or "^",
-        visible = false,
-        onclick = function()
-            isMinimized = not isMinimized
 
-            dialog --
-            :modify{id = "minimize", text = isMinimized and "v" or "^"}
+    local mouse = {position = Point(0, 0), leftClick = false}
 
-            for _, prefix in ipairs({"session", "today", "total"}) do
-                for _, suffix in ipairs({
-                    "change-time", "changes", "saves", "sessions"
-                }) do
-                    dialog:modify{
-                        id = prefix .. "-" .. suffix,
-                        visible = not isMinimized
-                    }
-                end
-            end
-
-            -- Update plugin preferences
-            options.preferences.isMinimized = isMinimized
-        end
-    } --
-    :button{
-        id = "start-stop",
-        text = "||",
+    local startStopButton
+    startStopButton = {
+        bounds = Rectangle(0, 0, 20, 16),
+        state = ButtonState,
+        icon = "debug_pause",
+        iconSize = Size(7, 7),
         onclick = function()
             if isRunning then
                 options.onpause()
+                startStopButton.icon = "debug_continue"
             else
                 options.onresume()
+                startStopButton.icon = "debug_pause"
             end
 
             isRunning = not isRunning
 
-            dialog:modify{id = "start-stop", text = isRunning and "||" or "|>"}
+            dialog:repaint()
         end
-    } --
-    :button{
-        id = "add-milestone",
-        text = "+",
+    }
+
+    local addMilestoneButton = {
+        bounds = Rectangle(0, 0, 20, 16),
+        state = ButtonState,
+        icon = "debug_breakpoint",
+        iconSize = Size(7, 7),
         onclick = function()
             local addMilestoneDialog = AddMilestoneDialog {
                 sprite = app.activeSprite,
                 preferences = options.preferences
             }
             addMilestoneDialog:show()
+
+            dialog:repaint()
+        end
+    }
+
+    local customWidgets = {startStopButton, addMilestoneButton}
+
+    dialog --
+    :canvas{
+        id = "canvas",
+        width = 120,
+        height = 17,
+        onpaint = function(ev)
+            local ctx = ev.context
+            local mouseOver = false
+            local widthSum = 0
+
+            -- Recalculate widget width first
+            for _, widget in ipairs(customWidgets) do
+                local size
+                if widget.icon then
+                    size = widget.iconSize or Rectangle(0, 0, 5, 5)
+                else
+                    size = ctx:measureText(widget.text)
+                end
+
+                widget.bounds.width = size.width + 5 * 2
+                widthSum = widthSum + widget.bounds.width
+            end
+
+            local x = (ctx.width - widthSum) / 2
+
+            -- ctx:drawThemeRect("separator_horz", Rectangle(0, 0, ctx.width, 16))
+
+            -- Draw each custom widget
+            for _, widget in ipairs(customWidgets) do
+                local state = widget.state.normal
+                local isMouseOver = widget.bounds:contains(mouse.position)
+
+                if isMouseOver and not mouseOver then
+                    state = widget.state.hot or state
+
+                    if mouse.leftClick then
+                        state = widget.state.selected
+                    end
+                end
+                mouseOver = mouseOver or isMouseOver
+
+                -- Calculate button X position
+                widget.bounds.x = x
+                x = x + widget.bounds.width - 1
+
+                ctx:drawThemeRect(state.part, widget.bounds)
+
+                local center = Point(widget.bounds.x + widget.bounds.width / 2,
+                                     widget.bounds.y + widget.bounds.height / 2)
+
+                if widget.icon then
+                    -- Assuming default icon size of 16x16 pixels
+                    local size = widget.iconSize or Rectangle(0, 0, 16, 16)
+
+                    ctx:drawThemeImage(widget.icon, widget.bounds.x + 5,
+                                       center.y - size.height / 2)
+                elseif widget.text then
+                    local size = ctx:measureText(widget.text)
+
+                    ctx.color = app.theme.color[state.color]
+                    ctx:fillText(widget.text, widget.bounds.x + 5,
+                                 center.y - size.height / 2)
+                end
+            end
+        end,
+        onmousemove = function(ev)
+            -- Update the mouse position
+            mouse.position = Point(ev.x, ev.y)
+
+            dialog:repaint()
+        end,
+        onmousedown = function(ev)
+            -- Update information about left mouse button being pressed
+            mouse.leftClick = ev.button == MouseButton.LEFT
+
+            dialog:repaint()
+        end,
+        onmouseup = function(ev)
+            local position = Point(ev.x, ev.y)
+
+            -- When releasing left mouse button over a widget, call `onclick` method
+            if ev.button == MouseButton.LEFT then
+                for _, widget in ipairs(customWidgets) do
+                    local isMouseOver = widget.bounds:contains(position)
+
+                    if isMouseOver then
+                        widget.onclick()
+                        break
+                    end
+                end
+            end
+
+            -- Update information about left mouse button being released
+            mouse.leftClick = false
+
+            dialog:repaint()
         end
     }
 
@@ -219,5 +291,3 @@ return function(options)
 
     return dialog
 end
-
--- TODO: Use the canvas to render buttons with icons

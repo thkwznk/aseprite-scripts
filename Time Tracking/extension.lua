@@ -68,11 +68,16 @@ function init(plugin)
         group = "view_controls",
         onclick = function()
             local dialog = TimeDialog {
+                notitlebar = true,
                 preferences = plugin.preferences,
                 onpause = function() ChangeTracker:Stop() end,
                 onresume = function() ChangeTracker:Resume() end
             }
             dialog:show{wait = false}
+            local newBounds = Rectangle(dialog.bounds)
+            newBounds.x = app.window.width - newBounds.width - 26
+            newBounds.y = 48
+            dialog.bounds = newBounds
         end
     }
 end
