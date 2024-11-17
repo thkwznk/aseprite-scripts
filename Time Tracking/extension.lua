@@ -27,6 +27,10 @@ function init(plugin)
         end
     }
 
+    -- If on init there's already an active sprite, simulate switching site to it
+    -- This fixes time tracking being stopped after updating the extension
+    if app.activeSprite then TimeTracker:OnSiteEnter(app.activeSprite) end
+
     -- TODO: Live update Sprite Statistics
 
     -- Register commands
