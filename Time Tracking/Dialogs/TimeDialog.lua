@@ -1,10 +1,9 @@
+local Preferences = dofile("../Preferences.lua")
 local Statistics = dofile("../Statistics.lua")
 local Tracking = dofile("../Tracking.lua")
-local Hash = dofile("../Hash.lua")
+local Tab = dofile("../Tab.lua")
 local Time = dofile("../Time.lua")
 -- local AddMilestoneDialog = dofile("./AddMilestoneDialog.lua")
-
-local Tab = {Session = "session-tab", Today = "today-tab", Total = "total-tab"}
 
 local ButtonState = {
     normal = {part = "toolbutton_last", color = "button_normal_text"},
@@ -13,6 +12,7 @@ local ButtonState = {
 }
 
 return function(options)
+    Preferences:Init(options.preferences)
     Statistics:Init(options.preferences)
 
     local isRunning = true
@@ -24,30 +24,8 @@ return function(options)
     -- local lastMilestone
     local onSiteChangeListener
 
-    -- TODO: Consider making an object that will have methods for getting data
-    local function GetSpriteSelectedTab(sprite)
-        if sprite == nil then return Tab.Session end
-
-        local id = Hash(sprite.filename)
-        local data = options.preferences[id]
-        if data == nil then return Tab.Session end
-        if data.tab == nil then data.tab = Tab.Session end
-
-        return data.tab
-    end
-
-    local function UpdateSpriteSelectedTab(sprite, tab)
-        if sprite == nil then return end
-
-        local id = Hash(sprite.filename)
-        local data = options.preferences[id]
-        if data == nil then return end
-
-        data.tab = tab
-    end
-
     -- This is necessary at this point as the dialog.data.tab doesn't update when using dialog:modify
-    local selectedTab = GetSpriteSelectedTab(app.activeSprite)
+    local selectedTab = Preferences:GetSelectedTab(app.activeSprite)
 
     local dialog = Dialog {
         title = "Session Time",
@@ -138,7 +116,7 @@ return function(options)
         local filename = sprite.filename
 
         if filename ~= lastFilename then
-            selectedTab = GetSpriteSelectedTab(sprite)
+            selectedTab = Preferences:GetSelectedTab(sprite)
 
             totalData = Statistics:GetTotalData(filename, true)
             todayData = Statistics:GetTodayData(filename, true)
@@ -196,7 +174,7 @@ return function(options)
             text = title,
             onclick = function()
                 selectedTab = Tab[title] -- TODO: Change this
-                UpdateSpriteSelectedTab(app.activeSprite, selectedTab)
+                Preferences:UpdateSelectedTab(app.activeSprite, selectedTab)
             end
         } --
         :label{id = prefix .. "-time", label = "Time:", visible = false} -- TODO: Just store it in a variable
