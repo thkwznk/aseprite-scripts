@@ -16,6 +16,7 @@ return function(options)
     Statistics:Init(options.preferences)
 
     local isRunning = true
+    local isMinimized = false
     local timer
 
     local lastFilename = app.activeSprite and app.activeSprite.filename
@@ -31,6 +32,9 @@ return function(options)
         title = "Session Time",
         notitlebar = options.notitlebar,
         onclose = function()
+            -- If dialog is just minimized then skip
+            if isMinimized then return end
+
             if options.onclose then options.onclose() end
             timer:stop()
 
@@ -105,11 +109,14 @@ return function(options)
 
         if sprite == nil then
             lastFilename = nil
-            sessionTime = Time.Zero()
-            todayTime = Time.Zero()
-            totalTime = Time.Zero()
-            -- UpdateLastMilestone()
+
+            isMinimized = true
+            dialog:close()
+
             return
+        else
+            isMinimized = false
+            dialog:show{wait = false}
         end
 
         local filename = sprite.filename
