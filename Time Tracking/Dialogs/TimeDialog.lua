@@ -13,9 +13,16 @@ local ButtonState = {
 }
 
 return function(options)
-    local isRunning = true
-    local timer, lastFilename, totalData, todayData -- , lastMilestone
     Statistics:Init(options.preferences)
+
+    local isRunning = true
+    local timer
+
+    local lastFilename = app.activeSprite and app.activeSprite.filename
+    local totalData = Statistics:GetTotalData(lastFilename, true)
+    local todayData = Statistics:GetTodayData(lastFilename, true)
+    -- local lastMilestone
+    local onSiteChangeListener
 
     -- TODO: Consider making an object that will have methods for getting data
     local function GetSpriteSelectedTab(sprite)
@@ -48,6 +55,8 @@ return function(options)
         onclose = function()
             if options.onclose then options.onclose() end
             timer:stop()
+
+            app.events:off(onSiteChangeListener)
 
             -- Resume when the dialog is closed
             if not isRunning then options.onresume() end
@@ -88,6 +97,34 @@ return function(options)
     -- end
 
     local function UpdateDialog(sprite)
+        if sprite == nil then return end
+
+        local sessionData = Statistics:GetSessionData(sprite.filename)
+
+        local totalDataUpdated = Tracking.Sum(totalData, sessionData)
+        local todayDataUpdated = Tracking.Sum(todayData, sessionData)
+
+        UpdateTime("total", totalDataUpdated)
+        UpdateTime("today", todayDataUpdated)
+        UpdateTime("session", sessionData)
+        -- UpdateLastMilestone(filename)
+        dialog:repaint()
+
+        if dialog.bounds.width ~= 126 -- 
+        or dialog.bounds.x ~= app.window.width - 152 --
+        or dialog.bounds.y ~= 48 then
+            local newBounds = Rectangle(dialog.bounds)
+            newBounds.width = 126
+            newBounds.x = app.window.width - 152
+            newBounds.y = 48
+            dialog.bounds = newBounds
+            app.refresh()
+        end
+    end
+
+    onSiteChangeListener = app.events:on("sitechange", function()
+        local sprite = app.activeSprite
+
         if sprite == nil then
             lastFilename = nil
             local data = Tracking.Data()
@@ -124,30 +161,10 @@ return function(options)
             :modify{id = "tab", selected = selectedTab}
         end
 
-        local sessionData = Statistics:GetSessionData(filename)
-
-        local totalDataUpdated = Tracking.Sum(totalData, sessionData)
-        local todayDataUpdated = Tracking.Sum(todayData, sessionData)
-
-        UpdateTime("total", totalDataUpdated)
-        UpdateTime("today", todayDataUpdated)
-        UpdateTime("session", sessionData)
-        -- UpdateLastMilestone(filename)
-        dialog:repaint()
-
-        if dialog.bounds.width ~= 126 -- 
-        or dialog.bounds.x ~= app.window.width - 152 --
-        or dialog.bounds.y ~= 48 then
-            local newBounds = Rectangle(dialog.bounds)
-            newBounds.width = 126
-            newBounds.x = app.window.width - 152
-            newBounds.y = 48
-            dialog.bounds = newBounds
-            app.refresh()
-        end
-
         lastFilename = filename
-    end
+
+        UpdateDialog(sprite)
+    end)
 
     local mouse = {position = Point(0, 0), leftClick = false}
 
@@ -330,13 +347,13 @@ return function(options)
     :tab{text = "X", onclick = function() dialog:close() end} --
     :endtabs{
         id = "tab",
-        selected = Tab.Session,
+        selected = selectedTab,
         onchange = function() dialog:repaint() end
     } --
     -- :label{id = "last-milestone", text = "", enabled = false} --
 
     timer = Timer {
-        interval = 0.5,
+        interval = 1.0,
         ontick = function() UpdateDialog(app.activeSprite) end
     }
     timer:start()
@@ -344,4 +361,4 @@ return function(options)
     return dialog
 end
 
--- TODO: Create a seprate debug dialog
+-- TODO: Create a separate debug dialog
