@@ -1,5 +1,6 @@
 local Statistics = dofile("../Statistics.lua")
 local Time = dofile("../Time.lua")
+local Tracking = dofile("../Tracking.lua")
 
 return function(options)
     local timer
@@ -8,8 +9,14 @@ return function(options)
 
     local dialog = Dialog {title = "Sprite Statistics"}
 
+    local sessionData = Statistics:GetSessionData(filename)
+
     local totalData = Statistics:GetTotalData(filename, true)
+    totalData = Tracking.Sum(totalData, sessionData)
+
     local todayData = Statistics:GetTodayData(filename, true)
+    todayData = Tracking.Sum(todayData, sessionData)
+
     local time = 0
 
     local function AddSection(prefix, title, data)
@@ -48,7 +55,7 @@ return function(options)
     :label{label = "Directory:", text = app.fs.filePath(filename)} --
 
     AddSection("total", "Total", totalData)
-    AddSection("today", "Today", totalData)
+    AddSection("today", "Today", todayData)
 
     dialog --
     :separator() --
