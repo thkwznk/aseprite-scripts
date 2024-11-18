@@ -1,6 +1,6 @@
 local Statistics = dofile("../Statistics.lua")
 local Tracking = dofile("../Tracking.lua")
--- local Hash = dofile("../Hash.lua")
+local Hash = dofile("../Hash.lua")
 local Time = dofile("../Time.lua")
 -- local AddMilestoneDialog = dofile("./AddMilestoneDialog.lua")
 
@@ -17,8 +17,30 @@ return function(options)
     local timer, lastFilename, totalData, todayData -- , lastMilestone
     Statistics:Init(options.preferences)
 
+    -- TODO: Consider making an object that will have methods for getting data
+    local function GetSpriteSelectedTab(sprite)
+        if sprite == nil then return Tab.Session end
+
+        local id = Hash(sprite.filename)
+        local data = options.preferences[id]
+        if data == nil then return Tab.Session end
+        if data.tab == nil then data.tab = Tab.Session end
+
+        return data.tab
+    end
+
+    local function UpdateSpriteSelectedTab(sprite, tab)
+        if sprite == nil then return end
+
+        local id = Hash(sprite.filename)
+        local data = options.preferences[id]
+        if data == nil then return end
+
+        data.tab = tab
+    end
+
     -- This is necessary at this point as the dialog.data.tab doesn't update when using dialog:modify
-    local selectedTab = Tab.Session
+    local selectedTab = GetSpriteSelectedTab(app.activeSprite)
 
     local dialog = Dialog {
         title = "Session Time",
@@ -79,38 +101,27 @@ return function(options)
         local filename = sprite.filename
 
         if filename ~= lastFilename then
+            selectedTab = GetSpriteSelectedTab(sprite)
+
             totalData = Statistics:GetTotalData(filename, true)
             todayData = Statistics:GetTodayData(filename, true)
 
-            if totalData.totalDays <= 1 then
-                if selectedTab == Tab.Total then
-                    dialog --
-                    :modify{id = "tab", selected = Tab.Today} --
-                    :modify{id = Tab.Total, selected = false} --
-                    :modify{id = Tab.Today, selected = true} --
-
-                    selectedTab = Tab.Today
-                end
-
-                dialog:modify{id = Tab.Total, enabled = false}
-            else
-                dialog:modify{id = Tab.Total, enabled = true}
-            end
-
-            if todayData.totalTime == 0 then
-                if selectedTab == Tab.Today then
-                    dialog --
-                    :modify{id = "tab", selected = Tab.Session} --
-                    :modify{id = Tab.Today, selected = false} --
-                    :modify{id = Tab.Session, selected = true}
-
-                    selectedTab = Tab.Session
-                end
-
-                dialog:modify{id = Tab.Today, enabled = false}
-            else
-                dialog:modify{id = Tab.Today, enabled = true}
-            end
+            dialog --
+            :modify{ --
+                id = Tab.Session,
+                selected = selectedTab == Tab.Session
+            } --
+            :modify{
+                id = Tab.Today,
+                enabled = todayData.totalTime > 0,
+                selected = selectedTab == Tab.Today
+            } --
+            :modify{
+                id = Tab.Total,
+                enabled = totalData.totalDays > 1,
+                selected = selectedTab == Tab.Total
+            } --
+            :modify{id = "tab", selected = selectedTab}
         end
 
         local sessionData = Statistics:GetSessionData(filename)
@@ -168,6 +179,7 @@ return function(options)
             text = title,
             onclick = function()
                 selectedTab = Tab[title] -- TODO: Change this
+                UpdateSpriteSelectedTab(app.activeSprite, selectedTab)
             end
         } --
         :label{id = prefix .. "-time", label = "Time:", visible = false} -- TODO: Just store it in a variable
@@ -333,4 +345,3 @@ return function(options)
 end
 
 -- TODO: Create a seprate debug dialog
--- TODO: Use plugin.preferences to remember what tab is open for a sprite, this should ensure that an invalid tab is never selected and I don't have to switch them
