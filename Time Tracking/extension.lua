@@ -62,7 +62,9 @@ function init(plugin)
         id = "SessionTime",
         title = "Session Time",
         group = "view_controls",
-        onenabled = function() return not isSessionTimeOpen end,
+        onenabled = function()
+            return app.activeSprite and not isSessionTimeOpen
+        end,
         onclick = function()
             isSessionTimeOpen = true
 
