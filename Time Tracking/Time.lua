@@ -1,4 +1,5 @@
 return {
+    Zero = function() return "00:00:00" end,
     Now = function() return os.clock() end,
     Date = function()
         local time = os.time()

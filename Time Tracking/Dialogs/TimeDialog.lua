@@ -41,9 +41,9 @@ return function(options)
         end
     }
 
-    local function UpdateTime(id, data)
-        dialog:modify{id = id .. "-time", text = Time.Parse(data.totalTime)}
-    end
+    local sessionTime = Time.Zero()
+    local todayTime = Time.Zero()
+    local totalTime = Time.Zero()
 
     -- local function UpdateLastMilestone(filename)
     --     if filename == nil then
@@ -79,12 +79,12 @@ return function(options)
 
         local sessionData = Statistics:GetSessionData(sprite.filename)
 
-        local totalDataUpdated = Tracking.Sum(totalData, sessionData)
         local todayDataUpdated = Tracking.Sum(todayData, sessionData)
+        local totalDataUpdated = Tracking.Sum(totalData, sessionData)
 
-        UpdateTime("total", totalDataUpdated)
-        UpdateTime("today", todayDataUpdated)
-        UpdateTime("session", sessionData)
+        sessionTime = Time.Parse(sessionData.totalTime)
+        todayTime = Time.Parse(todayDataUpdated.totalTime)
+        totalTime = Time.Parse(totalDataUpdated.totalTime)
         -- UpdateLastMilestone(filename)
         dialog:repaint()
 
@@ -105,10 +105,9 @@ return function(options)
 
         if sprite == nil then
             lastFilename = nil
-            local data = Tracking.Data()
-            UpdateTime("total", data)
-            UpdateTime("today", data)
-            UpdateTime("session", data)
+            sessionTime = Time.Zero()
+            todayTime = Time.Zero()
+            totalTime = Time.Zero()
             -- UpdateLastMilestone()
             return
         end
@@ -167,18 +166,7 @@ return function(options)
         end
     }
 
-    local function CreateTab(prefix, title)
-        dialog --
-        :tab{
-            id = prefix .. "-tab",
-            text = title,
-            onclick = function()
-                selectedTab = Tab[title] -- TODO: Change this
-                Preferences:UpdateSelectedTab(app.activeSprite, selectedTab)
-            end
-        } --
-        :label{id = prefix .. "-time", label = "Time:", visible = false} -- TODO: Just store it in a variable
-
+    local function CreateTab(title, tab)
         -- local addMilestoneButton = {
         --     bounds = Rectangle(0, 0, 20, 16),
         --     state = ButtonState,
@@ -199,8 +187,17 @@ return function(options)
         local customWidgets = {startStopButton} -- , addMilestoneButton}
 
         dialog --
+        :tab{
+            id = tab,
+            text = title,
+            onclick = function()
+                selectedTab = tab
+                Preferences:UpdateSelectedTab(app.activeSprite, selectedTab)
+            end
+        } --
+        :label{id = tab .. "-empty-label", visible = false} -- Tab needs at least one  widget to not glue all canvases together in the first one
         :canvas{
-            id = "canvas",
+            id = tab .. "-canvas",
             width = 120,
             height = 17,
             onpaint = function(ev)
@@ -211,11 +208,11 @@ return function(options)
                 local text = "Time: "
 
                 if selectedTab == Tab.Session then
-                    text = text .. dialog.data["session-time"]
+                    text = text .. sessionTime
                 elseif selectedTab == Tab.Today then
-                    text = text .. dialog.data["today-time"]
+                    text = text .. todayTime
                 else
-                    text = text .. dialog.data["total-time"]
+                    text = text .. totalTime
                 end
 
                 ctx.color = app.theme.color["button_normal_text"]
@@ -317,9 +314,9 @@ return function(options)
         }
     end
 
-    CreateTab("session", "Session")
-    CreateTab("today", "Today")
-    CreateTab("total", "Total")
+    CreateTab("Session", Tab.Session)
+    CreateTab("Today", Tab.Today)
+    CreateTab("Total", Tab.Total)
 
     dialog --
     :tab{text = "X", onclick = function() dialog:close() end} --
