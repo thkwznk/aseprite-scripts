@@ -6,12 +6,8 @@ local TimeDialog = dofile("./Dialogs/TimeDialog.lua")
 local MilestonesDialog = dofile("./Dialogs/MilestonesDialog.lua")
 
 function init(plugin)
-    -- Reset view if it has a deprecated value
-    if plugin.preferences.view == View.Basic or plugin.preferences.view ==
-        View.Advanced then plugin.preferences.view = nil end
-
     -- Initialize the view
-    plugin.preferences.view = plugin.preferences.view or View.Session
+    plugin.preferences.view = plugin.preferences.view or View.Basic
 
     -- Initialize the milestones
     plugin.preferences.milestones = plugin.preferences.milestones or {}
@@ -60,16 +56,22 @@ function init(plugin)
         end
     }
 
+    local isSessionTimeOpen = false
+
     plugin:newCommand{
-        id = "SpriteWorkTime",
-        title = "Sprite Work Time",
+        id = "SessionTime",
+        title = "Session Time",
         group = "view_controls",
+        onenabled = function() return not isSessionTimeOpen end,
         onclick = function()
+            isSessionTimeOpen = true
+
             local dialog = TimeDialog {
                 notitlebar = true,
                 preferences = plugin.preferences,
                 onpause = function() ChangeTracker:Stop() end,
-                onresume = function() ChangeTracker:Resume() end
+                onresume = function() ChangeTracker:Resume() end,
+                onclose = function() isSessionTimeOpen = false end
             }
             dialog:show{wait = false}
             local newBounds = Rectangle(dialog.bounds)

@@ -28,6 +28,9 @@ function TimeTracker:OnSiteLeave(sprite, forceClose)
     local now = Time.Now()
     local id = Hash(sprite.filename)
     local data = self.dataStorage[id]
+
+    -- TODO: What if leaving a sprite that doesn't have data?
+
     local isTrueClose = forceClose or not self:_IsSpriteOpen(data.filename)
 
     -- Data for temporary files isn't saved
