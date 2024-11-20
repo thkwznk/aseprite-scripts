@@ -44,7 +44,7 @@ function Statistics:GetTotalData(filename, skipUnsavedTime)
             saves = saves + currentSession.saves
             sessions = sessions + 1
 
-            -- TODO: What if it's the first session of the day an only one day before that this file was worked on? How to handle the totalDays in this case?
+            -- TODO: What if it's the first session of the day and only one day before that this file was worked on? How to handle the totalDays in this case?
         end
 
         unsavedTime = self:_GetUnsavedTime(data, now)
