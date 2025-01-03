@@ -1,4 +1,4 @@
-local function SelectedAnyCels()
+local function AnyCelsSelected()
     return app.activeSprite ~= nil and #app.range.cels > 0
 end
 
@@ -33,13 +33,17 @@ local function SelectContent(mode)
 end
 
 function init(plugin)
-    plugin:newCommand{
-        id = "SelectContent",
-        title = "Content",
-        group = "select_simple",
-        onenabled = SelectedAnyCels,
-        onclick = function() SelectContent(SelectionMode.REPLACE) end
-    }
+    local function AddSelectContentCommand(title, group)
+        plugin:newCommand{
+            id = "SelectContent",
+            title = title,
+            group = group,
+            onenabled = AnyCelsSelected,
+            onclick = function() SelectContent(SelectionMode.REPLACE) end
+        }
+    end
+
+    AddSelectContentCommand("Content", "select_simple")
 
     local parentGroup = "cel_popup_properties"
 
@@ -50,17 +54,11 @@ function init(plugin)
 
         plugin:newMenuGroup{
             id = parentGroup,
-            title = "Select Content",
+            title = "Select Cel(s) Content",
             group = "cel_popup_properties"
         }
 
-        plugin:newCommand{
-            id = "SelectContent",
-            title = "Replace selection",
-            group = parentGroup,
-            onenabled = SelectedAnyCels,
-            onclick = function() SelectContent(SelectionMode.REPLACE) end
-        }
+        AddSelectContentCommand("Replace selection", parentGroup)
 
         plugin:newMenuSeparator{group = parentGroup}
 
@@ -92,13 +90,7 @@ function init(plugin)
             end
         }
     else
-        plugin:newCommand{
-            id = "SelectContent",
-            title = "Select Content",
-            group = parentGroup,
-            onenabled = SelectedAnyCels,
-            onclick = function() SelectContent(SelectionMode.REPLACE) end
-        }
+        AddSelectContentCommand("Select Cel(s) Content", parentGroup)
     end
 end
 

@@ -149,4 +149,4 @@ Unreleased:
 ## Select Content
 
 Unreleased:
-- [Feature] Add content selection options to cells context menu
+- [Feature] Add content selection options to cels context menu under Cel > "Select Cel(s) Content" (for Aseprite versions older than v1.3-rc2 it will appear as a single option)
