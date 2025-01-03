@@ -145,3 +145,8 @@ Unreleased:
 
 - [Feature] Add a new option under _File > Run..._ that allows for searching and running scripts and commands 
 - [Feature] Add a keyboard shortcut for running the last searched script or command
+
+## Select Content
+
+Unreleased:
+- [Feature] Respect the editor selection mode (replace/add/subtract/intersect) when selecting content

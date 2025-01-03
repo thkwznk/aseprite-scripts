@@ -23,7 +23,7 @@
     ],
     "keys": [
       {
-        "id": "go-to-layer-tag-keys",
+        "id": "select-content-layer-tag-keys",
         "path": "./extension-keys.aseprite-keys"
       }
     ]
