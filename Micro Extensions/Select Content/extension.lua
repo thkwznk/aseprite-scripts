@@ -32,6 +32,69 @@ local function SelectContent(mode)
     app.refresh()
 end
 
+local function SelectContentIntersection()
+    local selection
+
+    for _, cel in ipairs(app.range.cels) do
+        local currentSelection = Selection()
+        for pixel in cel.image:pixels() do
+            if pixel() > 0 then
+                local rectangle = Rectangle(pixel.x + cel.position.x,
+                                            pixel.y + cel.position.y, 1, 1)
+
+                currentSelection:add(rectangle)
+            end
+        end
+
+        if selection == nil then
+            selection = currentSelection
+        else
+            selection:intersect(currentSelection)
+        end
+    end
+
+    app.activeSprite.selection = selection
+    app.refresh()
+end
+
+local function SelectContentDifference()
+    local selection = Selection()
+
+    for _, cel in ipairs(app.range.cels) do
+        for pixel in cel.image:pixels() do
+            if pixel() > 0 then
+                local rectangle = Rectangle(pixel.x + cel.position.x,
+                                            pixel.y + cel.position.y, 1, 1)
+
+                selection:add(rectangle)
+            end
+        end
+    end
+
+    selection:subtract(app.activeSprite.selection)
+    app.activeSprite.selection = selection
+    app.refresh()
+end
+
+local function SelectContentComplement()
+    local selection = Selection()
+
+    for _, cel in ipairs(app.range.cels) do
+        for pixel in cel.image:pixels() do
+            if pixel() > 0 then
+                local rectangle = Rectangle(pixel.x + cel.position.x,
+                                            pixel.y + cel.position.y, 1, 1)
+
+                selection:add(rectangle)
+            end
+        end
+    end
+
+    app.activeSprite.selection:selectAll()
+    app.activeSprite.selection:subtract(selection)
+    app.refresh()
+end
+
 function init(plugin)
     local function AddSelectContentCommand(title, group)
         plugin:newCommand{
@@ -58,7 +121,31 @@ function init(plugin)
             group = "cel_popup_properties"
         }
 
-        AddSelectContentCommand("Replace selection", parentGroup)
+        AddSelectContentCommand("Replace selection with union", parentGroup)
+
+        plugin:newCommand{
+            id = "SelectCelContentReplaceIntersect",
+            title = "Replace selection with intersection",
+            group = parentGroup,
+            onenabled = function() return #app.range.cels > 1 end,
+            onclick = function() SelectContentIntersection() end
+        }
+
+        plugin:newCommand{
+            id = "SelectCelContentReplaceComplement",
+            title = "Replace selection with complement",
+            group = parentGroup,
+            onenabled = AnyCelsSelected,
+            onclick = function() SelectContentComplement() end
+        }
+
+        plugin:newCommand{
+            id = "SelectCelContentReplaceDifference",
+            title = "Replace selection with difference",
+            group = parentGroup,
+            onenabled = SpriteHasSelection,
+            onclick = function() SelectContentDifference() end
+        }
 
         plugin:newMenuSeparator{group = parentGroup}
 

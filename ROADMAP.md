@@ -150,3 +150,4 @@ Unreleased:
 
 Unreleased:
 - [Feature] Add content selection options to cels context menu under Cel > "Select Cel(s) Content" (for Aseprite versions older than v1.3-rc2 it will appear as a single option)
+- [Feature] Add new content selection options for selecting an intersection, complement and difference of cels content
