@@ -1,9 +1,11 @@
-function CanSelectContent()
+local function SelectedAnyCels()
     return app.activeSprite ~= nil and #app.range.cels > 0
 end
 
-function SelectContent()
-    local mode = app.preferences.selection.mode
+local function SpriteHasSelection() return
+    not app.activeSprite.selection.isEmpty end
+
+local function SelectContent(mode)
     local selection = Selection()
 
     for _, cel in ipairs(app.range.cels) do
@@ -35,13 +37,71 @@ function init(plugin)
         id = "SelectContent",
         title = "Content",
         group = "select_simple",
-        onenabled = CanSelectContent,
-        onclick = SelectContent
+        onenabled = SelectedAnyCels,
+        onclick = function() SelectContent(SelectionMode.REPLACE) end
     }
+
+    local parentGroup = "cel_popup_properties"
+
+    if app.apiVersion >= 22 then
+        plugin:newMenuSeparator{group = "cel_popup_properties"}
+
+        parentGroup = "cel_popup_select_content"
+
+        plugin:newMenuGroup{
+            id = parentGroup,
+            title = "Select Content",
+            group = "cel_popup_properties"
+        }
+
+        plugin:newCommand{
+            id = "SelectContent",
+            title = "Replace selection",
+            group = parentGroup,
+            onenabled = SelectedAnyCels,
+            onclick = function() SelectContent(SelectionMode.REPLACE) end
+        }
+
+        plugin:newMenuSeparator{group = parentGroup}
+
+        plugin:newCommand{
+            id = "SelectCelContentAdd",
+            title = "Add to selection",
+            group = parentGroup,
+            onenabled = SpriteHasSelection,
+            onclick = function() SelectContent(SelectionMode.ADD) end
+        }
+
+        plugin:newCommand{
+            id = "SelectCelContentSubtract",
+            title = "Subtract from selection",
+            group = parentGroup,
+            onenabled = SpriteHasSelection,
+            onclick = function()
+                SelectContent(SelectionMode.SUBTRACT)
+            end
+        }
+
+        plugin:newCommand{
+            id = "SelectCelContentIntersect",
+            title = "Intersect selection",
+            group = parentGroup,
+            onenabled = SpriteHasSelection,
+            onclick = function()
+                SelectContent(SelectionMode.INTERSECT)
+            end
+        }
+    else
+        plugin:newCommand{
+            id = "SelectContent",
+            title = "Select Content",
+            group = parentGroup,
+            onenabled = SelectedAnyCels,
+            onclick = function() SelectContent(SelectionMode.REPLACE) end
+        }
+    end
 end
 
 function exit(plugin)
     -- You don't really need to do anything specific here
 end
-
--- TODO: For v2.0.0 add support for respecting the current selection mode (app.preferences.selection.mode) 

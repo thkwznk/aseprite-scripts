@@ -149,4 +149,4 @@ Unreleased:
 ## Select Content
 
 Unreleased:
-- [Feature] Respect the editor selection mode (replace/add/subtract/intersect) when selecting content
+- [Feature] Add content selection options to cells context menu
