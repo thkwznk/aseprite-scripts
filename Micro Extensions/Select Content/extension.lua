@@ -121,11 +121,11 @@ function init(plugin)
             group = "cel_popup_properties"
         }
 
-        AddSelectContentCommand("Replace selection with union", parentGroup)
+        AddSelectContentCommand("Union", parentGroup)
 
         plugin:newCommand{
             id = "SelectCelContentReplaceIntersect",
-            title = "Replace selection with intersection",
+            title = "Intersection",
             group = parentGroup,
             onenabled = function() return #app.range.cels > 1 end,
             onclick = function() SelectContentIntersection() end
@@ -133,7 +133,7 @@ function init(plugin)
 
         plugin:newCommand{
             id = "SelectCelContentReplaceComplement",
-            title = "Replace selection with complement",
+            title = "Inverse",
             group = parentGroup,
             onenabled = AnyCelsSelected,
             onclick = function() SelectContentComplement() end
@@ -141,7 +141,7 @@ function init(plugin)
 
         plugin:newCommand{
             id = "SelectCelContentReplaceDifference",
-            title = "Replace selection with difference",
+            title = "Difference",
             group = parentGroup,
             onenabled = SpriteHasSelection,
             onclick = function() SelectContentDifference() end
