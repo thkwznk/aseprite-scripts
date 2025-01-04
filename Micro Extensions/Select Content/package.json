@@ -2,7 +2,7 @@
   "name": "select-content",
   "displayName": "Select Content",
   "description": "Provides an option to precisely select cel's content.",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "author": {
     "name": "Kacper Woźniak",
     "email": "kac.wozniak@gmail.com",

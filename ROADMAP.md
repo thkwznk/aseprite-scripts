@@ -145,9 +145,3 @@ Unreleased:
 
 - [Feature] Add a new option under _File > Run..._ that allows for searching and running scripts and commands 
 - [Feature] Add a keyboard shortcut for running the last searched script or command
-
-## Select Content
-
-Unreleased:
-- [Feature] Add new menu options for the cels context menu (accessible from the timeline) - "Select Cel(s) Content" (for Aseprite versions older than v1.3-rc2 it will appear as a single option)
-- [Feature] Add new content selection options for selecting an intersection, complement and difference of selected cels content (only for Aseprite v1.3-rc2 or newer)
