@@ -2,8 +2,13 @@ local function AnyCelsSelected()
     return app.activeSprite ~= nil and #app.range.cels > 0
 end
 
-local function SpriteHasSelection() return
-    not app.activeSprite.selection.isEmpty end
+local function MultipleCelsSelected()
+    return app.activeSprite ~= nil and #app.range.cels > 1
+end
+
+local function SpriteHasSelection()
+    return app.activeSprite ~= nil and not app.activeSprite.selection.isEmpty
+end
 
 local function SelectContent(mode)
     local selection = Selection()
@@ -127,8 +132,8 @@ function init(plugin)
             id = "SelectCelContentReplaceIntersect",
             title = "Intersection",
             group = parentGroup,
-            onenabled = function() return #app.range.cels > 1 end,
-            onclick = function() SelectContentIntersection() end
+            onenabled = MultipleCelsSelected,
+            onclick = SelectContentIntersection
         }
 
         plugin:newCommand{
@@ -136,7 +141,7 @@ function init(plugin)
             title = "Inverse",
             group = parentGroup,
             onenabled = AnyCelsSelected,
-            onclick = function() SelectContentComplement() end
+            onclick = SelectContentComplement
         }
 
         plugin:newCommand{
@@ -144,7 +149,7 @@ function init(plugin)
             title = "Difference",
             group = parentGroup,
             onenabled = SpriteHasSelection,
-            onclick = function() SelectContentDifference() end
+            onclick = SelectContentDifference
         }
 
         plugin:newMenuSeparator{group = parentGroup}
