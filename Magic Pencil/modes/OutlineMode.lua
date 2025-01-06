@@ -1,3 +1,5 @@
+local GetBoundsForPixels = dofile("../GetBoundsForPixels.lua")
+
 local OutlineMode = {deleteOnEmptyCel = true}
 
 function OutlineMode:Process(change, sprite, cel, parameters)

@@ -1,3 +1,5 @@
+local GetBoundsForPixels = dofile("../GetBoundsForPixels.lua")
+
 local GraffitiMode = {canExtend = true}
 
 function GraffitiMode:Process(change, sprite, cel, parameters)

@@ -1,4 +1,6 @@
 local ModeFactory = dofile("./ModeFactory.lua")
+local GetBoundsForPixels = dofile("./GetBoundsForPixels.lua")
+local Mode = dofile("./Mode.lua")
 
 -- Automatically load all modes
 local extensionsDirectory = app.fs.joinPath(app.fs.userConfigPath, "extensions")
@@ -13,97 +15,17 @@ local MagicPink = Color {red = 255, green = 0, blue = 255, alpha = 128}
 local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 
 -- Modes
-local Modes = {
-    Regular = "RegularMode",
-    Graffiti = "GraffitiMode",
-    Outline = "OutlineMode",
-    OutlineLive = "OutlineLiveMode",
-    Cut = "CutMode",
-    Selection = "SelectionMode",
-    Yeet = "YeetMode",
-    Mix = "MixMode",
-    MixProportional = "MixProportionalMode",
-    Colorize = "ColorizeMode",
-    Desaturate = "DesaturateMode",
-    ShiftHsvHue = "ShiftHsvHueMode",
-    ShiftHsvSaturation = "ShiftHsvSaturationMode",
-    ShiftHsvValue = "ShiftHsvValueMode",
-    ShiftHslHue = "ShiftHslHueMode",
-    ShiftHslSaturation = "ShiftHslSaturationMode",
-    ShiftHslLightness = "ShiftHslLightnessMode",
-    ShiftRgbRed = "ShiftRgbRedMode",
-    ShiftRgbGreen = "ShiftRgbGreenMode",
-    ShiftRgbBlue = "ShiftRgbBlueMode"
-}
-
 local ShiftHsvModes = {
-    Modes.ShiftHsvHue, Modes.ShiftHsvSaturation, Modes.ShiftHsvValue
+    Mode.ShiftHsvHue, Mode.ShiftHsvSaturation, Mode.ShiftHsvValue
 }
-
 local ShiftHslModes = {
-    Modes.ShiftHslHue, Modes.ShiftHslSaturation, Modes.ShiftHslLightness
+    Mode.ShiftHslHue, Mode.ShiftHslSaturation, Mode.ShiftHslLightness
 }
-
-local ShiftRgbModes = {
-    Modes.ShiftRgbRed, Modes.ShiftRgbGreen, Modes.ShiftRgbBlue
-}
+local ShiftRgbModes = {Mode.ShiftRgbRed, Mode.ShiftRgbGreen, Mode.ShiftRgbBlue}
 
 local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
 
-local ToHsvMap = {
-    [Modes.ShiftHslHue] = Modes.ShiftHsvHue,
-    [Modes.ShiftHslSaturation] = Modes.ShiftHsvSaturation,
-    [Modes.ShiftHslLightness] = Modes.ShiftHsvValue,
-
-    [Modes.ShiftRgbRed] = Modes.ShiftHsvHue,
-    [Modes.ShiftRgbGreen] = Modes.ShiftHsvSaturation,
-    [Modes.ShiftRgbBlue] = Modes.ShiftHsvValue
-}
-
-local ToHslMap = {
-    [Modes.ShiftHsvHue] = Modes.ShiftHslHue,
-    [Modes.ShiftHsvSaturation] = Modes.ShiftHslSaturation,
-    [Modes.ShiftHsvValue] = Modes.ShiftHslLightness,
-
-    [Modes.ShiftRgbRed] = Modes.ShiftHslHue,
-    [Modes.ShiftRgbGreen] = Modes.ShiftHslSaturation,
-    [Modes.ShiftRgbBlue] = Modes.ShiftHslLightness
-}
-
-local ToRgbMap = {
-    [Modes.ShiftHsvHue] = Modes.ShiftRgbRed,
-    [Modes.ShiftHsvSaturation] = Modes.ShiftRgbGreen,
-    [Modes.ShiftHsvValue] = Modes.ShiftRgbBlue,
-
-    [Modes.ShiftHslHue] = Modes.ShiftRgbRed,
-    [Modes.ShiftHslSaturation] = Modes.ShiftRgbGreen,
-    [Modes.ShiftHslLightness] = Modes.ShiftRgbBlue
-}
-
-function Contains(collection, expectedValue)
-    for _, value in ipairs(collection) do
-        if value == expectedValue then return true end
-    end
-end
-
-function GetBoundsForPixels(pixels)
-    if pixels and #pixels == 0 then return end
-
-    local minX, maxX = pixels[1].x, pixels[1].x
-    local minY, maxY = pixels[1].y, pixels[1].y
-
-    for _, pixel in ipairs(pixels) do
-        minX = math.min(minX, pixel.x)
-        maxX = math.max(maxX, pixel.x)
-
-        minY = math.min(minY, pixel.y)
-        maxY = math.max(maxY, pixel.y)
-    end
-
-    return Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1)
-end
-
-function WasColorBlended(old, color, new)
+local function WasColorBlended(old, color, new)
     local oldAlpha = old.alpha / 255
     local pixelAlpha = color.alpha / 255
 
@@ -129,19 +51,19 @@ function WasColorBlended(old, color, new)
                math.abs(finalAlpha - new.alpha) < 1
 end
 
-function RectangleContains(rect, x, y)
+local function RectangleContains(rect, x, y)
     return x >= rect.x and x <= rect.x + rect.width - 1 and --
     y >= rect.y and y <= rect.y + rect.height - 1
 end
 
-function RectangleCenter(rect)
+local function RectangleCenter(rect)
     if not rect then return nil end
 
     return Point(rect.x + math.floor(rect.width / 2),
                  rect.y + math.floor(rect.height / 2))
 end
 
-function GetButtonsPressed(pixels, previous, next)
+local function GetButtonsPressed(pixels, previous, next)
     if #pixels == 0 then return end
 
     local leftPressed, rightPressed = false, false
@@ -179,7 +101,7 @@ function GetButtonsPressed(pixels, previous, next)
     return leftPressed, rightPressed
 end
 
-function CalculateChange(previous, next, canExtend)
+local function CalculateChange(previous, next, canExtend)
     -- If size changed then it's a clear indicator of a change
     -- Pencil can only add which means the new image can only be bigger (not true, you COULD paint with color 0...)
 
@@ -272,10 +194,10 @@ function CalculateChange(previous, next, canExtend)
     }
 end
 
-local MagicPencil = {dialog = nil, colorModel = ColorModels.HSV}
-
-function MagicPencil:Execute(options)
-    local selectedMode = Modes.Regular
+local function MagicPencilDialog(options)
+    local dialog
+    local colorModel = ColorModels.HSV
+    local selectedMode = Mode.Regular
     local sprite = app.activeSprite
 
     local lastKnownNumberOfCels, lastActiveCel, lastActiveLayer,
@@ -312,7 +234,7 @@ function MagicPencil:Execute(options)
         -- TODO: In order to make all tools work I need to readjust the detection of Magic Colors - spray will overlay them and break it right now
 
         if app.activeTool.id ~= "pencil" or -- If it's the wrong tool then ignore
-        selectedMode == Modes.Regular or -- If it's the regular mode then ignore
+        selectedMode == Mode.Regular or -- If it's the regular mode then ignore
         lastKnownNumberOfCels ~= #sprite.cels or -- If last layer/frame/cel was removed then ignore
         lastActiveCel ~= app.activeCel or -- If it's just a layer/frame/cel change then ignore
         lastActiveCel == nil or -- If a cel was created where previously was none or cel was copied
@@ -350,7 +272,7 @@ function MagicPencil:Execute(options)
             -- TODO: This can be checked with the new API since 1.3-rc1
             -- Not a user change - most probably an undo action, do nothing
         else
-            modeProcessor:Process(change, sprite, celData, self.dialog.data)
+            modeProcessor:Process(change, sprite, celData, dialog.data)
         end
 
         if deleteCel then app.activeSprite:deleteCel(app.activeCel) end
@@ -389,8 +311,8 @@ function MagicPencil:Execute(options)
         local enabled = false
         if sprite then enabled = sprite.colorMode == ColorMode.RGB end
 
-        for _, mode in pairs(Modes) do
-            self.dialog:modify{id = mode, enabled = enabled} --
+        for _, mode in pairs(Mode) do
+            dialog:modify{id = mode, enabled = enabled} --
         end
     end)
 
@@ -427,7 +349,7 @@ function MagicPencil:Execute(options)
     local onFgColorListener = app.events:on('fgcolorchange', OnFgColorChange)
     local onBgColorListener = app.events:on('bgcolorchange', OnBgColorChange)
 
-    self.dialog = Dialog {
+    dialog = Dialog {
         title = "Magic Pencil",
         onclose = function()
             if sprite then sprite.events:off(onChangeListener) end
@@ -446,8 +368,8 @@ function MagicPencil:Execute(options)
         end
     }
 
-    local Mode = function(mode, text, visible, selected)
-        self.dialog:radio{
+    local AddMode = function(mode, text, visible, selected)
+        dialog:radio{
             id = mode,
             text = text,
             selected = selected,
@@ -470,23 +392,23 @@ function MagicPencil:Execute(options)
                     pencilPreferences.ink = lastInk
                 end
 
-                self.dialog --
+                dialog --
                 :modify{
                     id = "outlineColor",
-                    visible = selectedMode == Modes.OutlineLive
+                    visible = selectedMode == Mode.OutlineLive
                 } --
                 :modify{
                     id = "graffitiPower",
-                    visible = selectedMode == Modes.Graffiti
+                    visible = selectedMode == Mode.Graffiti
                 } --
             end
         }:newrow() --
     end
 
-    Mode(Modes.Regular, "Regular", true, true)
+    AddMode(Mode.Regular, "Regular", true, true)
 
-    Mode(Modes.Graffiti, "Graffiti", true)
-    self.dialog:slider{
+    AddMode(Mode.Graffiti, "Graffiti", true)
+    dialog:slider{
         id = "graffitiPower",
         visible = false,
         min = 1,
@@ -494,97 +416,97 @@ function MagicPencil:Execute(options)
         value = 50
     }
 
-    self.dialog:separator{text = "Outline"} --
-    Mode(Modes.Outline, "Tool")
-    Mode(Modes.OutlineLive, "Brush")
-    self.dialog:color{
+    dialog:separator{text = "Outline"} --
+    AddMode(Mode.Outline, "Tool")
+    AddMode(Mode.OutlineLive, "Brush")
+    dialog:color{
         id = "outlineColor",
         visible = false,
         color = Color {gray = 0, alpha = 255}
     }
 
-    self.dialog:separator{text = "Transform"} --
-    Mode(Modes.Cut, "Lift")
-    Mode(Modes.Selection, "Selection")
+    dialog:separator{text = "Transform"} --
+    AddMode(Mode.Cut, "Lift")
+    AddMode(Mode.Selection, "Selection")
 
     -- self.dialog:separator{text = "Forbidden"} --
-    Mode(Modes.Yeet, "Yeet", false)
+    AddMode(Mode.Yeet, "Yeet", false)
 
-    self.dialog:separator{text = "Mix"}
-    Mode(Modes.Mix, "Unique")
-    Mode(Modes.MixProportional, "Proportional")
+    dialog:separator{text = "Mix"}
+    AddMode(Mode.Mix, "Unique")
+    AddMode(Mode.MixProportional, "Proportional")
 
-    self.dialog:separator{text = "Change"} --
-    Mode(Modes.Colorize, "Colorize")
-    Mode(Modes.Desaturate, "Desaturate")
+    dialog:separator{text = "Change"} --
+    AddMode(Mode.Colorize, "Colorize")
+    AddMode(Mode.Desaturate, "Desaturate")
 
-    self.dialog:separator{text = "Shift"} --
+    dialog:separator{text = "Shift"} --
     :combobox{
         id = "colorModel",
         options = ColorModels,
-        option = self.colorModel,
+        option = colorModel,
         onchange = function()
-            self.colorModel = self.dialog.data.colorModel
+            colorModel = dialog.data.colorModel
 
-            if self.colorModel == ColorModels.HSV then
-                selectedMode = ToHsvMap[selectedMode]
-            elseif self.colorModel == ColorModels.HSL then
-                selectedMode = ToHslMap[selectedMode]
-            elseif self.colorModel == ColorModels.RGB then
-                selectedMode = ToRgbMap[selectedMode]
+            if colorModel == ColorModels.HSV then
+                selectedMode = Mode.ToHsvMap[selectedMode]
+            elseif colorModel == ColorModels.HSL then
+                selectedMode = Mode.ToHslMap[selectedMode]
+            elseif colorModel == ColorModels.RGB then
+                selectedMode = Mode.ToRgbMap[selectedMode]
             end
 
             for _, hsvMode in ipairs(ShiftHsvModes) do
-                self.dialog:modify{
+                dialog:modify{
                     id = hsvMode,
-                    visible = self.colorModel == ColorModels.HSV,
+                    visible = colorModel == ColorModels.HSV,
                     selected = selectedMode == hsvMode
                 }
             end
 
             for _, hslMode in ipairs(ShiftHslModes) do
-                self.dialog:modify{
+                dialog:modify{
                     id = hslMode,
-                    visible = self.colorModel == ColorModels.HSL,
+                    visible = colorModel == ColorModels.HSL,
                     selected = selectedMode == hslMode
                 }
             end
 
             for _, rgbMode in ipairs(ShiftRgbModes) do
-                self.dialog:modify{
+                dialog:modify{
                     id = rgbMode,
-                    visible = self.colorModel == ColorModels.RGB,
+                    visible = colorModel == ColorModels.RGB,
                     selected = selectedMode == rgbMode
                 }
             end
         end
     } --
 
-    local isHsv = self.colorModel == ColorModels.HSV
-    Mode(Modes.ShiftHsvHue, "Hue", isHsv)
-    Mode(Modes.ShiftHsvSaturation, "Saturation", isHsv)
-    Mode(Modes.ShiftHsvValue, "Value", isHsv)
+    local isHsv = colorModel == ColorModels.HSV
+    AddMode(Mode.ShiftHsvHue, "Hue", isHsv)
+    AddMode(Mode.ShiftHsvSaturation, "Saturation", isHsv)
+    AddMode(Mode.ShiftHsvValue, "Value", isHsv)
 
-    local isHsl = self.colorModel == ColorModels.HSL
-    Mode(Modes.ShiftHslHue, "Hue", isHsl)
-    Mode(Modes.ShiftHslSaturation, "Saturation", isHsl)
-    Mode(Modes.ShiftHslLightness, "Lightness", isHsl)
+    local isHsl = colorModel == ColorModels.HSL
+    AddMode(Mode.ShiftHslHue, "Hue", isHsl)
+    AddMode(Mode.ShiftHslSaturation, "Saturation", isHsl)
+    AddMode(Mode.ShiftHslLightness, "Lightness", isHsl)
 
-    local isRgb = self.colorModel == ColorModels.RGB
-    Mode(Modes.ShiftRgbRed, "Red", isRgb)
-    Mode(Modes.ShiftRgbGreen, "Green", isRgb)
-    Mode(Modes.ShiftRgbBlue, "Blue", isRgb)
+    local isRgb = colorModel == ColorModels.RGB
+    AddMode(Mode.ShiftRgbRed, "Red", isRgb)
+    AddMode(Mode.ShiftRgbGreen, "Green", isRgb)
+    AddMode(Mode.ShiftRgbBlue, "Blue", isRgb)
 
-    self.dialog --
+    dialog --
     :slider{id = "shiftPercentage", min = 1, max = 100, value = 5} --
 
-    self.dialog --
+    dialog --
     :separator() --
     :check{id = "indexedMode", text = "Indexed Mode"}
 
-    self.dialog:show{wait = false}
+    return dialog
 end
 
-return MagicPencil
+return MagicPencilDialog
 
 -- TODO: Integrate the new `App.events`: `beforecommand` and `aftercommand`, to avoid responding to commands when a pencil tool is selected

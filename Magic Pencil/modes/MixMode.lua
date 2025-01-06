@@ -1,5 +1,11 @@
 local Variant = {Unique = "MixMode", Propotional = "MixProportionalMode"}
 
+local function Contains(collection, expectedValue)
+    for _, value in ipairs(collection) do
+        if value == expectedValue then return true end
+    end
+end
+
 local MixModeBase = {
     canExtend = true,
     useMaskColor = true,
