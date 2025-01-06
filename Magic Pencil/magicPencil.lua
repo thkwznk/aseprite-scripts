@@ -309,6 +309,8 @@ function MagicPencil:Execute(options)
         -- If there is no active cel, do nothing
         if app.activeCel == nil then return end
 
+        -- TODO: In order to make all tools work I need to readjust the detection of Magic Colors - spray will overlay them and break it right now
+
         if app.activeTool.id ~= "pencil" or -- If it's the wrong tool then ignore
         selectedMode == Modes.Regular or -- If it's the regular mode then ignore
         lastKnownNumberOfCels ~= #sprite.cels or -- If last layer/frame/cel was removed then ignore
@@ -584,3 +586,5 @@ function MagicPencil:Execute(options)
 end
 
 return MagicPencil
+
+-- TODO: Integrate the new `App.events`: `beforecommand` and `aftercommand`, to avoid responding to commands when a pencil tool is selected

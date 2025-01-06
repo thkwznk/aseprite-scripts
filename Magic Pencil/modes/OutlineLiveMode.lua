@@ -6,6 +6,7 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
     local selection = sprite.selection
     local extend = {}
 
+    -- TODO: Add an option to adjust this
     local outlineSize = 1
 
     local cx, cy = app.activeCel.position.x, app.activeCel.position.y
