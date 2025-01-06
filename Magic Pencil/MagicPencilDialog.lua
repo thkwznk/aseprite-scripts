@@ -1,14 +1,6 @@
-local ModeFactory = dofile("./ModeFactory.lua")
+local ModeProcessorProvider = dofile("./ModeProcessorProvider.lua")
 local GetBoundsForPixels = dofile("./GetBoundsForPixels.lua")
 local Mode = dofile("./Mode.lua")
-
--- Automatically load all modes
-local extensionsDirectory = app.fs.joinPath(app.fs.userConfigPath, "extensions")
-local magicPencilDirectory = app.fs
-                                 .joinPath(extensionsDirectory, "magic-pencil")
-local modesDirectory = app.fs.joinPath(magicPencilDirectory, "modes")
-
-ModeFactory:Init(modesDirectory)
 
 -- Colors
 local MagicPink = Color {red = 255, green = 0, blue = 255, alpha = 128}
@@ -256,7 +248,7 @@ local function MagicPencilDialog(options)
             return
         end
 
-        local modeProcessor = ModeFactory:Create(selectedMode)
+        local modeProcessor = ModeProcessorProvider:Get(selectedMode)
         local celData = newCelFromEmpty and
                             {
                 image = Image(0, 0),
@@ -334,7 +326,7 @@ local function MagicPencilDialog(options)
     local lastInk = app.preferences.tool("pencil").ink
 
     function OnFgColorChange()
-        local modeProcessor = ModeFactory:Create(selectedMode)
+        local modeProcessor = ModeProcessorProvider:Get(selectedMode)
 
         if modeProcessor.useMaskColor then
             if app.fgColor.rgbaPixel ~= MagicPink.rgbaPixel then
@@ -347,7 +339,7 @@ local function MagicPencilDialog(options)
     end
 
     function OnBgColorChange()
-        local modeProcessor = ModeFactory:Create(selectedMode)
+        local modeProcessor = ModeProcessorProvider:Get(selectedMode)
 
         if modeProcessor.useMaskColor then
             if app.bgColor.rgbaPixel ~= MagicTeal.rgbaPixel then
@@ -395,7 +387,7 @@ local function MagicPencilDialog(options)
                 selectedMode = mode
 
                 local useMaskColor =
-                    ModeFactory:Create(selectedMode).useMaskColor
+                    ModeProcessorProvider:Get(selectedMode).useMaskColor
                 local pencilPreferences = app.preferences.tool("pencil")
 
                 if useMaskColor then
