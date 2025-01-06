@@ -64,7 +64,7 @@ Future:
 
 Unreleased:
 
-- ...
+- [Fix] No longer add effects to pixels changed by commands
 
 Update v2.0.0:
 
@@ -73,6 +73,8 @@ Update v2.0.0:
 - [Improvement] Create a new section called "Tool", with Outline
 - [Feature] Add a separate set of options for the Grayscale Color Mode
 - [Feature] Add a separate set of options for the Indexed Color Mode
+- [Improvement] Update dialog when sprite changes color mode
+- [Fix] Lift content only above the layer it's lifted from
 
 Future:
 

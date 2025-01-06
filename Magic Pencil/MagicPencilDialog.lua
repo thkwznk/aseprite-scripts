@@ -227,7 +227,19 @@ local function MagicPencilDialog(options)
 
     updateLast()
 
+    local skip = false
+
+    local onBeforeCommand = function(ev) skip = true end
+
+    local onAfterCommand = function(ev)
+        skip = false
+        updateLast()
+    end
+
     local onSpriteChange = function(ev)
+        -- Skip change, usually when a command is being run
+        if skip then return end
+
         -- If there is no active cel, do nothing
         if app.activeCel == nil then return end
 
@@ -269,7 +281,6 @@ local function MagicPencilDialog(options)
             end
             -- Otherwise, do nothing
         elseif not change.leftPressed and not change.rightPressed then
-            -- TODO: This can be checked with the new API since 1.3-rc1
             -- Not a user change - most probably an undo action, do nothing
         else
             modeProcessor:Process(change, sprite, celData, dialog.data)
@@ -284,8 +295,10 @@ local function MagicPencilDialog(options)
         -- app.undo()
     end
 
+    local onBeforeCommandListener = app.events:on('beforecommand',
+                                                  onBeforeCommand)
+    local onAfterCommandListener = app.events:on('aftercommand', onAfterCommand)
     local onChangeListener = sprite.events:on('change', onSpriteChange)
-
     local onSiteChange = app.events:on('sitechange', function()
         -- If sprite stayed the same then do nothing
         if app.activeSprite == sprite then
@@ -363,6 +376,9 @@ local function MagicPencilDialog(options)
 
             local pencilPreferences = app.preferences.tool("pencil")
             pencilPreferences.ink = lastInk
+
+            app.events:off(onBeforeCommandListener)
+            app.events:off(onAfterCommandListener)
 
             options.onclose()
         end
@@ -508,5 +524,3 @@ local function MagicPencilDialog(options)
 end
 
 return MagicPencilDialog
-
--- TODO: Integrate the new `App.events`: `beforecommand` and `aftercommand`, to avoid responding to commands when a pencil tool is selected
