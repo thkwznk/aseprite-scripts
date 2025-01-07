@@ -7,6 +7,7 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
     local activeCel = app.activeCel
     local drawPixel = activeCel.image.drawPixel
 
+    -- TODO: Add a GUI control for these parameters instead of tying them to the brush size
     local brushSize = app.preferences.tool("pencil").brush.size
     local power = parameters.graffitiPower / 100
 

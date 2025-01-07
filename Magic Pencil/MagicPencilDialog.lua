@@ -2,6 +2,12 @@ local ModeProcessorProvider = dofile("./ModeProcessorProvider.lua")
 local GetBoundsForPixels = dofile("./GetBoundsForPixels.lua")
 local Mode = dofile("./Mode.lua")
 
+-- Tools
+local SupportedTools = {
+    "pencil", "spray", "eraser", "paint_bucket", "line", "curve", "rectangle",
+    "filled_rectangle", "ellipse", "filled_ellipse", "contour", "polygon"
+}
+
 -- Colors
 local MagicPink = Color {red = 255, green = 0, blue = 255, alpha = 128}
 local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
@@ -17,32 +23,6 @@ local ShiftRgbModes = {Mode.ShiftRgbRed, Mode.ShiftRgbGreen, Mode.ShiftRgbBlue}
 
 local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
 
-local function WasColorBlended(old, color, new)
-    local oldAlpha = old.alpha / 255
-    local pixelAlpha = color.alpha / 255
-
-    local finalAlpha = old.alpha + color.alpha - (oldAlpha * pixelAlpha * 255)
-
-    local oldRed = old.red * oldAlpha
-    local oldGreen = old.green * oldAlpha
-    local oldBlue = old.blue * oldAlpha
-
-    local pixelRed = color.red * pixelAlpha
-    local pixelGreen = color.green * pixelAlpha
-    local pixelBlue = color.blue * pixelAlpha
-
-    local pixelOpaqueness = ((255 - color.alpha) / 255)
-
-    local finalRed = pixelRed + oldRed * pixelOpaqueness
-    local finalGreen = pixelGreen + oldGreen * pixelOpaqueness
-    local finalBlue = pixelBlue + oldBlue * pixelOpaqueness
-
-    return math.abs(finalRed / (finalAlpha / 255) - new.red) < 1 and
-               math.abs(finalGreen / (finalAlpha / 255) - new.green) < 1 and
-               math.abs(finalBlue / (finalAlpha / 255) - new.blue) < 1 and
-               math.abs(finalAlpha - new.alpha) < 1
-end
-
 local function RectangleContains(rect, x, y)
     return x >= rect.x and x <= rect.x + rect.width - 1 and --
     y >= rect.y and y <= rect.y + rect.height - 1
@@ -53,6 +33,15 @@ local function RectangleCenter(rect)
 
     return Point(rect.x + math.floor(rect.width / 2),
                  rect.y + math.floor(rect.height / 2))
+end
+
+local function CompareRGB(a, b)
+    return a.red == b.red and a.green == b.green and a.blue == b.blue
+end
+
+local function ColorDistance(a, b)
+    return math.sqrt((a.red - b.red) ^ 2 + (a.green - b.green) ^ 2 +
+                         (a.blue - b.blue) ^ 2)
 end
 
 local function GetButtonsPressed(pixels, previous, next)
@@ -67,10 +56,11 @@ local function GetButtonsPressed(pixels, previous, next)
     if not RectangleContains(previous.bounds, pixel.x, pixel.y) then
         local newPixelValue = getPixel(next.image, pixel.x - next.position.x,
                                        pixel.y - next.position.y)
+        local newPixelColor = Color(newPixelValue)
 
-        if app.fgColor.rgbaPixel == newPixelValue then
+        if CompareRGB(app.fgColor, newPixelColor) then
             leftPressed = true
-        elseif app.bgColor.rgbaPixel == newPixelValue then
+        elseif CompareRGB(app.bgColor, newPixelColor) then
             rightPressed = true
         end
 
@@ -84,9 +74,14 @@ local function GetButtonsPressed(pixels, previous, next)
 
     if old == nil or new == nil then return leftPressed, rightPressed end
 
-    if WasColorBlended(old, app.fgColor, new) then
+    local fgColorDistance = ColorDistance(new, app.fgColor) -
+                                ColorDistance(old, app.fgColor)
+    local bgColorDistance = ColorDistance(new, app.bgColor) -
+                                ColorDistance(old, app.bgColor)
+
+    if fgColorDistance < bgColorDistance then
         leftPressed = true
-    elseif WasColorBlended(old, app.bgColor, new) then
+    else
         rightPressed = true
     end
 
@@ -235,9 +230,16 @@ local function MagicPencilDialog(options)
         -- If there is no active cel, do nothing
         if app.activeCel == nil then return end
 
-        -- TODO: In order to make all tools work I need to readjust the detection of Magic Colors - spray will overlay them and break it right now
+        local isToolSupported = false
 
-        if app.activeTool.id ~= "pencil" or -- If it's the wrong tool then ignore
+        for _, tool in ipairs(SupportedTools) do
+            if tool == app.tool.id then
+                isToolSupported = true
+                break
+            end
+        end
+
+        if not isToolSupported or -- Only react to supported tools
         selectedMode == Mode.Regular or -- If it's the regular mode then ignore
         lastKnownNumberOfCels ~= #sprite.cels or -- If last layer/frame/cel was removed then ignore
         lastActiveCel ~= app.activeCel or -- If it's just a layer/frame/cel change then ignore
@@ -323,7 +325,6 @@ local function MagicPencilDialog(options)
 
     local lastFgColor = Color(app.fgColor.rgbaPixel)
     local lastBgColor = Color(app.bgColor.rgbaPixel)
-    local lastInk = app.preferences.tool("pencil").ink
 
     function OnFgColorChange()
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
@@ -366,9 +367,6 @@ local function MagicPencilDialog(options)
             app.fgColor = lastFgColor
             app.bgColor = lastBgColor
 
-            local pencilPreferences = app.preferences.tool("pencil")
-            pencilPreferences.ink = lastInk
-
             app.events:off(onBeforeCommandListener)
             app.events:off(onAfterCommandListener)
 
@@ -388,16 +386,13 @@ local function MagicPencilDialog(options)
 
                 local useMaskColor =
                     ModeProcessorProvider:Get(selectedMode).useMaskColor
-                local pencilPreferences = app.preferences.tool("pencil")
 
                 if useMaskColor then
                     app.fgColor = MagicPink
                     app.bgColor = MagicTeal
-                    pencilPreferences.ink = "simple"
                 else
                     app.fgColor = lastFgColor
                     app.bgColor = lastBgColor
-                    pencilPreferences.ink = lastInk
                 end
 
                 dialog --

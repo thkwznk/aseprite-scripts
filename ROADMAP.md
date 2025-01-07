@@ -64,22 +64,23 @@ Future:
 
 Unreleased:
 
+- [Feature] Support all drawing tools to work with the Magic Pencil (not only the Pencil Tool)
 - [Fix] No longer add effects to pixels changed by commands
 
 Update v2.0.0:
 
-- [Improvement] Rework the dialog UI to accommodate the number of options
-- [Improvement] Create a new section called "Brush", with Outline and Graffiti modes
-- [Improvement] Create a new section called "Tool", with Outline
-- [Feature] Add a separate set of options for the Grayscale Color Mode
-- [Feature] Add a separate set of options for the Indexed Color Mode
-- [Improvement] Update dialog when sprite changes color mode
+- [Feature] New option - "Transform Merge" - that moves all pixels that were painted over into one layer (whether it's one of the existing layers or a new one is created needs to be seen)
+- [Improvement] Add a single option for "Change Shift", hide the shift options until it's selected and allow for selecting multiple components
+- [Improvement] Change the "Outline Tool" behaviour to outline all objects that were painted over (on the active layer and frame)
+- [Improvement] Add a separate subset of options for the Grayscale & Indexed Color Modes
+- [Improvement] Add controls for Graffiti parameters
+- [Improvement] Add controls for Outline parameters
 - [Fix] Lift content only above the layer it's lifted from
+- [Fix] Update dialog when sprite changes color mode
 
 Future:
 
-- [Feature] Two Tone
-- [Improvement] Allow for shifting multiple components at the same time (also, possibly, with different values?)
+- [Fix] Correctly support all inks
 
 ## Sprite Analyzer
 
