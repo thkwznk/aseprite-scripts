@@ -25,16 +25,15 @@ function CutMode:Process(change, sprite, cel, parameters)
     local activeLayerParent = app.activeLayer.parent
 
     local newLayer = sprite:newLayer()
-    newLayer.parent = activeLayerParent
-
-    if change.leftPressed then
-        newLayer.stackIndex = activeLayerIndex + 1
-    else
-        newLayer.stackIndex = activeLayerIndex
-    end
-
     newLayer.name = "Lifted Content"
+    newLayer.parent = activeLayerParent
+    newLayer.stackIndex = activeLayerIndex
+    if change.leftPressed then newLayer.stackIndex = newLayer.stackIndex + 1 end
+
     sprite:newCel(newLayer, app.activeFrame.frameNumber, newImage, Point(ox, oy))
+
+    -- Set the new layer as the active one for the GUI to correctly update
+    app.activeLayer = newLayer
 end
 
 return CutMode
