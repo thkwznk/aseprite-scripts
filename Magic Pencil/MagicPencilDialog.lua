@@ -183,6 +183,15 @@ local function MagicPencilDialog(options)
     local lastKnownNumberOfCels, lastActiveCel, lastActiveLayer,
           lastActiveFrame, newCelFromEmpty, lastCelData
 
+    local refreshDialog = function()
+        -- Update dialog based only sprite's color mode
+        local enabled = sprite and sprite.colorMode == ColorMode.RGB
+
+        for _, mode in pairs(Mode) do
+            dialog:modify{id = mode, enabled = enabled}
+        end
+    end
+
     local updateLast = function()
         if sprite then lastKnownNumberOfCels = #sprite.cels end
 
@@ -214,6 +223,8 @@ local function MagicPencilDialog(options)
     local onAfterCommand = function(ev)
         skip = false
         updateLast()
+
+        if ev.name == "ChangePixelFormat" then refreshDialog() end
     end
 
     local onSpriteChange = function(ev)
@@ -225,6 +236,7 @@ local function MagicPencilDialog(options)
 
         if not Tool:IsSupported(app.tool.id) or -- Only react to supported tools
         selectedMode == Mode.Regular or -- If it's the regular mode then ignore
+        sprite.colorMode ~= ColorMode.RGB or -- Currently only RGB color mode is supported
         lastKnownNumberOfCels ~= #sprite.cels or -- If last layer/frame/cel was removed then ignore
         lastActiveCel ~= app.activeCel or -- If it's just a layer/frame/cel change then ignore
         lastActiveCel == nil or -- If a cel was created where previously was none or cel was copied
@@ -299,12 +311,7 @@ local function MagicPencilDialog(options)
         end
 
         -- Update dialog based on new sprite's color mode
-        local enabled = false
-        if sprite then enabled = sprite.colorMode == ColorMode.RGB end
-
-        for _, mode in pairs(Mode) do
-            dialog:modify{id = mode, enabled = enabled} --
-        end
+        refreshDialog()
     end)
 
     local lastFgColor = Color(app.fgColor.rgbaPixel)
