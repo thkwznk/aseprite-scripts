@@ -385,6 +385,10 @@ local function MagicPencilDialog(options)
                     visible = selectedMode == Mode.OutlineLive
                 } --
                 :modify{
+                    id = "outlineSize",
+                    visible = selectedMode == Mode.OutlineLive
+                } --
+                :modify{
                     id = "graffitiPower",
                     visible = selectedMode == Mode.Graffiti
                 } --
@@ -435,11 +439,13 @@ local function MagicPencilDialog(options)
     dialog:separator{text = "Outline"} --
     AddMode(Mode.Outline, "Tool")
     AddMode(Mode.OutlineLive, "Brush")
-    dialog:color{
+    dialog --
+    :color{
         id = "outlineColor",
         visible = false,
         color = Color {gray = 0, alpha = 255}
-    }
+    } --
+    :number{id = "outlineSize", visible = false, text = "1", decimals = 0}
 
     dialog:separator{text = "Transform"} --
     AddMode(Mode.Cut, "Lift")
