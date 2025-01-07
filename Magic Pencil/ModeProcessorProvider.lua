@@ -7,9 +7,9 @@ local SelectionMode = dofile("./modes/SelectionMode.lua")
 local YeetMode = dofile("./modes/YeetMode.lua")
 local ColorizeMode = dofile("./modes/ColorizeMode.lua")
 local DesaturateMode = dofile("./modes/DesaturateMode.lua")
+local ShiftMode = dofile("./modes/ShiftMode.lua")
 
 local MixModes = dofile("./modes/MixMode.lua")
-local ShiftModes = dofile("./modes/ShiftMode.lua")
 
 local ModeProcessorProvider = {
     modes = {
@@ -21,16 +21,13 @@ local ModeProcessorProvider = {
         ["SelectionMode"] = SelectionMode,
         ["YeetMode"] = YeetMode,
         ["ColorizeMode"] = ColorizeMode,
-        ["DesaturateMode"] = DesaturateMode
+        ["DesaturateMode"] = DesaturateMode,
+        ["ShiftMode"] = ShiftMode
     }
 }
 
 -- Add variants
 for _, mixVariant in ipairs(MixModes) do
-    ModeProcessorProvider.modes[mixVariant.variantId] = mixVariant
-end
-
-for _, mixVariant in ipairs(ShiftModes) do
     ModeProcessorProvider.modes[mixVariant.variantId] = mixVariant
 end
 

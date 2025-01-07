@@ -407,7 +407,35 @@ local function MagicPencilDialog(options)
                     id = "graffitiSpeckPower",
                     visible = selectedMode == Mode.Graffiti and
                         dialog.data.graffitiSpeckEnabled
-                }
+                } --
+                :modify{id = "colorModel", visible = selectedMode == Mode.Shift} --
+                :modify{
+                    id = "shiftFirstOption",
+                    visible = selectedMode == Mode.Shift
+                } --
+                :modify{
+                    id = "shiftFirstPercentage",
+                    visible = selectedMode == Mode.Shift and
+                        dialog.data.shiftFirstOption
+                } --
+                :modify{
+                    id = "shiftSecondOption",
+                    visible = selectedMode == Mode.Shift
+                } --
+                :modify{
+                    id = "shiftSecondPercentage",
+                    visible = selectedMode == Mode.Shift and
+                        dialog.data.shiftSecondOption
+                } --
+                :modify{
+                    id = "shiftThirdOption",
+                    visible = selectedMode == Mode.Shift
+                } --
+                :modify{
+                    id = "shiftThirdPercentage",
+                    visible = selectedMode == Mode.Shift and
+                        dialog.data.shiftThirdOption
+                } --
             end
         }:newrow() --
     end
@@ -468,69 +496,99 @@ local function MagicPencilDialog(options)
     dialog:separator{text = "Change"} --
     AddMode(Mode.Colorize, "Colorize")
     AddMode(Mode.Desaturate, "Desaturate")
+    AddMode(Mode.Shift, "Shift")
 
-    dialog:separator{text = "Shift"} --
+    local abc = function()
+        dialog --
+        :modify{
+            id = "shiftFirstPercentage",
+            visible = selectedMode == Mode.Shift and
+                dialog.data.shiftFirstOption
+        } --
+        :modify{
+            id = "shiftSecondPercentage",
+            visible = selectedMode == Mode.Shift and
+                dialog.data.shiftSecondOption
+        } --
+        :modify{
+            id = "shiftThirdPercentage",
+            visible = selectedMode == Mode.Shift and
+                dialog.data.shiftThirdOption
+        } --
+    end
+
+    dialog --
     :combobox{
         id = "colorModel",
         options = ColorModels,
         option = colorModel,
+        visible = false,
         onchange = function()
             colorModel = dialog.data.colorModel
 
+            local firstOption = "Red"
+            local secondOption = "Green"
+            local thirdOption = "Blue"
+
             if colorModel == ColorModels.HSV then
-                selectedMode = Mode.ToHsvMap[selectedMode]
+                firstOption = "Hue"
+                secondOption = "Saturation"
+                thirdOption = "Value"
             elseif colorModel == ColorModels.HSL then
-                selectedMode = Mode.ToHslMap[selectedMode]
-            elseif colorModel == ColorModels.RGB then
-                selectedMode = Mode.ToRgbMap[selectedMode]
+                firstOption = "Hue"
+                secondOption = "Saturation"
+                thirdOption = "Lightness"
             end
 
-            for _, hsvMode in ipairs(ShiftHsvModes) do
-                dialog:modify{
-                    id = hsvMode,
-                    visible = colorModel == ColorModels.HSV,
-                    selected = selectedMode == hsvMode
-                }
-            end
-
-            for _, hslMode in ipairs(ShiftHslModes) do
-                dialog:modify{
-                    id = hslMode,
-                    visible = colorModel == ColorModels.HSL,
-                    selected = selectedMode == hslMode
-                }
-            end
-
-            for _, rgbMode in ipairs(ShiftRgbModes) do
-                dialog:modify{
-                    id = rgbMode,
-                    visible = colorModel == ColorModels.RGB,
-                    selected = selectedMode == rgbMode
-                }
-            end
+            dialog --
+            :modify{id = "shiftFirstOption", text = firstOption} --
+            :modify{id = "shiftSecondOption", text = secondOption} --
+            :modify{id = "shiftThirdOption", text = thirdOption}
         end
     } --
-
-    local isHsv = colorModel == ColorModels.HSV
-    AddMode(Mode.ShiftHsvHue, "Hue", isHsv)
-    AddMode(Mode.ShiftHsvSaturation, "Saturation", isHsv)
-    AddMode(Mode.ShiftHsvValue, "Value", isHsv)
-
-    local isHsl = colorModel == ColorModels.HSL
-    AddMode(Mode.ShiftHslHue, "Hue", isHsl)
-    AddMode(Mode.ShiftHslSaturation, "Saturation", isHsl)
-    AddMode(Mode.ShiftHslLightness, "Lightness", isHsl)
-
-    local isRgb = colorModel == ColorModels.RGB
-    AddMode(Mode.ShiftRgbRed, "Red", isRgb)
-    AddMode(Mode.ShiftRgbGreen, "Green", isRgb)
-    AddMode(Mode.ShiftRgbBlue, "Blue", isRgb)
-
-    dialog --
-    :slider{id = "shiftPercentage", min = 1, max = 100, value = 5} --
-
-    dialog --
-    :separator() --
+    :check{
+        id = "shiftFirstOption",
+        text = "Hue",
+        selected = true,
+        visible = false,
+        onclick = abc
+    } --
+    :slider{
+        id = "shiftFirstPercentage",
+        min = 1,
+        max = 100,
+        value = 5,
+        visible = false
+    } --
+    :check{
+        id = "shiftSecondOption",
+        text = "Saturation",
+        selected = false,
+        visible = false,
+        onclick = abc
+    } --
+    :slider{
+        id = "shiftSecondPercentage",
+        min = 1,
+        max = 100,
+        value = 5,
+        visible = false
+    } --
+    :check{
+        id = "shiftThirdOption",
+        text = "Value",
+        selected = false,
+        visible = false,
+        onclick = abc
+    } --
+    :slider{
+        id = "shiftThirdPercentage",
+        min = 1,
+        max = 100,
+        value = 5,
+        visible = false
+    } --
+    :separator{id = "indexedModeSeparator"} --
     :check{id = "indexedMode", text = "Indexed Mode"}
 
     return dialog
