@@ -66,6 +66,7 @@ Unreleased:
 
 - [Feature] Support all drawing tools to work with the Magic Pencil (not only the Pencil Tool)
 - [Improvement] "Outline > Tool" was changed to outline all objects that were painted over
+- [Improvement] Add controls for Graffiti parameters
 - [Fix] No longer add effects to pixels changed by commands
 - [Fix] "Transform > Lift" correctly updates the GUI to immediately show where the new layer is on the timeline
 
@@ -74,7 +75,6 @@ Update v2.0.0:
 - [Feature] New option - "Transform > Merge" - that moves all pixels that were painted over into one layer (whether it's one of the existing layers or a new one is created needs to be seen)
 - [Improvement] Add a single option for "Change > Shift", hide the shift options until it's selected and allow for selecting multiple components
 - [Improvement] Add a separate subset of options for the Grayscale & Indexed Color Modes
-- [Improvement] Add controls for Graffiti parameters
 - [Improvement] Add controls for Outline parameters
 - [Fix] Update dialog when sprite changes color mode
 

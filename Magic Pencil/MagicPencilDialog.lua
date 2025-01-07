@@ -388,6 +388,15 @@ local function MagicPencilDialog(options)
                     id = "graffitiPower",
                     visible = selectedMode == Mode.Graffiti
                 } --
+                :modify{
+                    id = "graffitiSpeckEnabled",
+                    visible = selectedMode == Mode.Graffiti
+                } --
+                :modify{
+                    id = "graffitiSpeckPower",
+                    visible = selectedMode == Mode.Graffiti and
+                        dialog.data.graffitiSpeckEnabled
+                }
             end
         }:newrow() --
     end
@@ -395,10 +404,30 @@ local function MagicPencilDialog(options)
     AddMode(Mode.Regular, "Regular", true, true)
 
     AddMode(Mode.Graffiti, "Graffiti", true)
-    dialog:slider{
+    dialog --
+    :slider{
         id = "graffitiPower",
         visible = false,
-        min = 1,
+        min = 0,
+        max = 100,
+        value = 50
+    } --
+    :check{
+        id = "graffitiSpeckEnabled",
+        visible = false,
+        selected = true,
+        text = "Speck",
+        onclick = function()
+            dialog:modify{
+                id = "graffitiSpeckPower",
+                visible = dialog.data.graffitiSpeckEnabled
+            }
+        end
+    } --
+    :slider{
+        id = "graffitiSpeckPower",
+        visible = false,
+        min = 0,
         max = 100,
         value = 50
     }

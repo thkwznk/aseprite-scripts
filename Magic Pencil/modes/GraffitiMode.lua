@@ -8,25 +8,27 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
     local drawPixel = activeCel.image.drawPixel
 
     local brushSize = app.preferences.tool(app.tool.id).brush.size
-    local power = parameters.graffitiPower / 100
+    local sizeFactor = 100 * 2 * brushSize
 
-    local safeValue = function(x) return math.ceil(x) end
+    local dripChance = parameters.graffitiPower / sizeFactor
+    local speckChance = (parameters.graffitiSpeckEnabled and
+                            parameters.graffitiSpeckPower or 0) / sizeFactor
 
-    local chanceToDrip = ((3 * power) + (4 / brushSize)) / 100
-    local maxDripLength = safeValue(brushSize * 8)
-    local maxDripSize = safeValue(brushSize * 0.2)
+    local maxDripLength = math.ceil(brushSize * 8)
+    local maxDripSize = math.ceil(brushSize * 0.8)
 
-    local chanceToSpeck = ((2 * power) + (4 / brushSize)) / 100
-    local maxSpeckDist = math.max(safeValue(brushSize * 2), 3)
-    local maxSpeckSize = safeValue(brushSize * 0.2)
+    local maxSpeckDist = math.max((brushSize * 2), 3)
+    local maxSpeckSize = math.ceil(brushSize * 0.2)
+
+    -- TODO: Test this further and adjust values
 
     if brushSize > 1 then maxSpeckSize = math.max(maxSpeckSize, 2) end
 
     local paintPixels = {}
 
     for _, pixel in ipairs(change.pixels) do
-        local shouldDrip = math.random() <= chanceToDrip
-        local shouldSpeck = math.random() <= chanceToSpeck
+        local shouldDrip = math.random() <= dripChance
+        local shouldSpeck = math.random() <= speckChance
 
         if shouldDrip then
             local proportions = math.random(10) / 10
@@ -72,6 +74,8 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
 end
 
 function GraffitiMode:_DrawDrip(x, y, length, size, color, pixels)
+    if length < 1 or size < 1 then return end
+
     for i = 1, length do
         for j = 1, size do
             table.insert(pixels,
@@ -89,6 +93,8 @@ function GraffitiMode:_DrawDrip(x, y, length, size, color, pixels)
 end
 
 function GraffitiMode:_DrawSpeck(x, y, size, color, pixels)
+    if size < 1 then return end
+
     for ex = x - size, x + size do
         for ey = y - size, y + size do
             if math.sqrt(((ex - x) ^ 2) + ((ey - y) ^ 2)) <= size then
