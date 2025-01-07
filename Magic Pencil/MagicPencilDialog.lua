@@ -1,12 +1,7 @@
 local ModeProcessorProvider = dofile("./ModeProcessorProvider.lua")
 local GetBoundsForPixels = dofile("./GetBoundsForPixels.lua")
 local Mode = dofile("./Mode.lua")
-
--- Tools
-local SupportedTools = {
-    "pencil", "spray", "eraser", "paint_bucket", "line", "curve", "rectangle",
-    "filled_rectangle", "ellipse", "filled_ellipse", "contour", "polygon"
-}
+local Tool = dofile("./Tool.lua")
 
 -- Colors
 local MagicPink = Color {red = 255, green = 0, blue = 255, alpha = 128}
@@ -228,16 +223,7 @@ local function MagicPencilDialog(options)
         -- If there is no active cel, do nothing
         if app.activeCel == nil then return end
 
-        local isToolSupported = false
-
-        for _, tool in ipairs(SupportedTools) do
-            if tool == app.tool.id then
-                isToolSupported = true
-                break
-            end
-        end
-
-        if not isToolSupported or -- Only react to supported tools
+        if not Tool:IsSupported(app.tool.id) or -- Only react to supported tools
         selectedMode == Mode.Regular or -- If it's the regular mode then ignore
         lastKnownNumberOfCels ~= #sprite.cels or -- If last layer/frame/cel was removed then ignore
         lastActiveCel ~= app.activeCel or -- If it's just a layer/frame/cel change then ignore
