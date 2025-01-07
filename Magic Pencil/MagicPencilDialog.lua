@@ -74,6 +74,12 @@ local function GetButtonsPressed(pixels, previous, next)
 
     if old == nil or new == nil then return leftPressed, rightPressed end
 
+    if app.fgColor.rgbaPixel == 0 and new.rgbaPixel ~= 0 then
+        return false, true
+    elseif app.bgColor.rgbaPixel == 0 and new.rgbaPixel ~= 0 then
+        return true, false
+    end
+
     local fgColorDistance = ColorDistance(new, app.fgColor) -
                                 ColorDistance(old, app.fgColor)
     local bgColorDistance = ColorDistance(new, app.bgColor) -
