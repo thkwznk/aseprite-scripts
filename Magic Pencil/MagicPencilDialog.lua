@@ -28,13 +28,6 @@ local function RectangleContains(rect, x, y)
     y >= rect.y and y <= rect.y + rect.height - 1
 end
 
-local function RectangleCenter(rect)
-    if not rect then return nil end
-
-    return Point(rect.x + math.floor(rect.width / 2),
-                 rect.y + math.floor(rect.height / 2))
-end
-
 local function CompareRGB(a, b)
     return a.red == b.red and a.green == b.green and a.blue == b.blue
 end
@@ -179,7 +172,6 @@ local function CalculateChange(previous, next, canExtend)
     return {
         pixels = pixels,
         bounds = bounds,
-        center = RectangleCenter(bounds),
         leftPressed = leftPressed,
         rightPressed = rightPressed,
         sizeChanged = previous.bounds.width ~= next.bounds.width or

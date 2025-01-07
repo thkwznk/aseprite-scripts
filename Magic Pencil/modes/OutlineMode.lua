@@ -1,6 +1,6 @@
 local GetBoundsForPixels = dofile("../GetBoundsForPixels.lua")
 
-local OutlineMode = {deleteOnEmptyCel = true}
+local OutlineMode = {canExtend = true, deleteOnEmptyCel = true}
 
 function OutlineMode:Process(change, sprite, cel, parameters)
     -- Calculate outline pixels from the center of the change bound
@@ -14,9 +14,7 @@ function OutlineMode:Process(change, sprite, cel, parameters)
         selection = Selection(localSelectionBounds)
     end
 
-    local outlinePixels = self:_Outline(selection, cel.image,
-                                        change.center.x - cel.bounds.x,
-                                        change.center.y - cel.bounds.y)
+    local outlinePixels = self:_Outline(selection, change, cel)
 
     local bounds = GetBoundsForPixels(outlinePixels)
 
@@ -49,20 +47,33 @@ function OutlineMode:Process(change, sprite, cel, parameters)
     end
 end
 
-function OutlineMode:_Outline(selection, image, x, y)
+function OutlineMode:_Outline(selection, change, cel)
     local outlinePixels = {}
-    self:_RecursiveOutline(selection, image, x, y, outlinePixels, {})
+    local visited = {}
+
+    for _, pixel in ipairs(change.pixels) do
+        local x = pixel.x - cel.position.x
+        local y = pixel.y - cel.position.y
+        local pixelCoordinate = tostring(x) .. ":" .. tostring(y)
+
+        if not visited[pixelCoordinate] then
+            self:_RecursiveOutline(selection, cel.image, x, y, outlinePixels,
+                                   visited, true)
+        end
+    end
+
     return outlinePixels
 end
 
 function OutlineMode:_RecursiveOutline(selection, image, x, y, outlinePixels,
-                                       visited)
+                                       visited, skip)
     -- Out of selection
     if selection then if not selection:Contains(x, y) then return end end
 
-    -- Out of bounds
-    if x < 0 or x > image.width - 1 or y < 0 or y > image.height - 1 then
-        table.insert(outlinePixels, {x = x, y = y})
+    if x < 0 or x > image.width - 1 or y < 0 or y > image.height - 1 or -- Out of bounds
+        Color(image:getPixel(x, y)).alpha == 0 -- Transparent
+    then
+        if not skip then table.insert(outlinePixels, {x = x, y = y}) end
         return
     end
 
@@ -71,11 +82,6 @@ function OutlineMode:_RecursiveOutline(selection, image, x, y, outlinePixels,
     if visited[pixelCoordinate] then return end
     -- Mark a pixel as visited
     visited[pixelCoordinate] = true
-
-    if Color(image:getPixel(x, y)).alpha == 0 then
-        table.insert(outlinePixels, {x = x, y = y})
-        return
-    end
 
     self:_RecursiveOutline(selection, image, x - 1, y, outlinePixels, visited)
     self:_RecursiveOutline(selection, image, x + 1, y, outlinePixels, visited)
