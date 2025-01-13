@@ -27,7 +27,8 @@ function OutlineMode:Process(change, sprite, cel, parameters)
         local shift = Point(cel.bounds.x - newImageBounds.x,
                             cel.bounds.y - newImageBounds.y)
 
-        local newImage = Image(newImageBounds.width, newImageBounds.height)
+        local newImage = Image(newImageBounds.width, newImageBounds.height,
+                               cel.sprite.colorMode)
         newImage:drawImage(cel.image, shift)
 
         local outlineColor = change.leftPressed and app.fgColor or app.bgColor

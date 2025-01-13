@@ -7,16 +7,32 @@ local Tool = dofile("./Tool.lua")
 local MagicPink = Color {red = 255, green = 0, blue = 255, alpha = 128}
 local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 
--- Modes
-local ShiftHsvModes = {
-    Mode.ShiftHsvHue, Mode.ShiftHsvSaturation, Mode.ShiftHsvValue
-}
-local ShiftHslModes = {
-    Mode.ShiftHslHue, Mode.ShiftHslSaturation, Mode.ShiftHslLightness
-}
-local ShiftRgbModes = {Mode.ShiftRgbRed, Mode.ShiftRgbGreen, Mode.ShiftRgbBlue}
-
 local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
+
+local function IsTransparent(color)
+    local sprite = app.activeSprite
+    if sprite and sprite.colorMode == ColorMode.RGB then
+        return color.alpha == 0
+    end
+
+    return color.index == 0
+end
+
+local function CreateColor(value)
+    local sprite = app.activeSprite
+    if sprite and sprite.colorMode == ColorMode.RGB then return Color(value) end
+
+    return Color {index = value}
+end
+
+local function CopyColor(color)
+    local sprite = app.activeSprite
+    if sprite and sprite.colorMode == ColorMode.RGB then
+        return Color(color.rgbaPixel)
+    end
+
+    return Color {index = color.index}
+end
 
 local function RectangleContains(rect, x, y)
     return x >= rect.x and x <= rect.x + rect.width - 1 and --
@@ -44,7 +60,7 @@ local function GetButtonsPressed(pixels, previous, next)
     if not RectangleContains(previous.bounds, pixel.x, pixel.y) then
         local newPixelValue = getPixel(next.image, pixel.x - next.position.x,
                                        pixel.y - next.position.y)
-        local newPixelColor = Color(newPixelValue)
+        local newPixelColor = CreateColor(newPixelValue)
 
         if CompareRGB(app.fgColor, newPixelColor) then
             leftPressed = true
@@ -55,16 +71,16 @@ local function GetButtonsPressed(pixels, previous, next)
         return leftPressed, rightPressed
     end
 
-    old = Color(getPixel(previous.image, pixel.x - previous.position.x,
-                         pixel.y - previous.position.y))
-    new = Color(getPixel(next.image, pixel.x - next.position.x,
-                         pixel.y - next.position.y))
+    old = CreateColor(getPixel(previous.image, pixel.x - previous.position.x,
+                               pixel.y - previous.position.y))
+    new = CreateColor(getPixel(next.image, pixel.x - next.position.x,
+                               pixel.y - next.position.y))
 
     if old == nil or new == nil then return leftPressed, rightPressed end
 
-    if app.fgColor.rgbaPixel == 0 and new.rgbaPixel ~= 0 then
+    if IsTransparent(app.fgColor) and not IsTransparent(new) then
         return false, true
-    elseif app.bgColor.rgbaPixel == 0 and new.rgbaPixel ~= 0 then
+    elseif IsTransparent(app.bgColor) and not IsTransparent(new) then
         return true, false
     end
 
@@ -112,20 +128,20 @@ local function CalculateChange(previous, next, canExtend)
                 -- Out of bounds of the previous image or transparent
                 if (shiftedX < 0 or shiftedX > previous.image.width - 1 or
                     shiftedY < 0 or shiftedY > previous.image.height - 1) then
-                    if Color(nextPixelValue).alpha > 0 then
+                    if IsTransparent(CreateColor(nextPixelValue)) then
                         table.insert(pixels, {
                             x = x + next.position.x,
                             y = y + next.position.y,
                             color = nil,
-                            newColor = Color(nextPixelValue)
+                            newColor = CreateColor(nextPixelValue)
                         })
                     end
                 elseif prevPixelValue ~= nextPixelValue then
                     table.insert(pixels, {
                         x = x + next.position.x,
                         y = y + next.position.y,
-                        color = Color(prevPixelValue),
-                        newColor = Color(nextPixelValue)
+                        color = CreateColor(prevPixelValue),
+                        newColor = CreateColor(nextPixelValue)
                     })
                 end
             end
@@ -152,8 +168,8 @@ local function CalculateChange(previous, next, canExtend)
                         table.insert(pixels, {
                             x = x + previous.position.x,
                             y = y + previous.position.y,
-                            color = Color(prevPixelValue),
-                            newColor = Color(nextPixelValue)
+                            color = CreateColor(prevPixelValue),
+                            newColor = CreateColor(nextPixelValue)
                         })
                     end
                 end
@@ -188,7 +204,7 @@ local function MagicPencilDialog(options)
         local enabled = sprite and sprite.colorMode == ColorMode.RGB
 
         for _, mode in pairs(Mode) do
-            dialog:modify{id = mode, enabled = enabled}
+            -- dialog:modify{id = mode, enabled = enabled}
         end
     end
 
@@ -209,7 +225,8 @@ local function MagicPencilDialog(options)
             lastCelData = {
                 image = lastActiveCel.image:clone(),
                 position = lastActiveCel.position,
-                bounds = lastActiveCel.bounds
+                bounds = lastActiveCel.bounds,
+                sprite = sprite
             }
         end
     end
@@ -236,7 +253,7 @@ local function MagicPencilDialog(options)
 
         if not Tool:IsSupported(app.tool.id) or -- Only react to supported tools
         selectedMode == Mode.Regular or -- If it's the regular mode then ignore
-        sprite.colorMode ~= ColorMode.RGB or -- Currently only RGB color mode is supported
+        -- sprite.colorMode ~= ColorMode.RGB or -- Currently only RGB color mode is supported
         lastKnownNumberOfCels ~= #sprite.cels or -- If last layer/frame/cel was removed then ignore
         lastActiveCel ~= app.activeCel or -- If it's just a layer/frame/cel change then ignore
         lastActiveCel == nil or -- If a cel was created where previously was none or cel was copied
@@ -314,19 +331,19 @@ local function MagicPencilDialog(options)
         refreshDialog()
     end)
 
-    local lastFgColor = Color(app.fgColor.rgbaPixel)
-    local lastBgColor = Color(app.bgColor.rgbaPixel)
+    local lastFgColor = CopyColor(app.fgColor)
+    local lastBgColor = CopyColor(app.bgColor)
 
     function OnFgColorChange()
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
 
         if modeProcessor.useMaskColor then
             if app.fgColor.rgbaPixel ~= MagicPink.rgbaPixel then
-                lastFgColor = Color(app.fgColor.rgbaPixel)
+                lastFgColor = CopyColor(app.fgColor)
                 app.fgColor = MagicPink
             end
         else
-            lastFgColor = Color(app.fgColor.rgbaPixel)
+            lastFgColor = CopyColor(app.fgColor)
         end
     end
 
@@ -335,11 +352,11 @@ local function MagicPencilDialog(options)
 
         if modeProcessor.useMaskColor then
             if app.bgColor.rgbaPixel ~= MagicTeal.rgbaPixel then
-                lastBgColor = Color(app.bgColor.rgbaPixel)
+                lastBgColor = CopyColor(app.bgColor)
                 app.bgColor = MagicTeal
             end
         else
-            lastBgColor = Color(app.bgColor.rgbaPixel)
+            lastBgColor = CopyColor(app.bgColor)
         end
     end
 

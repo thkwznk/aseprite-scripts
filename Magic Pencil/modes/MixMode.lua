@@ -45,8 +45,8 @@ function MixModeBase:Process(change, sprite, cel, parameters)
     local newBounds = app.activeCel.bounds
     local shift = Point(cel.bounds.x - newBounds.x, cel.bounds.y - newBounds.y)
 
-    local newImage =
-        Image(app.activeCel.image.width, app.activeCel.image.height)
+    local newImage = Image(app.activeCel.image.width,
+                           app.activeCel.image.height, cel.sprite.colorMode)
     newImage:drawImage(cel.image, shift)
 
     local drawPixel = newImage.drawPixel

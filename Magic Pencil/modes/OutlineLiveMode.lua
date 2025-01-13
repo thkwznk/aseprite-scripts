@@ -47,7 +47,7 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
     if extend.up then height = height + outlineSize end
     if extend.down then height = height + outlineSize end
 
-    local newImage = Image(width, height)
+    local newImage = Image(width, height, cel.sprite.colorMode)
 
     local dpx = extend.left and outlineSize or 0
     local dpy = extend.up and outlineSize or 0
