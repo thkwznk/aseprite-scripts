@@ -21,6 +21,7 @@
         "init",
         "exit",
         "Size",
-        "json"
+        "json",
+        "BrushType"
     ]
 }
