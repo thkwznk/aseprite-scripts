@@ -65,6 +65,7 @@ Future:
 Unreleased:
 
 - [Feature] Support all drawing tools to work with the Magic Pencil (not only the Pencil Tool)
+- [Feature] New option - "Transform > Merge" - that moves all pixels that were painted over into one layer
 - [Improvement] "Outline > Tool" was changed to outline all objects that were painted over
 - [Improvement] Add widgets to control the Graffiti specks
 - [Improvement] Add a widget to control the Outline size
@@ -75,7 +76,6 @@ Unreleased:
 
 Update v2.0.0:
 
-- [Feature] New option - "Transform > Merge" - that moves all pixels that were painted over into one layer (whether it's one of the existing layers or a new one is created needs to be seen)
 - [Improvement] Add a separate subset of options for the Grayscale & Indexed Color Modes
 
 Future:

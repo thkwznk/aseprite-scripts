@@ -4,6 +4,7 @@ local Mode = {
     Outline = "OutlineMode",
     OutlineLive = "OutlineLiveMode",
     Cut = "CutMode",
+    Merge = "MergeMode",
     Selection = "SelectionMode",
     Yeet = "YeetMode",
     Mix = "MixMode",
