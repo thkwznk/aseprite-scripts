@@ -7,15 +7,6 @@ local Tool = dofile("./Tool.lua")
 local MagicPink = Color {red = 255, green = 0, blue = 255, alpha = 128}
 local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 
--- Modes
-local ShiftHsvModes = {
-    Mode.ShiftHsvHue, Mode.ShiftHsvSaturation, Mode.ShiftHsvValue
-}
-local ShiftHslModes = {
-    Mode.ShiftHslHue, Mode.ShiftHslSaturation, Mode.ShiftHslLightness
-}
-local ShiftRgbModes = {Mode.ShiftRgbRed, Mode.ShiftRgbGreen, Mode.ShiftRgbBlue}
-
 local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
 
 local function RectangleContains(rect, x, y)

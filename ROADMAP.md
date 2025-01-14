@@ -70,6 +70,7 @@ Unreleased:
 - [Improvement] Add widgets to control the Graffiti specks
 - [Improvement] Add a widget to control the Outline size
 - [Improvement] Add a single option for "Change > Shift", hide the shift options until it's selected and allow for selecting multiple components
+- [Improvement] Minor performance improvement to the Shift option
 - [Fix] No longer add effects to pixels changed by commands
 - [Fix] "Transform > Lift" correctly updates the GUI to immediately show where the new layer is on the timeline
 - [Fix] Update Magic Pencil dialog when the sprites Color Mode changes
