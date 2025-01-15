@@ -501,6 +501,7 @@ local function MagicPencilDialog(options)
 
     dialog:separator{text = "Transform"} --
     AddMode(Mode.Cut, "Lift")
+    AddMode(Mode.Merge, "Merge")
     AddMode(Mode.Selection, "Selection")
 
     -- self.dialog:separator{text = "Forbidden"} --
