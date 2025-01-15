@@ -118,7 +118,6 @@ local function CalculateChange(previous, next, canExtend)
         for x = 0, next.image.width - 1 do
             for y = 0, next.image.height - 1 do
                 -- Save X and Y as canvas global
-
                 shiftedX = x + shift.x
                 shiftedY = y + shift.y
 
@@ -128,7 +127,7 @@ local function CalculateChange(previous, next, canExtend)
                 -- Out of bounds of the previous image or transparent
                 if (shiftedX < 0 or shiftedX > previous.image.width - 1 or
                     shiftedY < 0 or shiftedY > previous.image.height - 1) then
-                    if IsTransparent(CreateColor(nextPixelValue)) then
+                    if not IsTransparent(CreateColor(nextPixelValue)) then
                         table.insert(pixels, {
                             x = x + next.position.x,
                             y = y + next.position.y,
@@ -264,12 +263,12 @@ local function MagicPencilDialog(options)
         end
 
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
-        local celData = newCelFromEmpty and
-                            {
-                image = Image(0, 0),
-                position = Point(0, 0),
-                bounds = Rectangle(0, 0, 0, 0)
-            } or lastCelData
+        local celData = newCelFromEmpty and {
+            image = Image(0, 0),
+            position = Point(0, 0),
+            bounds = Rectangle(0, 0, 0, 0),
+            sprite = app.activeSprite
+        } or lastCelData
 
         local change = CalculateChange(celData, app.activeCel,
                                        modeProcessor.canExtend)
