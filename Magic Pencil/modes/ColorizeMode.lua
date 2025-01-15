@@ -15,7 +15,7 @@ function ColorizeMode:Process(change, sprite, cel, parameters)
             c.hsvHue = hue
             c.hsvSaturation = (c.hsvSaturation + app.fgColor.hsvSaturation) / 2
 
-            if parameters.indexedMode then
+            if parameters.indexedMode and cel.sprite.colorMode == ColorMode.RGB then
                 c = sprite.palettes[1]:getColor(c.index)
             end
 

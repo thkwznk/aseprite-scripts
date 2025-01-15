@@ -67,7 +67,7 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
 
     local isErasing = app.tool.id == "eraser"
 
-    if cel.sprite.colorMode == "RGB" then
+    if cel.sprite.colorMode == ColorMode.RGB then
         if app.fgColor.rgbaPixel == 0 then isErasing = true end
     else
         if app.fgColor.index == 0 then isErasing = true end

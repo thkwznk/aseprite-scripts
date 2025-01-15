@@ -38,7 +38,7 @@ function MixModeBase:Process(change, sprite, cel, parameters)
     local averageColor = change.leftPressed and self:_AverageColorRGB(colors) or
                              self:_AverageColorHSV(colors)
 
-    if parameters.indexedMode then
+    if parameters.indexedMode and cel.sprite.colorMode == ColorMode.RGB then
         averageColor = sprite.palettes[1]:getColor(averageColor.index)
     end
 

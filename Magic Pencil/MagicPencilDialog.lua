@@ -200,11 +200,13 @@ local function MagicPencilDialog(options)
 
     local refreshDialog = function()
         -- Update dialog based only sprite's color mode
-        local enabled = sprite and sprite.colorMode == ColorMode.RGB
+        local isIndexed = sprite and sprite.colorMode ~= ColorMode.RGB
 
-        for _, mode in pairs(Mode) do
-            -- dialog:modify{id = mode, enabled = enabled}
-        end
+        dialog:modify{
+            id = "indexedMode",
+            selected = isIndexed,
+            enabled = not isIndexed
+        }
     end
 
     local updateLast = function()
@@ -386,7 +388,6 @@ local function MagicPencilDialog(options)
             id = mode,
             text = text,
             selected = selected,
-            enabled = sprite.colorMode == ColorMode.RGB,
             visible = visible,
             onclick = function()
                 selectedMode = mode
@@ -605,9 +606,16 @@ local function MagicPencilDialog(options)
         visible = false
     } --
     :separator{id = "indexedModeSeparator"} --
-    :check{id = "indexedMode", text = "Indexed Mode"}
+    :check{
+        id = "indexedMode",
+        text = "Indexed Mode",
+        selected = sprite.colorMode ~= ColorMode.RGB,
+        enabled = sprite.colorMode == ColorMode.RGB
+    }
 
     return dialog
 end
 
 return MagicPencilDialog
+
+-- TODO: Maybe the Indexed Mode checkbox should be remembered when switching Color Modes?
