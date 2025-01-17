@@ -169,7 +169,7 @@ local function MagicPencilDialog(options)
     local lastKnownNumberOfCels, lastActiveCel, lastActiveLayer,
           lastActiveFrame, newCelFromEmpty, lastCelData
 
-    local refreshDialog = function()
+    local function RefreshDialog()
         -- Update dialog based only sprite's color mode
         local isIndexed = sprite and sprite.colorMode ~= ColorMode.RGB
 
@@ -180,7 +180,7 @@ local function MagicPencilDialog(options)
         }
     end
 
-    local updateLast = function()
+    local function UpdateLast()
         if sprite then lastKnownNumberOfCels = #sprite.cels end
 
         newCelFromEmpty = (lastActiveCel == nil) and
@@ -203,7 +203,7 @@ local function MagicPencilDialog(options)
         end
     end
 
-    updateLast()
+    UpdateLast()
 
     local skip = false
 
@@ -211,9 +211,9 @@ local function MagicPencilDialog(options)
 
     local onAfterCommand = function(ev)
         skip = false
-        updateLast()
+        UpdateLast()
 
-        if ev.name == "ChangePixelFormat" then refreshDialog() end
+        if ev.name == "ChangePixelFormat" then RefreshDialog() end
     end
 
     local onSpriteChange = function(ev)
@@ -231,7 +231,7 @@ local function MagicPencilDialog(options)
         lastActiveCel == nil or -- If a cel was created where previously was none or cel was copied
         (app.apiVersion >= 21 and ev.fromUndo) -- From API v21, ignore all changes from undo/redo
         then
-            updateLast()
+            UpdateLast()
             return
         end
 
@@ -268,7 +268,7 @@ local function MagicPencilDialog(options)
         if deleteCel then app.activeSprite:deleteCel(app.activeCel) end
 
         app.refresh()
-        updateLast()
+        UpdateLast()
 
         -- v This just crashes Aseprite
         -- app.undo()
@@ -281,7 +281,7 @@ local function MagicPencilDialog(options)
     local onSiteChange = app.events:on('sitechange', function()
         -- If sprite stayed the same then do nothing
         if app.activeSprite == sprite then
-            updateLast()
+            UpdateLast()
             return
         end
 
@@ -296,17 +296,17 @@ local function MagicPencilDialog(options)
             sprite = app.activeSprite
             onChangeListener = sprite.events:on('change', onSpriteChange)
 
-            updateLast()
+            UpdateLast()
         end
 
         -- Update dialog based on new sprite's color mode
-        refreshDialog()
+        RefreshDialog()
     end)
 
     local lastFgColor = ColorContext:Copy(app.fgColor)
     local lastBgColor = ColorContext:Copy(app.bgColor)
 
-    function OnFgColorChange()
+    local onFgColorChange = function()
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
 
         if modeProcessor.useMaskColor then
@@ -319,7 +319,7 @@ local function MagicPencilDialog(options)
         end
     end
 
-    function OnBgColorChange()
+    local onBgColorChange = function()
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
 
         if modeProcessor.useMaskColor then
@@ -332,8 +332,8 @@ local function MagicPencilDialog(options)
         end
     end
 
-    local onFgColorListener = app.events:on('fgcolorchange', OnFgColorChange)
-    local onBgColorListener = app.events:on('bgcolorchange', OnBgColorChange)
+    local onFgColorListener = app.events:on('fgcolorchange', onFgColorChange)
+    local onBgColorListener = app.events:on('bgcolorchange', onBgColorChange)
 
     dialog = Dialog {
         title = "Magic Pencil",
@@ -354,7 +354,7 @@ local function MagicPencilDialog(options)
         end
     }
 
-    local AddMode = function(mode, text, visible, selected)
+    local function AddMode(mode, text, visible, selected)
         dialog:radio{
             id = mode,
             text = text,
@@ -487,7 +487,7 @@ local function MagicPencilDialog(options)
     AddMode(Mode.Desaturate, "Desaturate")
     AddMode(Mode.Shift, "Shift")
 
-    local abc = function()
+    local onShiftOptionClick = function()
         dialog --
         :modify{
             id = "shiftFirstPercentage",
@@ -540,7 +540,7 @@ local function MagicPencilDialog(options)
         text = "Hue",
         selected = true,
         visible = false,
-        onclick = abc
+        onclick = onShiftOptionClick
     } --
     :slider{
         id = "shiftFirstPercentage",
@@ -554,7 +554,7 @@ local function MagicPencilDialog(options)
         text = "Saturation",
         selected = false,
         visible = false,
-        onclick = abc
+        onclick = onShiftOptionClick
     } --
     :slider{
         id = "shiftSecondPercentage",
@@ -568,7 +568,7 @@ local function MagicPencilDialog(options)
         text = "Value",
         selected = false,
         visible = false,
-        onclick = abc
+        onclick = onShiftOptionClick
     } --
     :slider{
         id = "shiftThirdPercentage",
