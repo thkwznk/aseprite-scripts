@@ -173,7 +173,20 @@ local function MagicPencilDialog(options)
     local function RefreshDialog()
         -- Update dialog based only sprite's color mode
         local isRGB = sprite and sprite.colorMode == ColorMode.RGB
+        local isIndexed = sprite and sprite.colorMode == ColorMode.INDEXED
+
         dialog --
+        :modify{id = "transformSeparator", visible = isRGB} --
+        :modify{id = Mode.Cut, visible = isRGB} --
+        :modify{id = Mode.Merge, visible = isRGB} --
+        :modify{id = Mode.Selection, visible = isRGB} --
+        :modify{id = "mixSeparator", visible = isRGB} --
+        :modify{id = Mode.Desaturate, visible = isRGB} --
+        :modify{id = "MixMode", visible = isRGB} --
+        :modify{id = "MixProportionalMode", visible = isRGB} --
+        :modify{id = "changeSeparator", visible = isRGB or isIndexed} --
+        :modify{id = Mode.Shift, visible = isRGB} --
+        :modify{id = Mode.Colorize, visible = isRGB or isIndexed} --
         :modify{id = "indexedModeSeparator", visible = isRGB} --
         :modify{id = "indexedMode", visible = isRGB, enabled = isRGB}
     end
@@ -473,19 +486,19 @@ local function MagicPencilDialog(options)
     } --
     :number{id = "outlineSize", visible = false, text = "1", decimals = 0}
 
-    dialog:separator{text = "Transform"} --
+    dialog:separator{id = "transformSeparator", text = "Transform"} --
     AddMode(Mode.Cut, "Lift")
     AddMode(Mode.Merge, "Merge")
     AddMode(Mode.Selection, "Selection")
 
     -- self.dialog:separator{text = "Forbidden"} --
-    AddMode(Mode.Yeet, "Yeet", false)
+    -- AddMode(Mode.Yeet, "Yeet", false)
 
-    dialog:separator{text = "Mix"}
+    dialog:separator{id = "mixSeparator", text = "Mix"}
     AddMode(Mode.Mix, "Unique")
     AddMode(Mode.MixProportional, "Proportional")
 
-    dialog:separator{text = "Change"} --
+    dialog:separator{id = "changeSeparator", text = "Change"} --
     AddMode(Mode.Colorize, "Colorize")
     AddMode(Mode.Desaturate, "Desaturate")
     AddMode(Mode.Shift, "Shift")
