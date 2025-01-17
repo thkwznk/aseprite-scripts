@@ -236,7 +236,8 @@ local function MagicPencilDialog(options)
 
         if not Tool:IsSupported(app.tool.id) or -- Only react to supported tools
         selectedMode == Mode.Regular or -- If it's the regular mode then ignore
-        -- sprite.colorMode ~= ColorMode.RGB or -- Currently only RGB color mode is supported
+        sprite.colorMode == ColorMode.TILEMAP or -- Tilemap Mode is not supported
+        app.activeLayer.isTilemap or -- If a layer is a tilemap
         lastKnownNumberOfCels ~= #sprite.cels or -- If last layer/frame/cel was removed then ignore
         lastActiveCel ~= app.activeCel or -- If it's just a layer/frame/cel change then ignore
         lastActiveCel == nil or -- If a cel was created where previously was none or cel was copied
