@@ -2,6 +2,7 @@ local ModeProcessorProvider = dofile("./ModeProcessorProvider.lua")
 local GetBoundsForPixels = dofile("./GetBoundsForPixels.lua")
 local Mode = dofile("./Mode.lua")
 local Tool = dofile("./Tool.lua")
+local ColorContext = dofile("./ColorContext.lua")
 
 -- Colors
 local MagicPink = Color {red = 255, green = 0, blue = 255, alpha = 128}
@@ -9,49 +10,9 @@ local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 
 local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
 
-local function IsTransparent(color)
-    local sprite = app.activeSprite
-    if sprite and sprite.colorMode == ColorMode.RGB then
-        return color.alpha == 0
-    end
-
-    return color.index == 0
-end
-
-local function CreateColor(value)
-    local sprite = app.activeSprite
-    if sprite and sprite.colorMode == ColorMode.RGB then return Color(value) end
-
-    return Color {index = value}
-end
-
-local function CopyColor(color)
-    local sprite = app.activeSprite
-    if sprite and sprite.colorMode == ColorMode.RGB then
-        return Color(color.rgbaPixel)
-    end
-
-    return Color {index = color.index}
-end
-
 local function RectangleContains(rect, x, y)
     return x >= rect.x and x <= rect.x + rect.width - 1 and --
     y >= rect.y and y <= rect.y + rect.height - 1
-end
-
-local function CompareColors(a, b)
-    local sprite = app.activeSprite
-
-    if sprite and sprite.colorMode == ColorMode.RGB then
-        return a.red == b.red and a.green == b.green and a.blue == b.blue
-    end
-
-    return a.index == b.index
-end
-
-local function ColorDistance(a, b)
-    return math.sqrt((a.red - b.red) ^ 2 + (a.green - b.green) ^ 2 +
-                         (a.blue - b.blue) ^ 2)
 end
 
 local function GetButtonsPressed(pixels, previous, next)
@@ -66,34 +27,37 @@ local function GetButtonsPressed(pixels, previous, next)
     if not RectangleContains(previous.bounds, pixel.x, pixel.y) then
         local newPixelValue = getPixel(next.image, pixel.x - next.position.x,
                                        pixel.y - next.position.y)
-        local newPixelColor = CreateColor(newPixelValue)
+        local newPixelColor = ColorContext:Create(newPixelValue)
 
-        if CompareColors(app.fgColor, newPixelColor) then
+        if ColorContext:Compare(app.fgColor, newPixelColor) then
             leftPressed = true
-        elseif CompareColors(app.bgColor, newPixelColor) then
+        elseif ColorContext:Compare(app.bgColor, newPixelColor) then
             rightPressed = true
         end
 
         return leftPressed, rightPressed
     end
 
-    old = CreateColor(getPixel(previous.image, pixel.x - previous.position.x,
-                               pixel.y - previous.position.y))
-    new = CreateColor(getPixel(next.image, pixel.x - next.position.x,
-                               pixel.y - next.position.y))
+    old = ColorContext:Create(getPixel(previous.image,
+                                       pixel.x - previous.position.x,
+                                       pixel.y - previous.position.y))
+    new = ColorContext:Create(getPixel(next.image, pixel.x - next.position.x,
+                                       pixel.y - next.position.y))
 
     if old == nil or new == nil then return leftPressed, rightPressed end
 
-    if IsTransparent(app.fgColor) and not IsTransparent(new) then
+    if ColorContext:IsTransparent(app.fgColor) and
+        not ColorContext:IsTransparent(new) then
         return false, true
-    elseif IsTransparent(app.bgColor) and not IsTransparent(new) then
+    elseif ColorContext:IsTransparent(app.bgColor) and
+        not ColorContext:IsTransparent(new) then
         return true, false
     end
 
-    local fgColorDistance = ColorDistance(new, app.fgColor) -
-                                ColorDistance(old, app.fgColor)
-    local bgColorDistance = ColorDistance(new, app.bgColor) -
-                                ColorDistance(old, app.bgColor)
+    local fgColorDistance = ColorContext:Distance(new, app.fgColor) -
+                                ColorContext:Distance(old, app.fgColor)
+    local bgColorDistance = ColorContext:Distance(new, app.bgColor) -
+                                ColorContext:Distance(old, app.bgColor)
 
     if fgColorDistance < bgColorDistance then
         leftPressed = true
@@ -133,20 +97,21 @@ local function CalculateChange(previous, next, canExtend)
                 -- Out of bounds of the previous image or transparent
                 if (shiftedX < 0 or shiftedX > previous.image.width - 1 or
                     shiftedY < 0 or shiftedY > previous.image.height - 1) then
-                    if not IsTransparent(CreateColor(nextPixelValue)) then
+                    if not ColorContext:IsTransparent(
+                        ColorContext:Create(nextPixelValue)) then
                         table.insert(pixels, {
                             x = x + next.position.x,
                             y = y + next.position.y,
                             color = nil,
-                            newColor = CreateColor(nextPixelValue)
+                            newColor = ColorContext:Create(nextPixelValue)
                         })
                     end
                 elseif prevPixelValue ~= nextPixelValue then
                     table.insert(pixels, {
                         x = x + next.position.x,
                         y = y + next.position.y,
-                        color = CreateColor(prevPixelValue),
-                        newColor = CreateColor(nextPixelValue)
+                        color = ColorContext:Create(prevPixelValue),
+                        newColor = ColorContext:Create(nextPixelValue)
                     })
                 end
             end
@@ -173,8 +138,8 @@ local function CalculateChange(previous, next, canExtend)
                         table.insert(pixels, {
                             x = x + previous.position.x,
                             y = y + previous.position.y,
-                            color = CreateColor(prevPixelValue),
-                            newColor = CreateColor(nextPixelValue)
+                            color = ColorContext:Create(prevPixelValue),
+                            newColor = ColorContext:Create(nextPixelValue)
                         })
                     end
                 end
@@ -338,19 +303,19 @@ local function MagicPencilDialog(options)
         refreshDialog()
     end)
 
-    local lastFgColor = CopyColor(app.fgColor)
-    local lastBgColor = CopyColor(app.bgColor)
+    local lastFgColor = ColorContext:Copy(app.fgColor)
+    local lastBgColor = ColorContext:Copy(app.bgColor)
 
     function OnFgColorChange()
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
 
         if modeProcessor.useMaskColor then
             if app.fgColor.rgbaPixel ~= MagicPink.rgbaPixel then
-                lastFgColor = CopyColor(app.fgColor)
+                lastFgColor = ColorContext:Copy(app.fgColor)
                 app.fgColor = MagicPink
             end
         else
-            lastFgColor = CopyColor(app.fgColor)
+            lastFgColor = ColorContext:Copy(app.fgColor)
         end
     end
 
@@ -359,11 +324,11 @@ local function MagicPencilDialog(options)
 
         if modeProcessor.useMaskColor then
             if app.bgColor.rgbaPixel ~= MagicTeal.rgbaPixel then
-                lastBgColor = CopyColor(app.bgColor)
+                lastBgColor = ColorContext:Copy(app.bgColor)
                 app.bgColor = MagicTeal
             end
         else
-            lastBgColor = CopyColor(app.bgColor)
+            lastBgColor = ColorContext:Copy(app.bgColor)
         end
     end
 
