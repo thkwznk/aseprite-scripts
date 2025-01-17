@@ -162,6 +162,7 @@ end
 
 local function MagicPencilDialog(options)
     local dialog
+    local isRefresh = false
     local colorModel = ColorModels.HSV
     local selectedMode = Mode.Regular
     local sprite = app.activeSprite
@@ -171,13 +172,10 @@ local function MagicPencilDialog(options)
 
     local function RefreshDialog()
         -- Update dialog based only sprite's color mode
-        local isIndexed = sprite and sprite.colorMode ~= ColorMode.RGB
-
-        dialog:modify{
-            id = "indexedMode",
-            selected = isIndexed,
-            enabled = not isIndexed
-        }
+        local isRGB = sprite and sprite.colorMode == ColorMode.RGB
+        dialog --
+        :modify{id = "indexedModeSeparator", visible = isRGB} --
+        :modify{id = "indexedMode", visible = isRGB, enabled = isRGB}
     end
 
     local function UpdateLast()
@@ -338,6 +336,11 @@ local function MagicPencilDialog(options)
     dialog = Dialog {
         title = "Magic Pencil",
         onclose = function()
+            if isRefresh then
+                isRefresh = false
+                return
+            end
+
             if sprite then sprite.events:off(onChangeListener) end
 
             app.events:off(onSiteChange)
@@ -578,16 +581,15 @@ local function MagicPencilDialog(options)
         visible = false
     } --
     :separator{id = "indexedModeSeparator"} --
-    :check{
-        id = "indexedMode",
-        text = "Indexed Mode",
-        selected = sprite.colorMode ~= ColorMode.RGB,
-        enabled = sprite.colorMode == ColorMode.RGB
-    }
+    :check{id = "indexedMode", text = "Indexed Mode"}
+
+    -- Show the dialog just to update widget visibility correctly
+    dialog:show{wait = false}
+    isRefresh = true
+    RefreshDialog()
+    dialog:close()
 
     return dialog
 end
 
 return MagicPencilDialog
-
--- TODO: Maybe the Indexed Mode checkbox should be remembered when switching Color Modes?
