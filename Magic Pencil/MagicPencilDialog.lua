@@ -39,8 +39,14 @@ local function RectangleContains(rect, x, y)
     y >= rect.y and y <= rect.y + rect.height - 1
 end
 
-local function CompareRGB(a, b)
-    return a.red == b.red and a.green == b.green and a.blue == b.blue
+local function CompareColors(a, b)
+    local sprite = app.activeSprite
+
+    if sprite and sprite.colorMode == ColorMode.RGB then
+        return a.red == b.red and a.green == b.green and a.blue == b.blue
+    end
+
+    return a.index == b.index
 end
 
 local function ColorDistance(a, b)
@@ -62,9 +68,9 @@ local function GetButtonsPressed(pixels, previous, next)
                                        pixel.y - next.position.y)
         local newPixelColor = CreateColor(newPixelValue)
 
-        if CompareRGB(app.fgColor, newPixelColor) then
+        if CompareColors(app.fgColor, newPixelColor) then
             leftPressed = true
-        elseif CompareRGB(app.bgColor, newPixelColor) then
+        elseif CompareColors(app.bgColor, newPixelColor) then
             rightPressed = true
         end
 
