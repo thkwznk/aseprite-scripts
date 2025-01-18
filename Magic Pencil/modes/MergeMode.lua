@@ -85,7 +85,9 @@ function MergeMode:Process(change, sprite, cel, parameters)
                 if color > 0 then
                     drawPixel(newImage, pixel.x - change.bounds.x,
                               pixel.y - change.bounds.y, color)
-                    drawPixel(layerCel.image, x, y, 0)
+
+                    -- I'm not sure if the Merge Mode should clear pixels
+                    -- drawPixel(layerCel.image, x, y, 0)
 
                     layerCel.updated = true
                 end
