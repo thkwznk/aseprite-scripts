@@ -76,6 +76,7 @@ Unreleased:
 - [Fix] Update Magic Pencil dialog when the sprites Color Mode changes
 - [Fix] No longer add effects to pixels changed by commands
 - [Fix] No longer add effects to pixels changed on Tilemap layers
+- [Fix] No longer allow for changing foreground or background color when Magic Pencil requires Magic Pink or Magic Teal
 
 Future:
 

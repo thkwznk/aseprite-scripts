@@ -318,29 +318,71 @@ local function MagicPencilDialog(options)
     local lastFgColor = ColorContext:Copy(app.fgColor)
     local lastBgColor = ColorContext:Copy(app.bgColor)
 
+    local function SelectMode(mode)
+        selectedMode = mode
+
+        local useMaskColor =
+            ModeProcessorProvider:Get(selectedMode).useMaskColor
+
+        if useMaskColor then
+            app.fgColor = MagicPink
+            app.bgColor = MagicTeal
+        else
+            app.fgColor = lastFgColor
+            app.bgColor = lastBgColor
+        end
+
+        dialog --
+        :modify{id = "outlineColor", visible = selectedMode == Mode.OutlineLive} --
+        :modify{id = "outlineSize", visible = selectedMode == Mode.OutlineLive} --
+        :modify{id = "graffitiPower", visible = selectedMode == Mode.Graffiti} --
+        :modify{
+            id = "graffitiSpeckEnabled",
+            visible = selectedMode == Mode.Graffiti
+        } --
+        :modify{
+            id = "graffitiSpeckPower",
+            visible = selectedMode == Mode.Graffiti and
+                dialog.data.graffitiSpeckEnabled
+        } --
+        :modify{id = "colorModel", visible = selectedMode == Mode.Shift} --
+        :modify{id = "shiftFirstOption", visible = selectedMode == Mode.Shift} --
+        :modify{
+            id = "shiftFirstPercentage",
+            visible = selectedMode == Mode.Shift and
+                dialog.data.shiftFirstOption
+        } --
+        :modify{id = "shiftSecondOption", visible = selectedMode == Mode.Shift} --
+        :modify{
+            id = "shiftSecondPercentage",
+            visible = selectedMode == Mode.Shift and
+                dialog.data.shiftSecondOption
+        } --
+        :modify{id = "shiftThirdOption", visible = selectedMode == Mode.Shift} --
+        :modify{
+            id = "shiftThirdPercentage",
+            visible = selectedMode == Mode.Shift and
+                dialog.data.shiftThirdOption
+        } --
+    end
+
     local onFgColorChange = function()
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
+        local isMagicColor = app.fgColor.rgbaPixel == MagicPink.rgbaPixel
 
-        if modeProcessor.useMaskColor then
-            if app.fgColor.rgbaPixel ~= MagicPink.rgbaPixel then
-                lastFgColor = ColorContext:Copy(app.fgColor)
-                app.fgColor = MagicPink
-            end
-        else
-            lastFgColor = ColorContext:Copy(app.fgColor)
+        if modeProcessor.useMaskColor and not isMagicColor then
+            dialog:modify{id = "RegularMode", selected = true}
+            SelectMode("RegularMode")
         end
     end
 
     local onBgColorChange = function()
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
+        local isMagicColor = app.bgColor.rgbaPixel == MagicTeal.rgbaPixel
 
-        if modeProcessor.useMaskColor then
-            if app.bgColor.rgbaPixel ~= MagicTeal.rgbaPixel then
-                lastBgColor = ColorContext:Copy(app.bgColor)
-                app.bgColor = MagicTeal
-            end
-        else
-            lastBgColor = ColorContext:Copy(app.bgColor)
+        if modeProcessor.useMaskColor and not isMagicColor then
+            dialog:modify{id = "RegularMode", selected = true}
+            SelectMode("RegularMode")
         end
     end
 
@@ -377,71 +419,7 @@ local function MagicPencilDialog(options)
             text = text,
             selected = selected,
             visible = visible,
-            onclick = function()
-                selectedMode = mode
-
-                local useMaskColor =
-                    ModeProcessorProvider:Get(selectedMode).useMaskColor
-
-                if useMaskColor then
-                    app.fgColor = MagicPink
-                    app.bgColor = MagicTeal
-                else
-                    app.fgColor = lastFgColor
-                    app.bgColor = lastBgColor
-                end
-
-                dialog --
-                :modify{
-                    id = "outlineColor",
-                    visible = selectedMode == Mode.OutlineLive
-                } --
-                :modify{
-                    id = "outlineSize",
-                    visible = selectedMode == Mode.OutlineLive
-                } --
-                :modify{
-                    id = "graffitiPower",
-                    visible = selectedMode == Mode.Graffiti
-                } --
-                :modify{
-                    id = "graffitiSpeckEnabled",
-                    visible = selectedMode == Mode.Graffiti
-                } --
-                :modify{
-                    id = "graffitiSpeckPower",
-                    visible = selectedMode == Mode.Graffiti and
-                        dialog.data.graffitiSpeckEnabled
-                } --
-                :modify{id = "colorModel", visible = selectedMode == Mode.Shift} --
-                :modify{
-                    id = "shiftFirstOption",
-                    visible = selectedMode == Mode.Shift
-                } --
-                :modify{
-                    id = "shiftFirstPercentage",
-                    visible = selectedMode == Mode.Shift and
-                        dialog.data.shiftFirstOption
-                } --
-                :modify{
-                    id = "shiftSecondOption",
-                    visible = selectedMode == Mode.Shift
-                } --
-                :modify{
-                    id = "shiftSecondPercentage",
-                    visible = selectedMode == Mode.Shift and
-                        dialog.data.shiftSecondOption
-                } --
-                :modify{
-                    id = "shiftThirdOption",
-                    visible = selectedMode == Mode.Shift
-                } --
-                :modify{
-                    id = "shiftThirdPercentage",
-                    visible = selectedMode == Mode.Shift and
-                        dialog.data.shiftThirdOption
-                } --
-            end
+            onclick = function() SelectMode(mode) end
         }:newrow() --
     end
 
