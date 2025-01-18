@@ -16,7 +16,7 @@ function DesaturateMode:Process(change, sprite, cel, parameters)
                 alpha = c.alpha
             }
 
-            if parameters.indexedMode then
+            if parameters.indexedMode and cel.sprite.colorMode == ColorMode.RGB then
                 c = sprite.palettes[1]:getColor(c.index)
             end
 

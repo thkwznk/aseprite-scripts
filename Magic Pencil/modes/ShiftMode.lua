@@ -47,7 +47,7 @@ function ShiftMode:Process(change, sprite, cel, parameters)
             end
         end
 
-        if parameters.indexedMode then
+        if parameters.indexedMode and cel.sprite.colorMode == ColorMode.RGB then
             c = sprite.palettes[1]:getColor(c.index)
         end
 

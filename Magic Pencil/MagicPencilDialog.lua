@@ -2,6 +2,7 @@ local ModeProcessorProvider = dofile("./ModeProcessorProvider.lua")
 local GetBoundsForPixels = dofile("./GetBoundsForPixels.lua")
 local Mode = dofile("./Mode.lua")
 local Tool = dofile("./Tool.lua")
+local ColorContext = dofile("./ColorContext.lua")
 
 -- Colors
 local MagicPink = Color {red = 255, green = 0, blue = 255, alpha = 128}
@@ -12,15 +13,6 @@ local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
 local function RectangleContains(rect, x, y)
     return x >= rect.x and x <= rect.x + rect.width - 1 and --
     y >= rect.y and y <= rect.y + rect.height - 1
-end
-
-local function CompareRGB(a, b)
-    return a.red == b.red and a.green == b.green and a.blue == b.blue
-end
-
-local function ColorDistance(a, b)
-    return math.sqrt((a.red - b.red) ^ 2 + (a.green - b.green) ^ 2 +
-                         (a.blue - b.blue) ^ 2)
 end
 
 local function GetButtonsPressed(pixels, previous, next)
@@ -35,34 +27,37 @@ local function GetButtonsPressed(pixels, previous, next)
     if not RectangleContains(previous.bounds, pixel.x, pixel.y) then
         local newPixelValue = getPixel(next.image, pixel.x - next.position.x,
                                        pixel.y - next.position.y)
-        local newPixelColor = Color(newPixelValue)
+        local newPixelColor = ColorContext:Create(newPixelValue)
 
-        if CompareRGB(app.fgColor, newPixelColor) then
+        if ColorContext:Compare(app.fgColor, newPixelColor) then
             leftPressed = true
-        elseif CompareRGB(app.bgColor, newPixelColor) then
+        elseif ColorContext:Compare(app.bgColor, newPixelColor) then
             rightPressed = true
         end
 
         return leftPressed, rightPressed
     end
 
-    old = Color(getPixel(previous.image, pixel.x - previous.position.x,
-                         pixel.y - previous.position.y))
-    new = Color(getPixel(next.image, pixel.x - next.position.x,
-                         pixel.y - next.position.y))
+    old = ColorContext:Create(getPixel(previous.image,
+                                       pixel.x - previous.position.x,
+                                       pixel.y - previous.position.y))
+    new = ColorContext:Create(getPixel(next.image, pixel.x - next.position.x,
+                                       pixel.y - next.position.y))
 
     if old == nil or new == nil then return leftPressed, rightPressed end
 
-    if app.fgColor.rgbaPixel == 0 and new.rgbaPixel ~= 0 then
+    if ColorContext:IsTransparent(app.fgColor) and
+        not ColorContext:IsTransparent(new) then
         return false, true
-    elseif app.bgColor.rgbaPixel == 0 and new.rgbaPixel ~= 0 then
+    elseif ColorContext:IsTransparent(app.bgColor) and
+        not ColorContext:IsTransparent(new) then
         return true, false
     end
 
-    local fgColorDistance = ColorDistance(new, app.fgColor) -
-                                ColorDistance(old, app.fgColor)
-    local bgColorDistance = ColorDistance(new, app.bgColor) -
-                                ColorDistance(old, app.bgColor)
+    local fgColorDistance = ColorContext:Distance(new, app.fgColor) -
+                                ColorContext:Distance(old, app.fgColor)
+    local bgColorDistance = ColorContext:Distance(new, app.bgColor) -
+                                ColorContext:Distance(old, app.bgColor)
 
     if fgColorDistance < bgColorDistance then
         leftPressed = true
@@ -93,7 +88,6 @@ local function CalculateChange(previous, next, canExtend)
         for x = 0, next.image.width - 1 do
             for y = 0, next.image.height - 1 do
                 -- Save X and Y as canvas global
-
                 shiftedX = x + shift.x
                 shiftedY = y + shift.y
 
@@ -103,20 +97,21 @@ local function CalculateChange(previous, next, canExtend)
                 -- Out of bounds of the previous image or transparent
                 if (shiftedX < 0 or shiftedX > previous.image.width - 1 or
                     shiftedY < 0 or shiftedY > previous.image.height - 1) then
-                    if Color(nextPixelValue).alpha > 0 then
+                    if not ColorContext:IsTransparent(
+                        ColorContext:Create(nextPixelValue)) then
                         table.insert(pixels, {
                             x = x + next.position.x,
                             y = y + next.position.y,
                             color = nil,
-                            newColor = Color(nextPixelValue)
+                            newColor = ColorContext:Create(nextPixelValue)
                         })
                     end
                 elseif prevPixelValue ~= nextPixelValue then
                     table.insert(pixels, {
                         x = x + next.position.x,
                         y = y + next.position.y,
-                        color = Color(prevPixelValue),
-                        newColor = Color(nextPixelValue)
+                        color = ColorContext:Create(prevPixelValue),
+                        newColor = ColorContext:Create(nextPixelValue)
                     })
                 end
             end
@@ -143,8 +138,8 @@ local function CalculateChange(previous, next, canExtend)
                         table.insert(pixels, {
                             x = x + previous.position.x,
                             y = y + previous.position.y,
-                            color = Color(prevPixelValue),
-                            newColor = Color(nextPixelValue)
+                            color = ColorContext:Create(prevPixelValue),
+                            newColor = ColorContext:Create(nextPixelValue)
                         })
                     end
                 end
@@ -167,6 +162,7 @@ end
 
 local function MagicPencilDialog(options)
     local dialog
+    local isRefresh = false
     local colorModel = ColorModels.HSV
     local selectedMode = Mode.Regular
     local sprite = app.activeSprite
@@ -174,16 +170,28 @@ local function MagicPencilDialog(options)
     local lastKnownNumberOfCels, lastActiveCel, lastActiveLayer,
           lastActiveFrame, newCelFromEmpty, lastCelData
 
-    local refreshDialog = function()
+    local function RefreshDialog()
         -- Update dialog based only sprite's color mode
-        local enabled = sprite and sprite.colorMode == ColorMode.RGB
+        local isRGB = sprite and sprite.colorMode == ColorMode.RGB
+        local isIndexed = sprite and sprite.colorMode == ColorMode.INDEXED
 
-        for _, mode in pairs(Mode) do
-            dialog:modify{id = mode, enabled = enabled}
-        end
+        dialog --
+        :modify{id = "transformSeparator", visible = isRGB} --
+        :modify{id = Mode.Cut, visible = isRGB} --
+        :modify{id = Mode.Merge, visible = isRGB} --
+        :modify{id = Mode.Selection, visible = isRGB} --
+        :modify{id = "mixSeparator", visible = isRGB} --
+        :modify{id = Mode.Desaturate, visible = isRGB} --
+        :modify{id = "MixMode", visible = isRGB} --
+        :modify{id = "MixProportionalMode", visible = isRGB} --
+        :modify{id = "changeSeparator", visible = isRGB or isIndexed} --
+        :modify{id = Mode.Shift, visible = isRGB} --
+        :modify{id = Mode.Colorize, visible = isRGB or isIndexed} --
+        :modify{id = "indexedModeSeparator", visible = isRGB} --
+        :modify{id = "indexedMode", visible = isRGB, enabled = isRGB}
     end
 
-    local updateLast = function()
+    local function UpdateLast()
         if sprite then lastKnownNumberOfCels = #sprite.cels end
 
         newCelFromEmpty = (lastActiveCel == nil) and
@@ -200,12 +208,13 @@ local function MagicPencilDialog(options)
             lastCelData = {
                 image = lastActiveCel.image:clone(),
                 position = lastActiveCel.position,
-                bounds = lastActiveCel.bounds
+                bounds = lastActiveCel.bounds,
+                sprite = sprite
             }
         end
     end
 
-    updateLast()
+    UpdateLast()
 
     local skip = false
 
@@ -213,9 +222,9 @@ local function MagicPencilDialog(options)
 
     local onAfterCommand = function(ev)
         skip = false
-        updateLast()
+        UpdateLast()
 
-        if ev.name == "ChangePixelFormat" then refreshDialog() end
+        if ev.name == "ChangePixelFormat" then RefreshDialog() end
     end
 
     local onSpriteChange = function(ev)
@@ -227,23 +236,24 @@ local function MagicPencilDialog(options)
 
         if not Tool:IsSupported(app.tool.id) or -- Only react to supported tools
         selectedMode == Mode.Regular or -- If it's the regular mode then ignore
-        sprite.colorMode ~= ColorMode.RGB or -- Currently only RGB color mode is supported
+        sprite.colorMode == ColorMode.TILEMAP or -- Tilemap Mode is not supported
+        app.activeLayer.isTilemap or -- If a layer is a tilemap
         lastKnownNumberOfCels ~= #sprite.cels or -- If last layer/frame/cel was removed then ignore
         lastActiveCel ~= app.activeCel or -- If it's just a layer/frame/cel change then ignore
         lastActiveCel == nil or -- If a cel was created where previously was none or cel was copied
         (app.apiVersion >= 21 and ev.fromUndo) -- From API v21, ignore all changes from undo/redo
         then
-            updateLast()
+            UpdateLast()
             return
         end
 
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
-        local celData = newCelFromEmpty and
-                            {
-                image = Image(0, 0),
-                position = Point(0, 0),
-                bounds = Rectangle(0, 0, 0, 0)
-            } or lastCelData
+        local celData = newCelFromEmpty and {
+            image = Image(0, 0),
+            position = Point(0, 0),
+            bounds = Rectangle(0, 0, 0, 0),
+            sprite = app.activeSprite
+        } or lastCelData
 
         local change = CalculateChange(celData, app.activeCel,
                                        modeProcessor.canExtend)
@@ -270,7 +280,7 @@ local function MagicPencilDialog(options)
         if deleteCel then app.activeSprite:deleteCel(app.activeCel) end
 
         app.refresh()
-        updateLast()
+        UpdateLast()
 
         -- v This just crashes Aseprite
         -- app.undo()
@@ -283,7 +293,7 @@ local function MagicPencilDialog(options)
     local onSiteChange = app.events:on('sitechange', function()
         -- If sprite stayed the same then do nothing
         if app.activeSprite == sprite then
-            updateLast()
+            UpdateLast()
             return
         end
 
@@ -298,48 +308,53 @@ local function MagicPencilDialog(options)
             sprite = app.activeSprite
             onChangeListener = sprite.events:on('change', onSpriteChange)
 
-            updateLast()
+            UpdateLast()
         end
 
         -- Update dialog based on new sprite's color mode
-        refreshDialog()
+        RefreshDialog()
     end)
 
-    local lastFgColor = Color(app.fgColor.rgbaPixel)
-    local lastBgColor = Color(app.bgColor.rgbaPixel)
+    local lastFgColor = ColorContext:Copy(app.fgColor)
+    local lastBgColor = ColorContext:Copy(app.bgColor)
 
-    function OnFgColorChange()
+    local onFgColorChange = function()
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
 
         if modeProcessor.useMaskColor then
             if app.fgColor.rgbaPixel ~= MagicPink.rgbaPixel then
-                lastFgColor = Color(app.fgColor.rgbaPixel)
+                lastFgColor = ColorContext:Copy(app.fgColor)
                 app.fgColor = MagicPink
             end
         else
-            lastFgColor = Color(app.fgColor.rgbaPixel)
+            lastFgColor = ColorContext:Copy(app.fgColor)
         end
     end
 
-    function OnBgColorChange()
+    local onBgColorChange = function()
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
 
         if modeProcessor.useMaskColor then
             if app.bgColor.rgbaPixel ~= MagicTeal.rgbaPixel then
-                lastBgColor = Color(app.bgColor.rgbaPixel)
+                lastBgColor = ColorContext:Copy(app.bgColor)
                 app.bgColor = MagicTeal
             end
         else
-            lastBgColor = Color(app.bgColor.rgbaPixel)
+            lastBgColor = ColorContext:Copy(app.bgColor)
         end
     end
 
-    local onFgColorListener = app.events:on('fgcolorchange', OnFgColorChange)
-    local onBgColorListener = app.events:on('bgcolorchange', OnBgColorChange)
+    local onFgColorListener = app.events:on('fgcolorchange', onFgColorChange)
+    local onBgColorListener = app.events:on('bgcolorchange', onBgColorChange)
 
     dialog = Dialog {
         title = "Magic Pencil",
         onclose = function()
+            if isRefresh then
+                isRefresh = false
+                return
+            end
+
             if sprite then sprite.events:off(onChangeListener) end
 
             app.events:off(onSiteChange)
@@ -356,12 +371,11 @@ local function MagicPencilDialog(options)
         end
     }
 
-    local AddMode = function(mode, text, visible, selected)
+    local function AddMode(mode, text, visible, selected)
         dialog:radio{
             id = mode,
             text = text,
             selected = selected,
-            enabled = sprite.colorMode == ColorMode.RGB,
             visible = visible,
             onclick = function()
                 selectedMode = mode
@@ -473,24 +487,24 @@ local function MagicPencilDialog(options)
     } --
     :number{id = "outlineSize", visible = false, text = "1", decimals = 0}
 
-    dialog:separator{text = "Transform"} --
+    dialog:separator{id = "transformSeparator", text = "Transform"} --
     AddMode(Mode.Cut, "Lift")
     AddMode(Mode.Merge, "Merge")
     AddMode(Mode.Selection, "Selection")
 
     -- self.dialog:separator{text = "Forbidden"} --
-    AddMode(Mode.Yeet, "Yeet", false)
+    -- AddMode(Mode.Yeet, "Yeet", false)
 
-    dialog:separator{text = "Mix"}
+    dialog:separator{id = "mixSeparator", text = "Mix"}
     AddMode(Mode.Mix, "Unique")
     AddMode(Mode.MixProportional, "Proportional")
 
-    dialog:separator{text = "Change"} --
+    dialog:separator{id = "changeSeparator", text = "Change"} --
     AddMode(Mode.Colorize, "Colorize")
     AddMode(Mode.Desaturate, "Desaturate")
     AddMode(Mode.Shift, "Shift")
 
-    local abc = function()
+    local onShiftOptionClick = function()
         dialog --
         :modify{
             id = "shiftFirstPercentage",
@@ -543,7 +557,7 @@ local function MagicPencilDialog(options)
         text = "Hue",
         selected = true,
         visible = false,
-        onclick = abc
+        onclick = onShiftOptionClick
     } --
     :slider{
         id = "shiftFirstPercentage",
@@ -557,7 +571,7 @@ local function MagicPencilDialog(options)
         text = "Saturation",
         selected = false,
         visible = false,
-        onclick = abc
+        onclick = onShiftOptionClick
     } --
     :slider{
         id = "shiftSecondPercentage",
@@ -571,7 +585,7 @@ local function MagicPencilDialog(options)
         text = "Value",
         selected = false,
         visible = false,
-        onclick = abc
+        onclick = onShiftOptionClick
     } --
     :slider{
         id = "shiftThirdPercentage",
@@ -582,6 +596,12 @@ local function MagicPencilDialog(options)
     } --
     :separator{id = "indexedModeSeparator"} --
     :check{id = "indexedMode", text = "Indexed Mode"}
+
+    -- Show the dialog just to update widget visibility correctly
+    dialog:show{wait = false}
+    isRefresh = true
+    RefreshDialog()
+    dialog:close()
 
     return dialog
 end

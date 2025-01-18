@@ -1,7 +1,7 @@
 local OutlineLiveMode = {canExtend = true}
 
 function OutlineLiveMode:Process(change, sprite, cel, parameters)
-    local color = parameters.outlineColor.rgbaPixel
+    local color = parameters.outlineColor
 
     local selection = sprite.selection
     local extend = {}
@@ -47,7 +47,7 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
     if extend.up then height = height + outlineSize end
     if extend.down then height = height + outlineSize end
 
-    local newImage = Image(width, height)
+    local newImage = Image(width, height, cel.sprite.colorMode)
 
     local dpx = extend.left and outlineSize or 0
     local dpy = extend.up and outlineSize or 0
@@ -65,16 +65,55 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
 
     -- TODO: Optimize image read/write
 
-    for _, pixel in ipairs(change.pixels) do
-        local ix = pixel.x - cx + dpx
-        local iy = pixel.y - cy + dpy
+    local isErasing = app.tool.id == "eraser"
 
-        for xx = -outlineSize, outlineSize do
-            for yy = -outlineSize, outlineSize do
-                if CanOutline(pixel.x + xx, pixel.y + yy) and
-                    d(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
-                    if getPixelCached(newImage, ix + xx, iy + yy) == 0 then
-                        drawOutline(ix + xx, iy + yy)
+    if cel.sprite.colorMode == ColorMode.RGB then
+        if app.fgColor.rgbaPixel == 0 then isErasing = true end
+    else
+        if app.fgColor.index == 0 then isErasing = true end
+    end
+
+    if isErasing then
+        for _, pixel in ipairs(change.pixels) do
+            local ix = pixel.x - cx + dpx
+            local iy = pixel.y - cy + dpy
+
+            local isOutline = false
+
+            for xx = -outlineSize, outlineSize do
+                for yy = -outlineSize, outlineSize do
+                    if CanOutline(pixel.x + xx, pixel.y + yy) and
+                        d(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
+                        local pixelValue =
+                            getPixelCached(newImage, ix + xx, iy + yy)
+
+                        if pixelValue ~= 0 then
+                            drawOutline(ix, iy)
+
+                            isOutline = true
+                            break
+                        end
+                    end
+                end
+
+                if isOutline then break end
+            end
+        end
+    else
+        for _, pixel in ipairs(change.pixels) do
+            local ix = pixel.x - cx + dpx
+            local iy = pixel.y - cy + dpy
+
+            for xx = -outlineSize, outlineSize do
+                for yy = -outlineSize, outlineSize do
+                    if CanOutline(pixel.x + xx, pixel.y + yy) and
+                        d(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
+                        local pixelValue =
+                            getPixelCached(newImage, ix + xx, iy + yy)
+
+                        if pixelValue == 0 then
+                            drawOutline(ix + xx, iy + yy)
+                        end
                     end
                 end
             end

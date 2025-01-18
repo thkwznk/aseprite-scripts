@@ -65,19 +65,17 @@ Future:
 Unreleased:
 
 - [Feature] Support all drawing tools to work with the Magic Pencil (not only the Pencil Tool)
+- [Feature] Support using a subset of options with sprites in Grayscale & Indexed Color Modes
 - [Feature] New option - "Transform > Merge" - that moves all pixels that were painted over into one layer
 - [Improvement] "Outline > Tool" was changed to outline all objects that were painted over
 - [Improvement] Add widgets to control the Graffiti specks
 - [Improvement] Add a widget to control the Outline size
 - [Improvement] Add a single option for "Change > Shift", hide the shift options until it's selected and allow for selecting multiple components
 - [Improvement] Minor performance improvement to the Shift option
-- [Fix] No longer add effects to pixels changed by commands
 - [Fix] "Transform > Lift" correctly updates the GUI to immediately show where the new layer is on the timeline
 - [Fix] Update Magic Pencil dialog when the sprites Color Mode changes
-
-Update v2.0.0:
-
-- [Improvement] Add a separate subset of options for the Grayscale & Indexed Color Modes
+- [Fix] No longer add effects to pixels changed by commands
+- [Fix] No longer add effects to pixels changed on Tilemap layers
 
 Future:
 

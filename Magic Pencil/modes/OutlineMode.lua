@@ -27,7 +27,8 @@ function OutlineMode:Process(change, sprite, cel, parameters)
         local shift = Point(cel.bounds.x - newImageBounds.x,
                             cel.bounds.y - newImageBounds.y)
 
-        local newImage = Image(newImageBounds.width, newImageBounds.height)
+        local newImage = Image(newImageBounds.width, newImageBounds.height,
+                               cel.sprite.colorMode)
         newImage:drawImage(cel.image, shift)
 
         local outlineColor = change.leftPressed and app.fgColor or app.bgColor
@@ -71,7 +72,7 @@ function OutlineMode:_RecursiveOutline(selection, image, x, y, outlinePixels,
     if selection then if not selection:Contains(x, y) then return end end
 
     if x < 0 or x > image.width - 1 or y < 0 or y > image.height - 1 or -- Out of bounds
-        Color(image:getPixel(x, y)).alpha == 0 -- Transparent
+        image:getPixel(x, y) == 0 -- Transparent
     then
         if not skip then table.insert(outlinePixels, {x = x, y = y}) end
         return
