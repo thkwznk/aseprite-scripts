@@ -24,7 +24,7 @@ local function GetLayersUnderneath(layer, operation)
 
         if l.isGroup then
             GetLayersRecursively(l.layers, operation)
-        elseif not l.isReference then
+        elseif not l.isReference and l.isVisible then
             operation(l)
         end
     end
