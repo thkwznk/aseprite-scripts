@@ -66,7 +66,7 @@ Unreleased:
 
 - [Feature] Support all drawing tools to work with the Magic Pencil (not only the Pencil Tool)
 - [Feature] Support using a subset of options with sprites in Grayscale & Indexed Color Modes
-- [Feature] New option - "Transform > Merge" - that moves all pixels that were painted over into one layer
+- [Feature] New option - "Transform > Merge" - copies all painted over pixels into a new layer
 - [Improvement] "Outline > Tool" was changed to outline all objects that were painted over
 - [Improvement] Add widgets to control the Graffiti specks
 - [Improvement] Add a widget to control the Outline size
@@ -148,3 +148,13 @@ Unreleased:
 
 - [Feature] Add a new option under _File > Run..._ that allows for searching and running scripts and commands 
 - [Feature] Add a keyboard shortcut for running the last searched script or command
+
+## Brush Transformations
+
+Unreleased:
+
+- ...
+
+Future:
+
+- [Improvement] Support existing operations for regular brushes (no longer grey-out options)
