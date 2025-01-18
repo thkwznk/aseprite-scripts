@@ -36,7 +36,7 @@ end
 
 function ColorContext:Distance(a, b)
     return math.sqrt((a.red - b.red) ^ 2 + (a.green - b.green) ^ 2 +
-                         (a.blue - b.blue) ^ 2)
+                         (a.blue - b.blue) ^ 2 + (a.alpha - b.alpha) ^ 2)
 end
 
 return ColorContext
