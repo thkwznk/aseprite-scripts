@@ -282,7 +282,10 @@ local function MagicPencilDialog(options)
         -- If there is no active cel, do nothing
         if app.activeCel == nil then return end
 
-        if not Tool:IsSupported(app.tool.id) or -- Only react to supported tools
+        -- TODO: For modes that require a mask color eraser is not supported
+        local modeProcessor = ModeProcessorProvider:Get(selectedMode)
+
+        if not Tool:IsSupported(app.tool.id, modeProcessor) or -- Only react to supported tools
         selectedMode == Mode.Regular or -- If it's the regular mode then ignore
         sprite.colorMode == ColorMode.TILEMAP or -- Tilemap Mode is not supported
         app.activeLayer.isTilemap or -- If a layer is a tilemap
@@ -291,10 +294,6 @@ local function MagicPencilDialog(options)
             UpdateLast()
             return
         end
-
-        -- TODO: For modes that require a mask color eraser is not supported
-
-        local modeProcessor = ModeProcessorProvider:Get(selectedMode)
 
         local change =
             lastCel.empty and CalculateChangeFromEmpty(app.activeCel) or

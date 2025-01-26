@@ -6,7 +6,10 @@ local Tool = {
     }
 }
 
-function Tool:IsSupported(toolId)
+function Tool:IsSupported(toolId, modeProcessor)
+    -- For modes that require the mask color the eraser makes it impossible to detect which button was pressed
+    if modeProcessor.useMaskColor and toolId == "eraser" then return false end
+
     for _, supportedToolId in ipairs(self.supportedTools) do
         if supportedToolId == toolId then return true end
     end
