@@ -318,18 +318,20 @@ local function MagicPencilDialog(options)
     local lastFgColor = ColorContext:Copy(app.fgColor)
     local lastBgColor = ColorContext:Copy(app.bgColor)
 
-    local function SelectMode(mode)
+    local function SelectMode(mode, skipColor)
         selectedMode = mode
 
         local useMaskColor =
             ModeProcessorProvider:Get(selectedMode).useMaskColor
 
-        if useMaskColor then
-            app.fgColor = MagicPink
-            app.bgColor = MagicTeal
-        else
-            app.fgColor = lastFgColor
-            app.bgColor = lastBgColor
+        if not skipColor then
+            if useMaskColor then
+                app.fgColor = MagicPink
+                app.bgColor = MagicTeal
+            else
+                app.fgColor = lastFgColor
+                app.bgColor = lastBgColor
+            end
         end
 
         dialog --
@@ -366,15 +368,33 @@ local function MagicPencilDialog(options)
         } --
     end
 
+    local resetColors = false
+    local resetColorsTimer = Timer {
+        interval = 1 / 6, -- fps
+        ontick = function()
+            -- This is the only reliable way
+            -- There's no option to change colors within a color change event without causing issue 
+            if resetColors then
+                app.fgColor = lastFgColor
+                app.bgColor = lastBgColor
+                resetColors = false
+            end
+        end
+    }
+
     local onFgColorChange = function()
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
         local isMagicColor = app.fgColor.rgbaPixel == MagicPink.rgbaPixel
 
-        lastFgColor = app.fgColor
+        if not isMagicColor then
+            if modeProcessor.useMaskColor then
+                dialog:modify{id = "RegularMode", selected = true}
+                SelectMode("RegularMode", true) -- Skip setting colors here to avoid issue with changing colors from within an event
 
-        if modeProcessor.useMaskColor and not isMagicColor then
-            dialog:modify{id = "RegularMode", selected = true}
-            SelectMode("RegularMode")
+                resetColors = true
+            end
+
+            lastFgColor = ColorContext:Copy(app.fgColor)
         end
     end
 
@@ -382,11 +402,15 @@ local function MagicPencilDialog(options)
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
         local isMagicColor = app.bgColor.rgbaPixel == MagicTeal.rgbaPixel
 
-        lastBgColor = app.bgColor
+        if not isMagicColor then
+            if modeProcessor.useMaskColor then
+                dialog:modify{id = "RegularMode", selected = true}
+                SelectMode("RegularMode", true) -- Skip setting colors here to avoid issue with changing colors from within an event
 
-        if modeProcessor.useMaskColor and not isMagicColor then
-            dialog:modify{id = "RegularMode", selected = true}
-            SelectMode("RegularMode")
+                resetColors = true
+            end
+
+            lastBgColor = ColorContext:Copy(app.bgColor)
         end
     end
 
@@ -412,6 +436,8 @@ local function MagicPencilDialog(options)
 
             app.events:off(onBeforeCommandListener)
             app.events:off(onAfterCommandListener)
+
+            resetColorsTimer:stop()
 
             options.onclose()
         end
@@ -584,6 +610,8 @@ local function MagicPencilDialog(options)
     isRefresh = true
     RefreshDialog()
     dialog:close()
+
+    resetColorsTimer:start()
 
     return dialog
 end
