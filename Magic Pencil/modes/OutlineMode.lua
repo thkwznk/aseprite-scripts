@@ -1,6 +1,10 @@
 local GetBoundsForPixels = dofile("../GetBoundsForPixels.lua")
 
-local OutlineMode = {canExtend = true, deleteOnEmptyCel = true}
+local OutlineMode = {
+    canExtend = true,
+    ignoreEmptyCel = true,
+    deleteOnEmptyCel = true
+}
 
 function OutlineMode:Process(change, sprite, cel, parameters)
     -- Calculate outline pixels from the center of the change bound

@@ -9,6 +9,7 @@ end
 local MixModeBase = {
     canExtend = true,
     useMaskColor = true,
+    ignoreEmptyCel = true,
     deleteOnEmptyCel = true,
     variantId = ""
 }

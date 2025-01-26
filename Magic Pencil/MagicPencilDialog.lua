@@ -15,6 +15,25 @@ local function RectangleContains(rect, x, y)
     y >= rect.y and y <= rect.y + rect.height - 1
 end
 
+local function GetButtonsPressedFromEmpty(pixels, cel)
+    if #pixels == 0 then return end
+
+    local old, new = nil, nil
+    local pixel = pixels[1]
+
+    local pixelValue = cel.image.getPixel(cel.image, pixel.x - cel.position.x,
+                                          pixel.y - cel.position.y)
+    local pixelColor = ColorContext:Create(pixelValue)
+
+    if ColorContext:Compare(app.fgColor, pixelColor) then
+        return true, false
+    elseif ColorContext:Compare(app.bgColor, pixelColor) then
+        return false, true
+    end
+
+    return false, false
+end
+
 local function GetButtonsPressed(pixels, previous, next)
     if #pixels == 0 then return end
 
@@ -66,6 +85,38 @@ local function GetButtonsPressed(pixels, previous, next)
     end
 
     return leftPressed, rightPressed
+end
+
+local function CalculateChangeFromEmpty(cel)
+    local pixels = {}
+    local pixelValue
+
+    local getPixel = cel.image.getPixel
+
+    for x = 0, cel.image.width - 1 do
+        for y = 0, cel.image.height - 1 do
+            pixelValue = getPixel(cel.image, x, y)
+
+            if pixelValue > 0 then
+                table.insert(pixels, {
+                    x = x + cel.position.x,
+                    y = y + cel.position.y,
+                    color = ColorContext:Create(0),
+                    newColor = ColorContext:Create(pixelValue)
+                })
+            end
+        end
+    end
+
+    local leftPressed, rightPressed = GetButtonsPressedFromEmpty(pixels, cel)
+
+    return {
+        pixels = pixels,
+        bounds = cel.bounds,
+        leftPressed = leftPressed,
+        rightPressed = rightPressed,
+        sizeChanged = false
+    }
 end
 
 local function CalculateChange(previous, next, canExtend)
@@ -166,9 +217,7 @@ local function MagicPencilDialog(options)
     local colorModel = ColorModels.HSV
     local selectedMode = Mode.Regular
     local sprite = app.activeSprite
-
-    local lastKnownNumberOfCels, lastActiveCel, lastActiveLayer,
-          lastActiveFrame, newCelFromEmpty, lastCelData
+    local lastCel
 
     local function RefreshDialog()
         -- Update dialog based only sprite's color mode
@@ -192,24 +241,20 @@ local function MagicPencilDialog(options)
     end
 
     local function UpdateLast()
-        if sprite then lastKnownNumberOfCels = #sprite.cels end
-
-        newCelFromEmpty = (lastActiveCel == nil) and
-                              (lastActiveLayer == app.activeLayer) and
-                              (lastActiveFrame == app.activeFrame)
-
-        lastActiveLayer = app.activeLayer
-        lastActiveFrame = app.activeFrame
-        lastActiveCel = app.activeCel
-        lastCelData = nil
-
-        -- When creating a new layer or cel this can be triggered
-        if lastActiveCel then
-            lastCelData = {
-                image = lastActiveCel.image:clone(),
-                position = lastActiveCel.position,
-                bounds = lastActiveCel.bounds,
+        if app.activeCel then
+            lastCel = {
+                image = app.activeCel.image:clone(),
+                position = app.activeCel.position,
+                bounds = app.activeCel.bounds,
                 sprite = sprite
+            }
+        else
+            lastCel = {
+                image = Image(0, 0),
+                position = Point(0, 0),
+                bounds = Rectangle(0, 0, 0, 0),
+                sprite = sprite,
+                empty = true
             }
         end
     end
@@ -229,7 +274,10 @@ local function MagicPencilDialog(options)
 
     local onSpriteChange = function(ev)
         -- Skip change, usually when a command is being run
-        if skip then return end
+        if skip then
+            UpdateLast()
+            return
+        end
 
         -- If there is no active cel, do nothing
         if app.activeCel == nil then return end
@@ -238,46 +286,42 @@ local function MagicPencilDialog(options)
         selectedMode == Mode.Regular or -- If it's the regular mode then ignore
         sprite.colorMode == ColorMode.TILEMAP or -- Tilemap Mode is not supported
         app.activeLayer.isTilemap or -- If a layer is a tilemap
-        lastKnownNumberOfCels ~= #sprite.cels or -- If last layer/frame/cel was removed then ignore
-        lastActiveCel ~= app.activeCel or -- If it's just a layer/frame/cel change then ignore
-        lastActiveCel == nil or -- If a cel was created where previously was none or cel was copied
         (app.apiVersion >= 21 and ev.fromUndo) -- From API v21, ignore all changes from undo/redo
         then
             UpdateLast()
             return
         end
 
-        local modeProcessor = ModeProcessorProvider:Get(selectedMode)
-        local celData = newCelFromEmpty and {
-            image = Image(0, 0),
-            position = Point(0, 0),
-            bounds = Rectangle(0, 0, 0, 0),
-            sprite = app.activeSprite
-        } or lastCelData
+        -- TODO: For modes that require a mask color eraser is not supported
 
-        local change = CalculateChange(celData, app.activeCel,
-                                       modeProcessor.canExtend)
+        local modeProcessor = ModeProcessorProvider:Get(selectedMode)
+
+        local change =
+            lastCel.empty and CalculateChangeFromEmpty(app.activeCel) or
+                CalculateChange(lastCel, app.activeCel, modeProcessor.canExtend)
 
         -- Mode Processor can cause the data about the last cel update, we calcualate it here to mitigate issues  
-        local deleteCel = newCelFromEmpty and modeProcessor.deleteOnEmptyCel
+        local deleteCel = lastCel.empty and modeProcessor.deleteOnEmptyCel
+        local celToDelete = app.activeCel -- Save the cel for deletion
 
         -- If no pixel was changed, but the size changed then revert to original
         if #change.pixels == 0 then
-            if change.sizeChanged and modeProcessor.canExtend and lastCelData then
+            if change.sizeChanged and modeProcessor.canExtend and lastCel then
                 -- If instead I just replace image and positon in the active cel, Aseprite will crash if I undo when hovering mouse over dialog
                 -- sprite:newCel(app.activeLayer, app.activeFrame.frameNumber,
                 --               lastCel.image, lastCel.position)
-                app.activeCel.image = lastCelData.image
-                app.activeCel.position = lastCelData.position
+                app.activeCel.image = lastCel.image
+                app.activeCel.position = lastCel.position
             end
             -- Otherwise, do nothing
-        elseif not change.leftPressed and not change.rightPressed then
-            -- Not a user change - most probably an undo action, do nothing
-        else
-            modeProcessor:Process(change, sprite, celData, dialog.data)
+        elseif lastCel.empty and modeProcessor.ignoreEmptyCel then
+            -- Ignore, do nothing
+        elseif change.leftPressed or change.rightPressed then
+            -- Only respond if it's known which button the user pressed
+            modeProcessor:Process(change, sprite, lastCel, dialog.data)
         end
 
-        if deleteCel then app.activeSprite:deleteCel(app.activeCel) end
+        if deleteCel then app.activeSprite:deleteCel(celToDelete) end
 
         app.refresh()
         UpdateLast()

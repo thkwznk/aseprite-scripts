@@ -75,6 +75,7 @@ Unreleased:
 - [Improvement] Rename the Regular Mode to Disabled
 - [Improvement] Add a new section "Effect" with Graffiti and Outline Modes
 - [Improvement] Move the "Outline > Tool" Mode to the "Change" section as the Outline Mode
+- [Fix] Correctly apply effects when drawing on a previously empty cel
 - [Fix] Correctly update the GUI when using Lift Mode to immediately show where the new layer is on the timeline
 - [Fix] Update Magic Pencil dialog when the sprites Color Mode changes
 - [Fix] No longer add effects to pixels changed by commands

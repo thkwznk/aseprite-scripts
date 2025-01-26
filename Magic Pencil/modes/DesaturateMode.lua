@@ -1,4 +1,8 @@
-local DesaturateMode = {useMaskColor = true, deleteOnEmptyCel = true}
+local DesaturateMode = {
+    useMaskColor = true,
+    ignoreEmptyCel = true,
+    deleteOnEmptyCel = true
+}
 
 function DesaturateMode:Process(change, sprite, cel, parameters)
     local x, y, c

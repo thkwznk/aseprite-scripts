@@ -1,4 +1,4 @@
-local ColorizeMode = {deleteOnEmptyCel = true}
+local ColorizeMode = {ignoreEmptyCel = true, deleteOnEmptyCel = true}
 
 function ColorizeMode:Process(change, sprite, cel, parameters)
     local x, y, c

@@ -1,4 +1,8 @@
-local CutMode = {useMaskColor = true, deleteOnEmptyCel = true}
+local CutMode = {
+    useMaskColor = true,
+    ignoreEmptyCel = true,
+    deleteOnEmptyCel = true
+}
 
 function CutMode:Process(change, sprite, cel, parameters)
     local newImage = Image(change.bounds.width, change.bounds.height,

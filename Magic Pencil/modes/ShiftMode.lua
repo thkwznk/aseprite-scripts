@@ -1,4 +1,8 @@
-local ShiftMode = {useMaskColor = true, deleteOnEmptyCel = true}
+local ShiftMode = {
+    useMaskColor = true,
+    ignoreEmptyCel = true,
+    deleteOnEmptyCel = true
+}
 
 function ShiftMode:Process(change, sprite, cel, parameters)
     local direction = change.leftPressed and 1 or -1
