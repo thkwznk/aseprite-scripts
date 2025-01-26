@@ -8,19 +8,17 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
     local drawPixel = activeCel.image.drawPixel
 
     local brushSize = app.preferences.tool(app.tool.id).brush.size
-    local sizeFactor = 100 * 2 * brushSize
+    local sizeFactor = brushSize * 400 -- The second value is a magic number
 
     local dripChance = parameters.graffitiPower / sizeFactor
     local speckChance = (parameters.graffitiSpeckEnabled and
                             parameters.graffitiSpeckPower or 0) / sizeFactor
 
     local maxDripLength = math.ceil(brushSize * 8)
-    local maxDripSize = math.ceil(brushSize * 0.8)
+    local maxDripSize = math.ceil(brushSize * 0.5)
 
     local maxSpeckDist = math.max((brushSize * 2), 3)
     local maxSpeckSize = math.ceil(brushSize * 0.2)
-
-    -- TODO: Test this further and adjust values
 
     if brushSize > 1 then maxSpeckSize = math.max(maxSpeckSize, 2) end
 
