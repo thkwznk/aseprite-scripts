@@ -427,7 +427,9 @@ local function MagicPencilDialog(options)
         }:newrow() --
     end
 
-    AddMode(Mode.Regular, "Regular", true, true)
+    AddMode(Mode.Regular, "Disable", true, true)
+
+    dialog:separator{text = "Effect"}
 
     AddMode(Mode.Graffiti, "Graffiti", true)
     dialog --
@@ -457,10 +459,7 @@ local function MagicPencilDialog(options)
         max = 100,
         value = 50
     }
-
-    dialog:separator{text = "Outline"} --
-    AddMode(Mode.Outline, "Tool")
-    AddMode(Mode.OutlineLive, "Brush")
+    AddMode(Mode.OutlineLive, "Outline")
     dialog --
     :color{
         id = "outlineColor",
@@ -482,6 +481,7 @@ local function MagicPencilDialog(options)
     AddMode(Mode.MixProportional, "Proportional")
 
     dialog:separator{id = "changeSeparator", text = "Change"} --
+    AddMode(Mode.Outline, "Outline")
     AddMode(Mode.Colorize, "Colorize")
     AddMode(Mode.Desaturate, "Desaturate")
     AddMode(Mode.Shift, "Shift")
