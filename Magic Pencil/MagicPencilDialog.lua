@@ -370,6 +370,8 @@ local function MagicPencilDialog(options)
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
         local isMagicColor = app.fgColor.rgbaPixel == MagicPink.rgbaPixel
 
+        lastFgColor = app.fgColor
+
         if modeProcessor.useMaskColor and not isMagicColor then
             dialog:modify{id = "RegularMode", selected = true}
             SelectMode("RegularMode")
@@ -379,6 +381,8 @@ local function MagicPencilDialog(options)
     local onBgColorChange = function()
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
         local isMagicColor = app.bgColor.rgbaPixel == MagicTeal.rgbaPixel
+
+        lastBgColor = app.bgColor
 
         if modeProcessor.useMaskColor and not isMagicColor then
             dialog:modify{id = "RegularMode", selected = true}
