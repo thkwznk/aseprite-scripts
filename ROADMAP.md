@@ -64,9 +64,10 @@ Future:
 
 Unreleased:
 
-- [Feature] Support all drawing tools to work with the Magic Pencil (not only the Pencil Tool)
 - [Feature] Add a new mode - "Transform > Merge" - copies all painted over pixels into a new layer
+- [Feature] Support all drawing tools to work with the Magic Pencil (not only the Pencil Tool)
 - [Feature] Support using a subset of modes with sprites in Grayscale & Indexed Color Modes
+- [Feature] Add an option to minimize the Magic Pencil dialog window
 - [Improvement] "Outline > Tool" was changed to outline all objects that were painted over
 - [Improvement] Add widgets to control the Graffiti specks
 - [Improvement] Add a widget to control the Outline size

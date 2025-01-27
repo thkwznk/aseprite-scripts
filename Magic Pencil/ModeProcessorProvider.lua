@@ -5,26 +5,26 @@ local OutlineLiveMode = dofile("./modes/OutlineLiveMode.lua")
 local CutMode = dofile("./modes/CutMode.lua")
 local MergeMode = dofile("./modes/MergeMode.lua")
 local SelectionMode = dofile("./modes/SelectionMode.lua")
-local YeetMode = dofile("./modes/YeetMode.lua")
 local ColorizeMode = dofile("./modes/ColorizeMode.lua")
 local DesaturateMode = dofile("./modes/DesaturateMode.lua")
 local ShiftMode = dofile("./modes/ShiftMode.lua")
 
 local MixModes = dofile("./modes/MixMode.lua")
 
+local Mode = dofile("./Mode.lua")
+
 local ModeProcessorProvider = {
     modes = {
-        ["RegularMode"] = RegularMode,
-        ["GraffitiMode"] = GraffitiMode,
-        ["OutlineMode"] = OutlineMode,
-        ["OutlineLiveMode"] = OutlineLiveMode,
-        ["CutMode"] = CutMode,
-        ["MergeMode"] = MergeMode,
-        ["SelectionMode"] = SelectionMode,
-        ["YeetMode"] = YeetMode,
-        ["ColorizeMode"] = ColorizeMode,
-        ["DesaturateMode"] = DesaturateMode,
-        ["ShiftMode"] = ShiftMode
+        [Mode.Regular] = RegularMode,
+        [Mode.Graffiti] = GraffitiMode,
+        [Mode.Outline] = OutlineMode,
+        [Mode.OutlineLive] = OutlineLiveMode,
+        [Mode.Cut] = CutMode,
+        [Mode.Merge] = MergeMode,
+        [Mode.Selection] = SelectionMode,
+        [Mode.Colorize] = ColorizeMode,
+        [Mode.Desaturate] = DesaturateMode,
+        [Mode.Shift] = ShiftMode
     }
 }
 

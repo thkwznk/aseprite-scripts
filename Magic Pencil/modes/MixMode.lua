@@ -1,4 +1,6 @@
-local Variant = {Unique = "MixMode", Propotional = "MixProportionalMode"}
+local Mode = dofile("../Mode.lua")
+
+local Variant = {Unique = Mode.Mix, Propotional = Mode.MixProportional}
 
 local function Contains(collection, expectedValue)
     for _, value in ipairs(collection) do
@@ -61,6 +63,8 @@ function MixModeBase:Process(change, sprite, cel, parameters)
     app.activeCel.position = Point(newBounds.x, newBounds.y)
 end
 
+-- TODO: Move these to the ColorContext
+
 function MixModeBase:_AverageColorRGB(colors)
     local r, g, b = 0, 0, 0
 
@@ -103,3 +107,5 @@ for _, variantId in pairs(Variant) do
 end
 
 return variants
+
+-- TODO: Refactor this to remove variants

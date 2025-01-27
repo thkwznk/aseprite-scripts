@@ -218,6 +218,9 @@ local function MagicPencilDialog(options)
     local selectedMode = Mode.Regular
     local sprite = app.activeSprite
     local lastCel
+    local lastFgColor = ColorContext:Copy(app.fgColor)
+    local lastBgColor = ColorContext:Copy(app.bgColor)
+    local isMinimized = options.isminimized
 
     local function RefreshDialog()
         -- Update dialog based only sprite's color mode
@@ -225,19 +228,46 @@ local function MagicPencilDialog(options)
         local isIndexed = sprite and sprite.colorMode == ColorMode.INDEXED
 
         dialog --
-        :modify{id = "transformSeparator", visible = isRGB} --
-        :modify{id = Mode.Cut, visible = isRGB} --
-        :modify{id = Mode.Merge, visible = isRGB} --
-        :modify{id = Mode.Selection, visible = isRGB} --
-        :modify{id = "mixSeparator", visible = isRGB} --
-        :modify{id = Mode.Desaturate, visible = isRGB} --
-        :modify{id = "MixMode", visible = isRGB} --
-        :modify{id = "MixProportionalMode", visible = isRGB} --
-        :modify{id = "changeSeparator", visible = isRGB or isIndexed} --
-        :modify{id = Mode.Shift, visible = isRGB} --
-        :modify{id = Mode.Colorize, visible = isRGB or isIndexed} --
-        :modify{id = "indexedModeSeparator", visible = isRGB} --
-        :modify{id = "indexedMode", visible = isRGB, enabled = isRGB}
+        :modify{id = "selectedMode", visible = isMinimized} --
+        :modify{id = Mode.Regular, visible = not isMinimized} --
+        :modify{id = "effectSeparator", visible = not isMinimized} --
+        :modify{id = Mode.Graffiti, visible = not isMinimized} --
+        :modify{id = Mode.OutlineLive, visible = not isMinimized} --
+        :modify{id = "transformSeparator", visible = isRGB and not isMinimized} --
+        :modify{id = Mode.Cut, visible = isRGB and not isMinimized} --
+        :modify{id = Mode.Merge, visible = isRGB and not isMinimized} --
+        :modify{id = Mode.Selection, visible = isRGB and not isMinimized} --
+        :modify{id = "mixSeparator", visible = isRGB and not isMinimized} --
+        :modify{id = Mode.Desaturate, visible = isRGB and not isMinimized} --
+        :modify{id = Mode.Mix, visible = isRGB and not isMinimized} --
+        :modify{id = Mode.MixProportional, visible = isRGB and not isMinimized} --
+        :modify{
+            id = "changeSeparator",
+            visible = (isRGB or isIndexed) and not isMinimized
+        } --
+        :modify{id = Mode.Outline, visible = isRGB and not isMinimized} --
+        :modify{id = Mode.Shift, visible = isRGB and not isMinimized} --
+        :modify{
+            id = Mode.Colorize,
+            visible = (isRGB or isIndexed) and not isMinimized
+        } --
+        :modify{
+            id = "indexedModeSeparator",
+            visible = isRGB and not isMinimized
+        } --
+        :modify{
+            id = "indexedMode",
+            visible = isRGB and not isMinimized,
+            enabled = isRGB
+        }
+
+        isRefresh = true
+        dialog:close()
+        local newBounds = Rectangle(dialog.bounds)
+        newBounds.width = (isMinimized and 125 or 88) *
+                              app.preferences.general["ui_scale"]
+
+        dialog:show{wait = false, bounds = newBounds}
     end
 
     local function UpdateLast()
@@ -282,7 +312,6 @@ local function MagicPencilDialog(options)
         -- If there is no active cel, do nothing
         if app.activeCel == nil then return end
 
-        -- TODO: For modes that require a mask color eraser is not supported
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
 
         if not Tool:IsSupported(app.tool.id, modeProcessor) or -- Only react to supported tools
@@ -358,11 +387,18 @@ local function MagicPencilDialog(options)
         RefreshDialog()
     end)
 
-    local lastFgColor = ColorContext:Copy(app.fgColor)
-    local lastBgColor = ColorContext:Copy(app.bgColor)
+    local function ToggleMinimize()
+        isMinimized = not isMinimized
+
+        RefreshDialog()
+    end
 
     local function SelectMode(mode, skipColor)
         selectedMode = mode
+
+        dialog --
+        :modify{id = "selectedMode", option = selectedMode} --
+        :modify{id = selectedMode, selected = true}
 
         local useMaskColor =
             ModeProcessorProvider:Get(selectedMode).useMaskColor
@@ -431,8 +467,8 @@ local function MagicPencilDialog(options)
 
         if not isMagicColor then
             if modeProcessor.useMaskColor then
-                dialog:modify{id = "RegularMode", selected = true}
-                SelectMode("RegularMode", true) -- Skip setting colors here to avoid issue with changing colors from within an event
+                -- Skip setting colors here to avoid issue with changing colors from within an event
+                SelectMode(Mode.Regular, true)
 
                 resetColors = true
             end
@@ -447,8 +483,8 @@ local function MagicPencilDialog(options)
 
         if not isMagicColor then
             if modeProcessor.useMaskColor then
-                dialog:modify{id = "RegularMode", selected = true}
-                SelectMode("RegularMode", true) -- Skip setting colors here to avoid issue with changing colors from within an event
+                -- Skip setting colors here to avoid issue with changing colors from within an event
+                SelectMode(Mode.Regular, true)
 
                 resetColors = true
             end
@@ -482,25 +518,42 @@ local function MagicPencilDialog(options)
 
             resetColorsTimer:stop()
 
-            options.onclose()
+            options.onclose(isMinimized)
         end
     }
 
-    local function AddMode(mode, text, visible, selected)
-        dialog:radio{
+    local function AddMode(mode, text, selected)
+        dialog --
+        :radio{
             id = mode,
             text = text,
             selected = selected,
-            visible = visible,
+            visible = not isMinimized,
             onclick = function() SelectMode(mode) end
-        }:newrow() --
+        }:newrow()
     end
 
-    AddMode(Mode.Regular, "Disable", true, true)
+    dialog:combobox{
+        id = "selectedMode",
+        option = Mode.Regular,
+        options = {
+            Mode.Regular, Mode.Graffiti, Mode.OutlineLive, Mode.Cut, Mode.Merge,
+            Mode.Selection, Mode.Mix, Mode.MixProportional, Mode.Outline,
+            Mode.Colorize, Mode.Desaturate, Mode.Shift
+        },
+        visible = isMinimized,
+        onchange = function() SelectMode(dialog.data.selectedMode) end
+    }
 
-    dialog:separator{text = "Effect"}
+    AddMode(Mode.Regular, "Disable", true)
 
-    AddMode(Mode.Graffiti, "Graffiti", true)
+    dialog:separator{
+        id = "effectSeparator",
+        text = "Effect",
+        visible = not isMinimized
+    }
+
+    AddMode(Mode.Graffiti, "Graffiti")
     dialog --
     :slider{
         id = "graffitiPower",
@@ -537,19 +590,28 @@ local function MagicPencilDialog(options)
     } --
     :number{id = "outlineSize", visible = false, text = "1", decimals = 0}
 
-    dialog:separator{id = "transformSeparator", text = "Transform"} --
+    dialog:separator{
+        id = "transformSeparator",
+        text = "Transform",
+        visible = not isMinimized
+    }
     AddMode(Mode.Cut, "Lift")
     AddMode(Mode.Merge, "Merge")
     AddMode(Mode.Selection, "Selection")
 
-    -- self.dialog:separator{text = "Forbidden"} --
-    -- AddMode(Mode.Yeet, "Yeet", false)
-
-    dialog:separator{id = "mixSeparator", text = "Mix"}
+    dialog:separator{
+        id = "mixSeparator",
+        text = "Mix",
+        visible = not isMinimized
+    }
     AddMode(Mode.Mix, "Unique")
     AddMode(Mode.MixProportional, "Proportional")
 
-    dialog:separator{id = "changeSeparator", text = "Change"} --
+    dialog:separator{
+        id = "changeSeparator",
+        text = "Change",
+        visible = not isMinimized
+    }
     AddMode(Mode.Outline, "Outline")
     AddMode(Mode.Colorize, "Colorize")
     AddMode(Mode.Desaturate, "Desaturate")
@@ -646,13 +708,16 @@ local function MagicPencilDialog(options)
         visible = false
     } --
     :separator{id = "indexedModeSeparator"} --
-    :check{id = "indexedMode", text = "Indexed Mode"}
+    :check{id = "indexedMode", text = "Indexed Mode"} --
+    :separator() --
+    :check{
+        id = "minimize-check",
+        text = "Minimize",
+        selected = isMinimized,
+        onclick = ToggleMinimize
+    }
 
-    -- Show the dialog just to update widget visibility correctly
-    dialog:show{wait = false}
-    isRefresh = true
     RefreshDialog()
-    dialog:close()
 
     resetColorsTimer:start()
 
@@ -660,3 +725,5 @@ local function MagicPencilDialog(options)
 end
 
 return MagicPencilDialog
+
+-- TODO: The index mode checkbox should only appear for relevant options

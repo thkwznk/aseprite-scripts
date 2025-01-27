@@ -3,6 +3,10 @@ local MagicPencilDialog = dofile("./MagicPencilDialog.lua")
 function init(plugin)
     local isDialogOpen = false
 
+    if plugin.preferences.isMinimized == nil then
+        plugin.preferences.isMinimized = false
+    end
+
     plugin:newCommand{
         id = "MagicPencil",
         title = "Magic Pencil",
@@ -12,7 +16,11 @@ function init(plugin)
         end,
         onclick = function()
             local dialog = MagicPencilDialog {
-                onclose = function() isDialogOpen = false end
+                isminimized = plugin.preferences.isMinimized,
+                onclose = function(isMinimized)
+                    isDialogOpen = false
+                    plugin.preferences.isMinimized = isMinimized
+                end
             }
             dialog:show{wait = false}
 

@@ -1,17 +1,22 @@
 local Mode = {
-    Regular = "RegularMode",
-    Graffiti = "GraffitiMode",
-    Outline = "OutlineMode",
-    OutlineLive = "OutlineLiveMode",
-    Cut = "CutMode",
-    Merge = "MergeMode",
-    Selection = "SelectionMode",
+    Regular = "Disabled",
+
+    Graffiti = "Effect / Graffiti",
+    OutlineLive = "Effect / Outline",
+
+    Cut = "Transform / Lift",
+    Merge = "Transform / Merge",
+    Selection = "Transform / Select",
+
     Yeet = "YeetMode",
-    Mix = "MixMode",
-    MixProportional = "MixProportionalMode",
-    Colorize = "ColorizeMode",
-    Desaturate = "DesaturateMode",
-    Shift = "ShiftMode"
+
+    Mix = "Mix / Unique",
+    MixProportional = "Mix / Proportional",
+
+    Outline = "Change / Outline",
+    Colorize = "Change / Colorize",
+    Desaturate = "Change / Desaturate",
+    Shift = "Change / Shift"
 }
 
 return Mode
