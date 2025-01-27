@@ -227,6 +227,9 @@ local function MagicPencilDialog(options)
         local isRGB = sprite and sprite.colorMode == ColorMode.RGB
         local isIndexed = sprite and sprite.colorMode == ColorMode.INDEXED
 
+        local isChange = selectedMode == Mode.Colorize or selectedMode ==
+                             Mode.Desaturate or selectedMode == Mode.Shift
+
         dialog --
         :modify{id = "selectedMode", visible = isMinimized} --
         :modify{id = Mode.Regular, visible = not isMinimized} --
@@ -251,13 +254,10 @@ local function MagicPencilDialog(options)
             id = Mode.Colorize,
             visible = (isRGB or isIndexed) and not isMinimized
         } --
-        :modify{
-            id = "indexedModeSeparator",
-            visible = isRGB and not isMinimized
-        } --
+        :modify{id = "indexedModeSeparator", visible = isRGB and isChange} --
         :modify{
             id = "indexedMode",
-            visible = isRGB and not isMinimized,
+            visible = isRGB and isChange,
             enabled = isRGB
         }
 
@@ -413,6 +413,9 @@ local function MagicPencilDialog(options)
             end
         end
 
+        local isChange = selectedMode == Mode.Colorize or selectedMode ==
+                             Mode.Desaturate or selectedMode == Mode.Shift
+
         dialog --
         :modify{id = "outlineColor", visible = selectedMode == Mode.OutlineLive} --
         :modify{id = "outlineSize", visible = selectedMode == Mode.OutlineLive} --
@@ -445,6 +448,8 @@ local function MagicPencilDialog(options)
             visible = selectedMode == Mode.Shift and
                 dialog.data.shiftThirdOption
         } --
+        :modify{id = "indexedModeSeparator", visible = isChange} --
+        :modify{id = "indexedMode", visible = isChange} --
     end
 
     local resetColors = false
@@ -725,5 +730,3 @@ local function MagicPencilDialog(options)
 end
 
 return MagicPencilDialog
-
--- TODO: The index mode checkbox should only appear for relevant options
