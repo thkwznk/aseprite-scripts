@@ -8,17 +8,23 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
     local drawPixel = activeCel.image.drawPixel
 
     local brushSize = app.preferences.tool(app.tool.id).brush.size
-    local sizeFactor = brushSize * 400 -- The second value is a magic number
 
-    local dripChance = parameters.graffitiPower / sizeFactor
-    local speckChance = (parameters.graffitiSpeckEnabled and
-                            parameters.graffitiSpeckPower or 0) / sizeFactor
+    -- Paint Bucket has a hardcoded brush size of 64 so it needs to be overwritten for better results
+    if app.tool.id == "paint_bucket" then brushSize = 8 end
+
+    local sizeFactor = brushSize * 4 -- The second value is a magic number
+    local power = parameters.graffitiPower / 100
+    local speckPower = (parameters.graffitiSpeckEnabled and
+                           parameters.graffitiSpeckPower or 0) / 100
+
+    local dripChance = power / sizeFactor
+    local speckChance = speckPower / sizeFactor
 
     local maxDripLength = math.ceil(brushSize * 8)
-    local maxDripSize = math.ceil(brushSize * 0.5)
+    local maxDripSize = math.ceil(brushSize * power)
 
     local maxSpeckDist = math.max((brushSize * 2), 3)
-    local maxSpeckSize = math.ceil(brushSize * 0.2)
+    local maxSpeckSize = math.ceil(brushSize * speckPower)
 
     if brushSize > 1 then maxSpeckSize = math.max(maxSpeckSize, 2) end
 

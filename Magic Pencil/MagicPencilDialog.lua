@@ -526,7 +526,7 @@ local function MagicPencilDialog(options)
         visible = false,
         min = 0,
         max = 100,
-        value = 50
+        value = 20
     }
     AddMode(Mode.OutlineLive, "Outline")
     dialog --
