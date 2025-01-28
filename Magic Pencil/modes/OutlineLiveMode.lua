@@ -1,36 +1,60 @@
 local OutlineLiveMode = {canExtend = true}
 
+local function Distance(x, y, x2, y2)
+    return math.sqrt((x - x2) ^ 2 + (y - y2) ^ 2)
+end
+
+local function IsErasing()
+    if app.tool.id == "eraser" then return true end
+
+    if app.activeSprite.colorMode == ColorMode.RGB then
+        if app.fgColor.rgbaPixel == 0 then return true end
+    else
+        if app.fgColor.index == 0 then return true end
+    end
+
+    return false
+end
+
+local function PixelCache(image)
+    local getPixel = image.getPixel
+    local cache = {pixels = {}}
+
+    function cache:GetPixel(x, y)
+        if self.pixels[x] then
+            if self.pixels[x][y] then return self.pixels[x][y] end
+        else
+            self.pixels[x] = {}
+        end
+
+        self.pixels[x][y] = getPixel(image, x, y)
+        return self.pixels[x][y]
+    end
+
+    function cache:SetPixel(x, y, value)
+        if not self.pixels[x] then self.pixels[x] = {} end
+
+        self.pixels[x][y] = value
+    end
+
+    return cache
+end
+
 function OutlineLiveMode:Process(change, sprite, cel, parameters)
     local color = parameters.outlineColor
 
     local selection = sprite.selection
+    local InSelection = function(x, y)
+        return selection.isEmpty or
+                   (not selection.isEmpty and selection:contains(x, y))
+    end
+
     local extend = {}
 
     local outlineSize = parameters.outlineSize
 
     local cx, cy = app.activeCel.position.x, app.activeCel.position.y
     local width, height = app.activeCel.image.width, app.activeCel.image.height
-    local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
-
-    local pixelCache = {}
-    local getPixelCached = function(image, x, y)
-        if pixelCache[x] then
-            if pixelCache[x][y] then return pixelCache[x][y] end
-        else
-            pixelCache[x] = {}
-        end
-
-        pixelCache[x][y] = getPixel(image, x, y)
-        return pixelCache[x][y]
-    end
-
-    local outlinePixelCache = {}
-
-    local drawOutline = function(x, y)
-        if not outlinePixelCache[x] then outlinePixelCache[x] = {} end
-
-        outlinePixelCache[x][y] = true
-    end
 
     for _, pixel in ipairs(change.pixels) do
         local ix = pixel.x - cx
@@ -48,32 +72,15 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
     if extend.down then height = height + outlineSize end
 
     local newImage = Image(width, height, cel.sprite.colorMode)
+    local pixelCache = PixelCache(newImage)
+    local outlinePixelCache = PixelCache(newImage)
 
     local dpx = extend.left and outlineSize or 0
     local dpy = extend.up and outlineSize or 0
 
     newImage:drawImage(app.activeCel.image, Point(dpx, dpy))
 
-    local CanOutline = function(x, y)
-        return selection.isEmpty or
-                   (not selection.isEmpty and selection:contains(x, y))
-    end
-
-    local d = function(x, y, x2, y2)
-        return math.sqrt((x - x2) ^ 2 + (y - y2) ^ 2)
-    end
-
-    -- TODO: Optimize image read/write
-
-    local isErasing = app.tool.id == "eraser"
-
-    if cel.sprite.colorMode == ColorMode.RGB then
-        if app.fgColor.rgbaPixel == 0 then isErasing = true end
-    else
-        if app.fgColor.index == 0 then isErasing = true end
-    end
-
-    if isErasing then
+    if IsErasing() then
         for _, pixel in ipairs(change.pixels) do
             local ix = pixel.x - cx + dpx
             local iy = pixel.y - cy + dpy
@@ -82,13 +89,12 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
 
             for xx = -outlineSize, outlineSize do
                 for yy = -outlineSize, outlineSize do
-                    if CanOutline(pixel.x + xx, pixel.y + yy) and
-                        d(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
-                        local pixelValue =
-                            getPixelCached(newImage, ix + xx, iy + yy)
+                    if InSelection(pixel.x + xx, pixel.y + yy) and
+                        Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
+                        local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
 
                         if pixelValue ~= 0 then
-                            drawOutline(ix, iy)
+                            outlinePixelCache:SetPixel(ix, iy, true)
 
                             isOutline = true
                             break
@@ -106,13 +112,12 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
 
             for xx = -outlineSize, outlineSize do
                 for yy = -outlineSize, outlineSize do
-                    if CanOutline(pixel.x + xx, pixel.y + yy) and
-                        d(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
-                        local pixelValue =
-                            getPixelCached(newImage, ix + xx, iy + yy)
+                    if InSelection(pixel.x + xx, pixel.y + yy) and
+                        Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
+                        local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
 
                         if pixelValue == 0 then
-                            drawOutline(ix + xx, iy + yy)
+                            outlinePixelCache:SetPixel(ix + xx, iy + yy, true)
                         end
                     end
                 end
@@ -120,7 +125,8 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
         end
     end
 
-    for x, column in pairs(outlinePixelCache) do
+    local drawPixel = newImage.drawPixel
+    for x, column in pairs(outlinePixelCache.pixels) do
         for y, _ in pairs(column) do drawPixel(newImage, x, y, color) end
     end
 
