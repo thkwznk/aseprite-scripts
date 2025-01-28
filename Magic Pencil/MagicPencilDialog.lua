@@ -262,6 +262,7 @@ local function MagicPencilDialog(options)
         }
 
         isRefresh = true
+        dialog:show{wait = false}
         dialog:close()
         local newBounds = Rectangle(dialog.bounds)
         newBounds.width = (isMinimized and 125 or 88) *
