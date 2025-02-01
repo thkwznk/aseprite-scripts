@@ -141,7 +141,7 @@ Unreleased:
 
 Unreleased:
 
-- [Improvement] Support rotating and flipping of regular brushes
+- ...
 
 ## Extend Cel
 
