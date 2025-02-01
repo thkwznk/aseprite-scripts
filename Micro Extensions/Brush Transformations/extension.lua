@@ -51,7 +51,7 @@ local function TransformImageBrush(brush, options)
         type = brush.type,
         size = brush.size,
         angle = brush.angle,
-        center = brush.center,
+        center = Point(transformedImage.width / 2, transformedImage.height / 2),
         image = transformedImage,
         pattern = brush.pattern,
         patternOrigin = brush.patternOrigin
