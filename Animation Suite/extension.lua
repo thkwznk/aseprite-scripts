@@ -1,5 +1,5 @@
-ActiveElementsCache = dofile("./shared/ActiveElementsCache.lua")
-ImportAnimationDialog = dofile("./import-animation/ImportAnimationDialog.lua")
+-- ActiveElementsCache = dofile("./shared/ActiveElementsCache.lua")
+ImportAnimationDialog = dofile("./ImportAnimationDialog.lua")
 LoopDialog = dofile("./LoopDialog.lua")
 
 function init(plugin)
@@ -7,31 +7,27 @@ function init(plugin)
         id = "import-animation",
         title = "Import Animation",
         group = "edit_insert",
-        onenabled = function()
-            return app.activeSprite ~= nil and #app.sprites > 1
-        end,
+        onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
             -- Check is UI available
             if not app.isUIAvailable then return end
 
-            ActiveElementsCache:Clear()
+            -- TODO: Verify if this is needed
+            -- ActiveElementsCache:Clear()
 
-            ImportAnimationDialog:Create{
+            -- TODO: Consider splitting the process into selection of a source in one dialog
+            -- And after that the placement of it in the sprite
+
+            local dialog
+            dialog = ImportAnimationDialog {
                 title = "Import Animation",
-                targetSprite = app.activeSprite,
-                targetLayer = app.activeLayer,
-                targetFrameNumber = app.activeFrame.frameNumber,
-                bounds = plugin.preferences.bounds and
-                    {
-                        x = plugin.preferences.bounds.x,
-                        y = plugin.preferences.bounds.y
-                    } or nil,
-                onclose = function(bounds)
-                    plugin.preferences.bounds = bounds or
+                onclose = function()
+                    -- TODO: Make sure the position is saved
+                    plugin.preferences.bounds = dialog.bounds or
                                                     plugin.preferences.bounds
                 end
             }
-            ImportAnimationDialog:Show()
+            dialog:show()
         end
     }
 
