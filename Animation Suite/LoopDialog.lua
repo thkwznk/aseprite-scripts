@@ -84,16 +84,7 @@ local function Loop(sprite, layersToLoop, maxNumberOfFrames)
     end
 end
 
-local LoopDialog = {
-    title = nil,
-    dialog = nil,
-    bounds = nil,
-    layers = {},
-    layersToLoop = {},
-    maxNumberOfFrames = 1024
-}
-
-function LoopDialog:GetAvailableLayers()
+local function GetAvailableLayers()
     local layers = {}
 
     for _, layer in ipairs(app.activeSprite.layers) do
@@ -108,87 +99,77 @@ function LoopDialog:GetAvailableLayers()
     return layers
 end
 
-function LoopDialog:_LayerSelected(layer)
-    for _, layerToLoop in ipairs(self.layersToLoop) do
-        if layerToLoop == layer then return true end
+local function LoopDialog(options)
+    local layers = GetAvailableLayers()
+    local layersToLoop = {}
+
+    local dialog = Dialog {title = options.title}
+
+    local function GetSeparatorLabel()
+        if #layersToLoop >= 2 then
+            return "Selected " .. tostring(#layersToLoop) .. " layers to loop"
+        elseif #layersToLoop == 1 then
+            return "Select at least 2 layers to loop, selected 1 layer"
+        else
+            return "Select at least 2 layers to loop, selected 0 layers"
+        end
     end
 
-    return false
-end
+    for i, layer in ipairs(layers) do
+        local id = "layer-" .. tostring(i)
+        local isSelected = false
 
-function LoopDialog:Create(title)
-    self.title = title or self.title
-    self.layersToLoop = {}
-    self.layers = self:GetAvailableLayers()
-end
-
-function LoopDialog:Show()
-    self.dialog = Dialog(self.title)
-
-    self.dialog --
-    :separator{text = "Select layers to loop:"} --
-
-    -- Get all layers
-    for _, layer in ipairs(self.layers) do
-        local isSelected = self:_LayerSelected(layer)
-
-        self.dialog:button{
+        dialog:button{
+            id = id,
             label = layer,
-            text = isSelected and "-" or "+",
+            text = "+",
             onclick = function()
-                if isSelected then
-                    for i = 1, #self.layersToLoop do
-                        if self.layersToLoop[i] == layer then
-                            table.remove(self.layersToLoop, i)
+                isSelected = not isSelected
+
+                if not isSelected then
+                    for i = 1, #layersToLoop do
+                        if layersToLoop[i] == layer then
+                            table.remove(layersToLoop, i)
                             break
                         end
                     end
                 else
-                    table.insert(self.layersToLoop, layer)
+                    table.insert(layersToLoop, layer)
                 end
 
-                self:Refresh()
+                dialog --
+                :modify{id = id, text = isSelected and "-" or "+"} --
+                :modify{id = "separator-label", text = GetSeparatorLabel()} --
+                :modify{id = "loop-button", enabled = #layersToLoop > 1}
             end
         }
     end
 
-    self.dialog:separator{
-        text = "Selected " .. tostring(#self.layersToLoop) .. " Layers to loop"
-    }:number{
+    dialog --
+    :separator{id = "separator-label", text = GetSeparatorLabel()} --
+    :number{
         id = "maxNumberOfFrames",
         label = "Max # of Frames",
-        text = tostring(self.maxNumberOfFrames),
-        decimals = 0,
-        onchange = function()
-            self.maxNumberOfFrames = self.dialog.data["maxNumberOfFrames"]
-        end
-    }:button{
-        text = "Loop Animations",
-        enabled = #self.layersToLoop > 1,
+        text = tostring(1024), -- 1024 is an arbitrary default value
+        decimals = 0
+    } --
+    :button{
+        id = "loop-button",
+        text = "&OK",
+        enabled = false,
         onclick = function()
+            local maxNumberOfFrames = dialog.data["maxNumberOfFrames"]
+
             app.transaction(function()
-                Loop(app.activeSprite, self.layersToLoop, self.maxNumberOfFrames)
+                Loop(app.activeSprite, layersToLoop, maxNumberOfFrames)
             end)
-            self.dialog:close()
+
+            dialog:close()
         end
     } --
-    :button{text = "Cancel"}
+    :button{text = "&Cancel"}
 
-    -- Reset bounds
-    if self.bounds ~= nil then
-        local newBounds = self.dialog.bounds
-        newBounds.x = self.bounds.x
-        newBounds.y = self.bounds.y
-        self.dialog.bounds = newBounds
-    end
-
-    self.dialog:show()
-end
-
-function LoopDialog:Refresh()
-    self.bounds = self.dialog.bounds
-    self.dialog:close()
-    self:Show()
+    return dialog
 end
 
 return LoopDialog

@@ -44,8 +44,8 @@ function init(plugin)
             -- Check is UI available
             if not app.isUIAvailable then return end
 
-            LoopDialog:Create("Loop Animation")
-            LoopDialog:Show()
+            local dialog = LoopDialog {title = "Loop Animation"}
+            dialog:show()
         end
     }
 end

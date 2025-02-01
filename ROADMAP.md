@@ -92,12 +92,14 @@ Update v2.0.0:
 
 Unreleased:
 
-- ...
+- [Improvement] [LoopAnimation] Add information to the label about a minimum of 2 layers being required to loop an animation
+- [Fix] [LoopAnimation] Align button text with default Aseprite buttons
 
 Update v2.0.0:
 
 - [Improvement] Always import into a new layer
 - [Improvement] New UI - animation steps preview in the dialog with interactive UI
+- [Improvement] Allow for importing from a file (so the menu option is always enabled if there's an active sprite)
 
 ## On-Screen Controls
 
