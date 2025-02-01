@@ -173,3 +173,6 @@ local function LoopDialog(options)
 end
 
 return LoopDialog
+
+-- TODO: Correctly handle reference layers (skip them)
+-- TODO: Correctly get all layers within groups

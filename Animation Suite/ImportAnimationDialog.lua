@@ -1,3 +1,5 @@
+local PreviewCanvas = dofile("./PreviewCanvas.lua")
+
 local SourceType = {Selection = "Selection", Layer = "Layer", Tag = "Tag"}
 
 local function GetSpriteName(filename)
@@ -24,6 +26,12 @@ return function(options)
 
     local spriteNames, sprites = GetSprites()
 
+    local image = Image(sprite)
+
+    local RepaintPreviewImage = PreviewCanvas(dialog, 100, 100,
+                                              app.activeSprite, image,
+                                              Point(0, 0))
+
     dialog --
     :separator{text = "Source"} --
     :combobox{
@@ -32,7 +40,9 @@ return function(options)
         options = spriteNames,
         option = GetSpriteName(app.activeSprite.filename),
         onchange = function()
-            app.activeSprite = sprites[dialog.data["source-sprite"]]
+            local selectedSprite = sprites[dialog.data["source-sprite"]]
+
+            RepaintPreviewImage(selectedSprite, Image(selectedSprite))
         end
     } --
     :button{
@@ -67,5 +77,9 @@ return function(options)
     -- TODO: Hide the Selection source if a sprite doesn't have a selection
     -- TODO: Hide the Tag source if a sprite doesn't have tags
 
+    -- TODO: Instead of switching the active sprite just have a preview here
+
     return dialog
 end
+
+-- TODO: Test the new API option (added in v1.3.13-beta1) `app.clipboard` (https://github.com/aseprite/aseprite/pull/4850) to just copy an animation from another sprite
