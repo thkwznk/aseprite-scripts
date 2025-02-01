@@ -1,6 +1,6 @@
 ActiveElementsCache = dofile("./shared/ActiveElementsCache.lua")
 ImportAnimationDialog = dofile("./import-animation/ImportAnimationDialog.lua")
-LoopDialog = dofile("./loop/LoopDialog.lua")
+LoopDialog = dofile("./LoopDialog.lua")
 
 function init(plugin)
     plugin:newCommand{

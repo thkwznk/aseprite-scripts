@@ -1,4 +1,88 @@
-Looper = dofile("./Looper.lua");
+local function GetLayersToLoop(sprite, layersToLoop)
+    local layers = {}
+
+    for _, layer in ipairs(sprite.layers) do
+        -- Skip empty layers to avoid issues with calculations
+        if #layer.cels == 0 then goto continue end
+
+        for _, layerToLoop in pairs(layersToLoop) do
+            if layer.name == layerToLoop then
+                table.insert(layers, layer)
+            end
+        end
+
+        ::continue::
+    end
+
+    return layers
+end
+
+local function GetLayerAnimationCels(layers)
+    local layerAnimationCels = {}
+
+    for _, layer in ipairs(layers) do
+        local cels = {}
+        for _, cel in ipairs(layer.cels) do table.insert(cels, cel) end
+
+        layerAnimationCels[layer] = cels
+    end
+
+    return layerAnimationCels
+end
+
+local function GetNotLoopedLayers(sprite, layers)
+    local result = {}
+
+    for _, layer in ipairs(layers) do
+        local lastFrameCel = layer:cel(#sprite.frames)
+        if lastFrameCel == nil then table.insert(result, layer) end
+    end
+
+    return result
+end
+
+local function GetLastCelFrameNumber(layer)
+    local frameNumber = -1
+    for _, cel in ipairs(layer.cels) do frameNumber = cel.frameNumber end
+    return frameNumber
+end
+
+local function RepeatAnimation(sprite, layer, animationCels, maxNumberOfFrames)
+    local fromFrame = GetLastCelFrameNumber(layer)
+    local frameNumber = fromFrame
+
+    for imageIndex = 1, #animationCels do
+        frameNumber = fromFrame + imageIndex
+
+        if frameNumber > maxNumberOfFrames then return true end
+        if frameNumber > #sprite.frames then sprite:newEmptyFrame() end
+
+        sprite:newCel(layer, frameNumber, animationCels[imageIndex].image,
+                      animationCels[imageIndex].position)
+    end
+
+    return frameNumber == #sprite.frames
+end
+
+local function Loop(sprite, layersToLoop, maxNumberOfFrames)
+    local layers = GetLayersToLoop(sprite, layersToLoop)
+    local layerAnimationCels = GetLayerAnimationCels(layers)
+
+    while true do
+        local notLoopedLayers = GetNotLoopedLayers(sprite, layers)
+        if #notLoopedLayers == 0 then break end
+
+        for _, layer in ipairs(notLoopedLayers) do
+            repeat
+                local isDone = RepeatAnimation(sprite, layer,
+                                               layerAnimationCels[layer],
+                                               maxNumberOfFrames)
+            until isDone
+        end
+
+        if #sprite.frames > maxNumberOfFrames then break end
+    end
+end
 
 local LoopDialog = {
     title = nil,
@@ -13,7 +97,7 @@ function LoopDialog:GetAvailableLayers()
     local layers = {}
 
     for _, layer in ipairs(app.activeSprite.layers) do
-        -- TODO: Handle background layersF
+        -- TODO: Handle background layers
         if layer.isBackground then goto skip end
 
         table.insert(layers, layer.name)
@@ -83,8 +167,7 @@ function LoopDialog:Show()
         enabled = #self.layersToLoop > 1,
         onclick = function()
             app.transaction(function()
-                Looper:Loop(app.activeSprite, self.layersToLoop,
-                            self.maxNumberOfFrames)
+                Loop(app.activeSprite, self.layersToLoop, self.maxNumberOfFrames)
             end)
             self.dialog:close()
         end
