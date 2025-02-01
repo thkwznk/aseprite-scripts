@@ -141,8 +141,14 @@ Unreleased:
 
 Unreleased:
 
+- [Improvement] Support rotating and flipping of regular brushes
+
+## Extend Cel
+
+Unreleased:
+
 - ...
 
 Future:
 
-- [Improvement] Support existing operations for regular brushes (no longer grey-out options)
+- [Feature] Fill - add a new option in the context menu which extends the cel both directions (backwards and forwards)

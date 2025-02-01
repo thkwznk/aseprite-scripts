@@ -1,18 +1,21 @@
-local function CanTransformBrush()
-    local sprite = app.activeSprite
-    if sprite == nil then return false end
+local function TransformRegularBrush(brush, options)
+    local angle = brush.angle
 
-    local brush = app.activeBrush
-    if brush == nil then return false end
+    if options.rotateCw then
+        angle = angle + 90
+    elseif options.rotateCcw then
+        angle = angle - 90
+    elseif options.flipHorizontal or options.flipVertical then
+        angle = 360 - angle
+    end
 
-    local image = brush.image
-    if image == nil then return false end
-
-    return true
+    -- Updating a regular brush requires updating properties directly
+    -- Instead of updating the active brush 
+    local tool = app.preferences.tool(app.activeTool)
+    tool.brush.angle = (angle % 360) - 180
 end
 
-local function TransformBrush(options)
-    local brush = app.activeBrush
+local function TransformImageBrush(brush, options)
     local image, width, height = brush.image, brush.image.width,
                                  brush.image.height
 
@@ -55,6 +58,18 @@ local function TransformBrush(options)
     }
 end
 
+local function TransformBrush(options)
+    local brush = app.activeBrush
+
+    if brush.type == BrushType.IMAGE then
+        TransformImageBrush(brush, options)
+    else
+        TransformRegularBrush(brush, options)
+    end
+
+    app.refresh()
+end
+
 function init(plugin)
     local parentGroup = "edit_transform"
 
@@ -72,7 +87,6 @@ function init(plugin)
         id = "BrushRotateCW",
         title = app.apiVersion >= 22 and "Rotate 90 CW" or "Brush Rotate 90 CW",
         group = parentGroup,
-        onenabled = CanTransformBrush,
         onclick = function() TransformBrush {rotateCw = true} end
     }
 
@@ -81,7 +95,6 @@ function init(plugin)
         title = app.apiVersion >= 22 and "Rotate 90 CCW" or
             "Brush Rotate 90 CCW",
         group = parentGroup,
-        onenabled = CanTransformBrush,
         onclick = function() TransformBrush {rotateCcw = true} end
     }
 
@@ -92,7 +105,6 @@ function init(plugin)
         title = app.apiVersion >= 22 and "Flip Horizontal" or
             "Brush Flip Horizontal",
         group = parentGroup,
-        onenabled = CanTransformBrush,
         onclick = function() TransformBrush {flipHorizontal = true} end
     }
 
@@ -101,7 +113,6 @@ function init(plugin)
         title = app.apiVersion >= 22 and "Flip Vertical" or
             "Brush Flip Vertical",
         group = parentGroup,
-        onenabled = CanTransformBrush,
         onclick = function() TransformBrush {flipVertical = true} end
     }
 end
