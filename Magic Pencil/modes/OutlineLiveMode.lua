@@ -95,8 +95,7 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
                         Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
                         local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
 
-                        if not ColorContext:IsTransparent(
-                            ColorContext:Create(pixelValue)) then
+                        if not ColorContext:IsTransparentValue(pixelValue) then
                             outlinePixelCache:SetPixel(ix, iy, true)
 
                             isOutline = true
@@ -119,8 +118,7 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
                         Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
                         local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
 
-                        if ColorContext:IsTransparent(
-                            ColorContext:Create(pixelValue)) then
+                        if ColorContext:IsTransparentValue(pixelValue) then
                             outlinePixelCache:SetPixel(ix + xx, iy + yy, true)
                         end
                     end

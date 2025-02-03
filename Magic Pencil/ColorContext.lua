@@ -9,6 +9,15 @@ function ColorContext:IsTransparent(color)
     return color.index == 0
 end
 
+function ColorContext:IsTransparentValue(value)
+    local sprite = app.activeSprite
+    if sprite and sprite.colorMode == ColorMode.RGB then
+        return app.pixelColor.rgbaA(value) == 0
+    end
+
+    return value == 0
+end
+
 function ColorContext:Create(value)
     local sprite = app.activeSprite
     if sprite and sprite.colorMode == ColorMode.RGB then return Color(value) end

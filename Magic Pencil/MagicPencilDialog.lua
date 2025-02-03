@@ -148,8 +148,7 @@ local function CalculateChange(previous, next, canExtend)
                 -- Out of bounds of the previous image or transparent
                 if (shiftedX < 0 or shiftedX > previous.image.width - 1 or
                     shiftedY < 0 or shiftedY > previous.image.height - 1) then
-                    if not ColorContext:IsTransparent(
-                        ColorContext:Create(nextPixelValue)) then
+                    if not ColorContext:IsTransparentValue(nextPixelValue) then
                         table.insert(pixels, {
                             x = x + next.position.x,
                             y = y + next.position.y,
