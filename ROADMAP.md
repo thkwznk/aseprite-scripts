@@ -64,7 +64,7 @@ Future:
 
 Unreleased:
 
-- ...
+- [Fix] Correctly handle painting with or on top of fully transparent pixels
 
 Future:
 

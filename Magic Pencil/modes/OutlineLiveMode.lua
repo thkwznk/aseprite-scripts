@@ -1,16 +1,18 @@
+local ColorContext = dofile("../ColorContext.lua")
+
 local OutlineLiveMode = {canExtend = true}
 
 local function Distance(x, y, x2, y2)
     return math.sqrt((x - x2) ^ 2 + (y - y2) ^ 2)
 end
 
-local function IsErasing()
+local function IsErasing(change)
     if app.tool.id == "eraser" then return true end
 
-    if app.activeSprite.colorMode == ColorMode.RGB then
-        if app.fgColor.rgbaPixel == 0 then return true end
-    else
-        if app.fgColor.index == 0 then return true end
+    if change.leftPressed then
+        return ColorContext:IsTransparent(app.fgColor)
+    elseif change.rightPressed then
+        return ColorContext:IsTransparent(app.bgColor)
     end
 
     return false
@@ -80,7 +82,7 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
 
     newImage:drawImage(app.activeCel.image, Point(dpx, dpy))
 
-    if IsErasing() then
+    if IsErasing(change) then
         for _, pixel in ipairs(change.pixels) do
             local ix = pixel.x - cx + dpx
             local iy = pixel.y - cy + dpy
@@ -93,7 +95,8 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
                         Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
                         local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
 
-                        if pixelValue ~= 0 then
+                        if not ColorContext:IsTransparent(
+                            ColorContext:Create(pixelValue)) then
                             outlinePixelCache:SetPixel(ix, iy, true)
 
                             isOutline = true
@@ -116,7 +119,8 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
                         Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
                         local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
 
-                        if pixelValue == 0 then
+                        if ColorContext:IsTransparent(
+                            ColorContext:Create(pixelValue)) then
                             outlinePixelCache:SetPixel(ix + xx, iy + yy, true)
                         end
                     end
