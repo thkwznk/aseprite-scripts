@@ -304,14 +304,12 @@ local function MagicPencilDialog(options)
     end
 
     local onSpriteChange = function(ev)
-        -- Skip change, usually when a command is being run
-        if skip then
+        if skip or -- Skip change, usually when a command is being run
+        app.activeCel == nil -- If there is no active cel, do nothing
+        then
             UpdateLast()
             return
         end
-
-        -- If there is no active cel, do nothing
-        if app.activeCel == nil then return end
 
         local modeProcessor = ModeProcessorProvider:Get(selectedMode)
 

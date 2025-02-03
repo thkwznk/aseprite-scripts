@@ -65,6 +65,7 @@ Future:
 Unreleased:
 
 - [Fix] Correctly handle painting with or on top of fully transparent pixels
+- [Fix] Correctly handle changes where all pixels from a cel are removed while Magic Pencil is enabled
 
 Future:
 
