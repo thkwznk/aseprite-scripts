@@ -110,3 +110,5 @@ function GraffitiMode:_DrawSpeck(x, y, size, color, pixels)
 end
 
 return GraffitiMode
+
+-- TODO: Correctly blend color with alpha

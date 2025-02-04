@@ -51,34 +51,18 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
                    (not selection.isEmpty and selection:contains(x, y))
     end
 
-    local extend = {}
-
     local outlineSize = parameters.outlineSize
 
     local cx, cy = app.activeCel.position.x, app.activeCel.position.y
-    local width, height = app.activeCel.image.width, app.activeCel.image.height
-
-    for _, pixel in ipairs(change.pixels) do
-        local ix = pixel.x - cx
-        local iy = pixel.y - cy
-
-        if ix <= outlineSize - 1 then extend.left = true end
-        if ix >= width - outlineSize then extend.right = true end
-        if iy <= outlineSize - 1 then extend.up = true end
-        if iy >= height - outlineSize then extend.down = true end
-    end
-
-    if extend.left then width = width + outlineSize end
-    if extend.right then width = width + outlineSize end
-    if extend.up then height = height + outlineSize end
-    if extend.down then height = height + outlineSize end
+    local width = app.activeCel.image.width + outlineSize * 2
+    local height = app.activeCel.image.height + outlineSize * 2
 
     local newImage = Image(width, height, cel.sprite.colorMode)
     local pixelCache = PixelCache(newImage)
     local outlinePixelCache = PixelCache(newImage)
 
-    local dpx = extend.left and outlineSize or 0
-    local dpy = extend.up and outlineSize or 0
+    local dpx = outlineSize
+    local dpy = outlineSize
 
     newImage:drawImage(app.activeCel.image, Point(dpx, dpy))
 
@@ -91,11 +75,14 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
 
             for xx = -outlineSize, outlineSize do
                 for yy = -outlineSize, outlineSize do
-                    if InSelection(pixel.x + xx, pixel.y + yy) and
+                    if (ix + xx >= 0 and ix + xx < width and iy + yy >= 0 and iy +
+                        yy < height) and InSelection(pixel.x + xx, pixel.y + yy) and
                         Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
                         local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
 
-                        if not ColorContext:IsTransparentValue(pixelValue) then
+                        if not ColorContext:IsTransparentValue(pixelValue) and
+                            not ColorContext:Equals(
+                                ColorContext:Create(pixelValue), color) then
                             outlinePixelCache:SetPixel(ix, iy, true)
 
                             isOutline = true
@@ -132,8 +119,12 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
         for y, _ in pairs(column) do drawPixel(newImage, x, y, color) end
     end
 
-    app.activeCel.image = newImage
-    app.activeCel.position = Point(cx - dpx, cy - dpy)
+    local shrunkBounds = newImage:shrinkBounds()
+    app.activeCel.image = Image(newImage, shrunkBounds)
+    app.activeCel.position = Point(cx - dpx + shrunkBounds.x,
+                                   cy - dpy + shrunkBounds.y)
 end
 
 return OutlineLiveMode
+
+-- TODO: Correctly blend (outline) colors with alpha

@@ -43,6 +43,15 @@ function ColorContext:Compare(a, b)
     return a.index == b.index
 end
 
+function ColorContext:Equals(a, b)
+    local sprite = app.activeSprite
+    if sprite and sprite.colorMode == ColorMode.RGB then
+        return a.rgbaPixel == b.rgbaPixel
+    end
+
+    return a.index == b.index
+end
+
 function ColorContext:Distance(a, b)
     return math.sqrt((a.red - b.red) ^ 2 + (a.green - b.green) ^ 2 +
                          (a.blue - b.blue) ^ 2 + (a.alpha - b.alpha) ^ 2)

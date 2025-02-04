@@ -15,68 +15,38 @@ local function RectangleContains(rect, x, y)
     y >= rect.y and y <= rect.y + rect.height - 1
 end
 
-local function GetButtonsPressedFromEmpty(pixels, cel)
+local function GetButtonsPressedFromEmpty(pixels)
     if #pixels == 0 then return end
 
-    local old, new = nil, nil
     local pixel = pixels[1]
 
-    local pixelValue = cel.image.getPixel(cel.image, pixel.x - cel.position.x,
-                                          pixel.y - cel.position.y)
-    local pixelColor = ColorContext:Create(pixelValue)
-
-    if ColorContext:Compare(app.fgColor, pixelColor) then
+    if ColorContext:Compare(app.fgColor, pixel.newColor) then
         return true, false
-    elseif ColorContext:Compare(app.bgColor, pixelColor) then
+    elseif ColorContext:Compare(app.bgColor, pixel.newColor) then
         return false, true
     end
 
     return false, false
 end
 
-local function GetButtonsPressed(pixels, previous, next)
-    if #pixels == 0 then return end
+local function GetButtonsPressed(pixels)
+    if #pixels == 0 then return false, false end
 
     local leftPressed, rightPressed = false, false
-    local old, new = nil, nil
     local pixel = pixels[1]
 
-    local getPixel = next.image.getPixel
-
-    if not RectangleContains(previous.bounds, pixel.x, pixel.y) then
-        local newPixelValue = getPixel(next.image, pixel.x - next.position.x,
-                                       pixel.y - next.position.y)
-        local newPixelColor = ColorContext:Create(newPixelValue)
-
-        if ColorContext:Compare(app.fgColor, newPixelColor) then
-            leftPressed = true
-        elseif ColorContext:Compare(app.bgColor, newPixelColor) then
-            rightPressed = true
-        end
-
-        return leftPressed, rightPressed
-    end
-
-    old = ColorContext:Create(getPixel(previous.image,
-                                       pixel.x - previous.position.x,
-                                       pixel.y - previous.position.y))
-    new = ColorContext:Create(getPixel(next.image, pixel.x - next.position.x,
-                                       pixel.y - next.position.y))
-
-    if old == nil or new == nil then return leftPressed, rightPressed end
-
     if ColorContext:IsTransparent(app.fgColor) and
-        not ColorContext:IsTransparent(new) then
+        not ColorContext:IsTransparent(pixel.newColor) then
         return false, true
     elseif ColorContext:IsTransparent(app.bgColor) and
-        not ColorContext:IsTransparent(new) then
+        not ColorContext:IsTransparent(pixel.newColor) then
         return true, false
     end
 
-    local fgColorDistance = ColorContext:Distance(new, app.fgColor) -
-                                ColorContext:Distance(old, app.fgColor)
-    local bgColorDistance = ColorContext:Distance(new, app.bgColor) -
-                                ColorContext:Distance(old, app.bgColor)
+    local fgColorDistance = ColorContext:Distance(pixel.newColor, app.fgColor) -
+                                ColorContext:Distance(pixel.color, app.fgColor)
+    local bgColorDistance = ColorContext:Distance(pixel.newColor, app.bgColor) -
+                                ColorContext:Distance(pixel.color, app.bgColor)
 
     if fgColorDistance < bgColorDistance then
         leftPressed = true
@@ -108,7 +78,7 @@ local function CalculateChangeFromEmpty(cel)
         end
     end
 
-    local leftPressed, rightPressed = GetButtonsPressedFromEmpty(pixels, cel)
+    local leftPressed, rightPressed = GetButtonsPressedFromEmpty(pixels)
 
     return {
         pixels = pixels,
@@ -128,8 +98,15 @@ local function CalculateChange(previous, next, canExtend)
 
     local getPixel = previous.image.getPixel
 
+    local previousArea = previous.bounds.width * previous.bounds.height
+    local nextArea = next.bounds.width * next.bounds.height
+
+    -- if nextArea < previousArea then
+    --     CalculateChangeWhenNextSmaller(previous, next, canExtend)
+    -- end
+
     -- It's faster without registering any local variables inside the loops
-    if canExtend then -- Can extend, iterate over the new image
+    if nextArea > previousArea and canExtend then -- Can extend, iterate over the new image
         local shift = {
             x = next.position.x - previous.position.x,
             y = next.position.y - previous.position.y
@@ -192,13 +169,20 @@ local function CalculateChange(previous, next, canExtend)
                             newColor = ColorContext:Create(nextPixelValue)
                         })
                     end
+                elseif not ColorContext:IsTransparentValue(prevPixelValue) then
+                    table.insert(pixels, {
+                        x = x + previous.position.x,
+                        y = y + previous.position.y,
+                        color = ColorContext:Create(prevPixelValue),
+                        newColor = ColorContext:Create(0)
+                    })
                 end
             end
         end
     end
 
     local bounds = GetBoundsForPixels(pixels)
-    local leftPressed, rightPressed = GetButtonsPressed(pixels, previous, next)
+    local leftPressed, rightPressed = GetButtonsPressed(pixels)
 
     return {
         pixels = pixels,
@@ -326,28 +310,20 @@ local function MagicPencilDialog(options)
             lastCel.empty and CalculateChangeFromEmpty(app.activeCel) or
                 CalculateChange(lastCel, app.activeCel, modeProcessor.canExtend)
 
-        -- Mode Processor can cause the data about the last cel update, we calcualate it here to mitigate issues  
-        local deleteCel = lastCel.empty and modeProcessor.deleteOnEmptyCel
-        local celToDelete = app.activeCel -- Save the cel for deletion
+        -- Mode Processor can change the active cel, save it here for deletion just in case  
+        local celToDelete = app.activeCel
 
         -- If no pixel was changed, but the size changed then revert to original
-        if #change.pixels == 0 then
-            if change.sizeChanged and modeProcessor.canExtend and lastCel then
-                -- If instead I just replace image and positon in the active cel, Aseprite will crash if I undo when hovering mouse over dialog
-                -- sprite:newCel(app.activeLayer, app.activeFrame.frameNumber,
-                --               lastCel.image, lastCel.position)
-                app.activeCel.image = lastCel.image
-                app.activeCel.position = lastCel.position
-            end
-            -- Otherwise, do nothing
-        elseif lastCel.empty and modeProcessor.ignoreEmptyCel then
+        if #change.pixels == 0 or lastCel.empty and modeProcessor.ignoreEmptyCel then
             -- Ignore, do nothing
         elseif change.leftPressed or change.rightPressed then
             -- Only respond if it's known which button the user pressed
             modeProcessor:Process(change, sprite, lastCel, dialog.data)
         end
 
-        if deleteCel then app.activeSprite:deleteCel(celToDelete) end
+        if lastCel.empty and modeProcessor.deleteOnEmptyCel then
+            app.activeSprite:deleteCel(celToDelete)
+        end
 
         app.refresh()
         UpdateLast()
@@ -728,3 +704,5 @@ local function MagicPencilDialog(options)
 end
 
 return MagicPencilDialog
+
+-- TODO: Last cel data might include a cache of pixels to speed up processing
