@@ -392,7 +392,15 @@ local function MagicPencilDialog(options)
 
         dialog --
         :modify{id = "outlineColor", visible = selectedMode == Mode.OutlineLive} --
-        :modify{id = "outlineSize", visible = selectedMode == Mode.OutlineLive} --
+        :modify{id = "outlineSize", visible = selectedMode == Mode.OutlineLive} -- 
+        :modify{
+            id = "outlineOtherColors",
+            visible = selectedMode == Mode.OutlineLive
+        } --
+        :modify{
+            id = "outlineErasingEnable",
+            visible = selectedMode == Mode.OutlineLive
+        } --
         :modify{id = "graffitiPower", visible = selectedMode == Mode.Graffiti} --
         :modify{
             id = "graffitiSpeckEnabled",
@@ -567,7 +575,20 @@ local function MagicPencilDialog(options)
         visible = false,
         color = Color {gray = 0, alpha = 255}
     } --
-    :number{id = "outlineSize", visible = false, text = "1", decimals = 0}
+    :number{id = "outlineSize", visible = false, text = "1", decimals = 0} --
+    :check{
+        id = "outlineOtherColors",
+        text = "Over color",
+        visible = false,
+        selected = false
+    } --
+    :newrow() --
+    :check{
+        id = "outlineErasingEnable",
+        text = "Erasing",
+        visible = false,
+        selected = true
+    } --
 
     dialog:separator{
         id = "transformSeparator",

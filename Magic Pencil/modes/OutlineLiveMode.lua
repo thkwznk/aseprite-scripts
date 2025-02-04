@@ -20,6 +20,9 @@ local function IsErasing(change)
 end
 
 function OutlineLiveMode:Process(change, sprite, cel, parameters)
+    local isErasing = IsErasing(change)
+    if isErasing and not parameters.outlineErasingEnable then return end
+
     local color = parameters.outlineColor
 
     local selection = sprite.selection
@@ -43,7 +46,7 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
 
     newImage:drawImage(app.activeCel.image, Point(dpx, dpy))
 
-    if IsErasing(change) then
+    if isErasing then
         for _, pixel in ipairs(change.pixels) do
             local ix = pixel.x - cx + dpx
             local iy = pixel.y - cy + dpy
@@ -82,8 +85,17 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
                         Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
                         local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
 
-                        if ColorContext:IsTransparentValue(pixelValue) then
-                            outlinePixelCache:SetPixel(ix + xx, iy + yy, true)
+                        if parameters.outlineOtherColors then
+                            if not ColorContext:Equals(
+                                ColorContext:Create(pixelValue), pixel.newColor) then
+                                outlinePixelCache:SetPixel(ix + xx, iy + yy,
+                                                           true)
+                            end
+                        else
+                            if ColorContext:IsTransparentValue(pixelValue) then
+                                outlinePixelCache:SetPixel(ix + xx, iy + yy,
+                                                           true)
+                            end
                         end
                     end
                 end
