@@ -1,4 +1,4 @@
--- v1.0
+-- v1.1
 local AdjustScale = function(scale)
     if scale < 0 then return 1 / (math.abs(scale) + 1) end
     return scale
@@ -54,8 +54,8 @@ local PreviewCanvas = function(dialog, width, height, sprite, image, position)
 
     image = DrawImageOnCanvas(sprite, image, position)
 
-    local RepaintImage = function(newImage, newPosition)
-        image = DrawImageOnCanvas(sprite, newImage, newPosition or position)
+    local RepaintImage = function(newSprite, newImage, newPosition)
+        image = DrawImageOnCanvas(newSprite, newImage, newPosition or position)
         dialog:repaint()
     end
 

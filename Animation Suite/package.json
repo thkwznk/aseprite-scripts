@@ -17,7 +17,7 @@
   "contributes": {
     "scripts": [
       {
-        "path": "./AnimationSuite.lua"
+        "path": "./extension.lua"
       }
     ]
   }
