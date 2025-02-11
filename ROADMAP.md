@@ -64,7 +64,7 @@ Future:
 
 Unreleased:
 
-- ...
+- [Fix] No longer throw an error when placing pixels outside of an existing cel
 
 Future:
 

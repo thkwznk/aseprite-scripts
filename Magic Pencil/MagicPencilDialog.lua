@@ -129,7 +129,7 @@ local function CalculateChange(previous, next, canExtend)
                         table.insert(pixels, {
                             x = x + next.position.x,
                             y = y + next.position.y,
-                            color = nil,
+                            color = ColorContext:Create(0),
                             newColor = ColorContext:Create(nextPixelValue)
                         })
                     end
