@@ -64,13 +64,6 @@ local function ParallaxDialog(options)
 
     dialog --
     :separator{text = "Movement"} --
-    -- FUTURE: Enable different movement functions
-    -- :combobox{
-    --     id = "movementFunction",
-    --     label = "Type",
-    --     option = Parallax:GetDefaultMovementFunction(),
-    --     options = Parallax:GetMovementFunctions()
-    -- } --
     :number{
         id = "speedX",
         label = "Speed [X/Y]",

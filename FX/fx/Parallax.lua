@@ -1,35 +1,4 @@
-local LinearMovement = "Linear"
-
-local Parallax = {
-    initialPositions = {},
-    movementFunctions = {
-        [LinearMovement] = function() return 1 end,
-        ["Ease Out Cubic"] = function(x) return 1 - ((1 - x) ^ 3) end,
-        ["Ease In Out Back"] = function(x)
-            local c1 = 1.70158
-            local c2 = c1 * 1.525
-
-            return x < 0.5 and (((2 * x) ^ 2) * ((c2 + 1) * 2 * x - c2)) / 2 or
-                       (((2 * x - 2) ^ 2) * ((c2 + 1) * (x * 2 - 2) + c2) + 2) /
-                       2
-        end,
-        ["Ease Out Elastic"] = function(x)
-            local c4 = (2 * math.pi) / 3
-
-            return x == 0 and 0 or x == 1 and 1 or (2 ^ (-10 * x)) *
-                       math.sin((x * 10 - 0.75) * c4) + 1;
-        end
-    }
-}
-
-function Parallax:GetDefaultMovementFunction() return LinearMovement end
-
-function Parallax:GetMovementFunctions()
-    local result = {}
-    for key, _ in pairs(self.movementFunctions) do table.insert(result, key) end
-
-    return result
-end
+local Parallax = {initialPositions = {}}
 
 function Parallax:GetFullLayerName(layer)
     local result = layer.name
@@ -262,15 +231,6 @@ function Parallax:_BuildCelsModel(sourceSprite, destinationSprite, factor,
     for frameNumber = 1, parameters.frames do
         local shiftX = frameNumber
         local shiftY = frameNumber
-
-        -- FUTURE: Adjust this for X and Y
-        -- if parameters.movementFunction ~= LinearMovement then
-        --     local easingFunction =
-        --         self.movementFunctions[parameters.movementFunction]
-        --     local easing = easingFunction(frameNumber / parameters.frames)
-
-        --     shiftX = destinationSprite.width * easing
-        -- end
 
         shiftX = math.floor(shiftX * parameters.speedX * factor) %
                      destinationSprite.width
