@@ -50,6 +50,7 @@ Future:
 Unreleased:
 
 - [Improvement] Parallax - add a preview in the dialog window
+- [Improvement] Parallax - add an option to input a layer speed directly
 
 Future:
 

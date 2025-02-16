@@ -24,34 +24,20 @@ local function ParallaxDialog(options)
         onclose = function() timer:stop() end
     }
 
-    local defaultSpeed = math.floor(math.sqrt(math.sqrt(sprite.width)))
-    local defaultFrames = math.floor(sprite.width /
-                                         math.max((defaultSpeed / 2), 1))
-
-    local speedX = session:Get(sprite, "speedX") or defaultSpeed
-    local speedY = session:Get(sprite, "speedY") or 0
-
-    function AddLayerWidgets(layersToProcess, groupIndex)
+    function AddLayerWidgets(layersToProcess, groupSpeed)
         for i = #layersToProcess, 1, -1 do
             local layer = layersToProcess[i]
+            local speed = 0
 
             if layer.isGroup then
-                AddLayerWidgets(layer.layers, #layersToProcess - i)
+                AddLayerWidgets(layer.layers, speed)
             elseif layer.isVisible and not layer.isReference then
-                local speed = defaultSpeed ^ (#layersToProcess - i)
-                if groupIndex then
-                    speed = defaultSpeed ^ groupIndex
-                end
+                if groupSpeed then speed = groupSpeed end
 
                 if layer.isBackground then speed = 0 end
 
                 -- Save the initial position of the layers
                 local cel = layer.cels[1]
-
-                -- If there's saved speed, use it
-                if layer.data and #layer.data > 0 then
-                    speed = tonumber(layer.data) or speed
-                end
 
                 local id = StackIndexId(layer)
                 local label = GetFullLayerName(layer)
@@ -59,10 +45,17 @@ local function ParallaxDialog(options)
                 if cel then
                     dialog --
                     :number{
-                        id = "distance-" .. id,
+                        id = "speed-x-" .. id,
                         label = label,
                         decimals = 2,
                         text = tostring(speed),
+                        enabled = not layer.isBackground,
+                        visible = not layer.isBackground
+                    } --
+                    :number{
+                        id = "speed-y-" .. id,
+                        decimals = 2,
+                        text = tostring(0), -- TODO: ???
                         enabled = not layer.isBackground,
                         visible = not layer.isBackground
                     }
@@ -87,44 +80,19 @@ local function ParallaxDialog(options)
     }
     timer:start()
 
-    dialog:separator{text = "Distance"}
+    -- TODO: The button to preview the parallax is necessary, it should also be off by default
+
+    dialog:separator{text = "Speed [X/Y]"}
 
     AddLayerWidgets(sprite.layers)
 
     dialog --
-    :separator{text = "Movement"} --
-    :number{
-        id = "speedX",
-        label = "Speed [X/Y]",
-        text = tostring(speedX),
-        onchange = function()
-            session:Set(sprite, "speedX", dialog.data.speedX)
-
-            dialog:modify{
-                id = "okButton",
-                enabled = dialog.data.speedX ~= 0 or dialog.data.speedY ~= 0
-            }
-        end
-    } --
-    :number{
-        id = "speedY",
-        text = tostring(speedY),
-        onchange = function()
-            session:Set(sprite, "speedY", dialog.data.speedY)
-
-            dialog:modify{
-                id = "okButton",
-                enabled = dialog.data.speedX ~= 0 or dialog.data.speedY ~= 0
-            }
-        end
-    } --
     :separator{text = "Output"} --
-    :number{id = "frames", label = "Frames", text = tostring(defaultFrames)} --
+    :number{id = "frames", label = "Frames", text = tostring(sprite.width)} --
     :separator() --
     :button{
         id = "okButton",
         text = "&OK",
-        enabled = speedX ~= 0 or speedY ~= 0,
         onclick = function()
             dialog:close()
             Parallax:Generate(sprite, dialog.data)

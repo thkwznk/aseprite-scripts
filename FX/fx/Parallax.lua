@@ -33,18 +33,19 @@ local function MapLinkedSourceCels(layer)
     return map
 end
 
-local function BuildCelsModel(sourceSprite, destinationSprite, factor,
+local function BuildCelsModel(sourceSprite, destinationSprite, layer,
                               parameters, linkedSourceCelsMap)
     local celsModel = {}
+    local id = StackIndexId(layer)
+    local speedX = parameters["speed-x-" .. id] or 0
+    local speedY = parameters["speed-y-" .. id] or 0
 
     for frameNumber = 1, parameters.frames do
         local shiftX = frameNumber
         local shiftY = frameNumber
 
-        shiftX = math.floor(shiftX * parameters.speedX * factor) %
-                     destinationSprite.width
-        shiftY = math.floor(shiftY * parameters.speedY * factor) %
-                     destinationSprite.height
+        shiftX = math.floor(shiftX * speedX) % destinationSprite.width
+        shiftY = math.floor(shiftY * speedY) % destinationSprite.height
 
         -- Fix for nan
         if shiftX ~= shiftX then shiftX = 0 end
@@ -184,11 +185,9 @@ local function GenerateLayers(sourceSprite, destinationSprite, layers,
         elseif layer.isVisible and not layer.isReference then
             local linkedSourceCelsMap = MapLinkedSourceCels(layer)
 
-            local factor = 1.0 / tonumber(layer.data)
-
             -- Create an abastract model of the layer
             local celsModel = BuildCelsModel(sourceSprite, destinationSprite,
-                                             factor, parameters,
+                                             layer, parameters,
                                              linkedSourceCelsMap)
 
             -- Build the actual timeline in the destination sprite based on the model
@@ -208,18 +207,10 @@ function Parallax:Preview(sprite, parameters, shift)
 
         if cel then
             local id = StackIndexId(layer)
-            local distance = parameters["distance-" .. id]
             -- local wrap = parameters["wrap-" .. id]
 
-            local shiftX, shiftY = 0, 0
-
-            if distance ~= 0 then
-                shiftX = parameters.speedX * (shift / distance)
-                shiftY = parameters.speedY * (shift / distance)
-            end
-
-            local x = cel.position.x + shiftX
-            local y = cel.position.y + shiftY
+            local x = cel.position.x + parameters["speed-x-" .. id] * shift
+            local y = cel.position.y + parameters["speed-y-" .. id] * shift
 
             -- if wrap then
             x = x % sprite.width
@@ -252,12 +243,6 @@ function Parallax:Preview(sprite, parameters, shift)
 end
 
 function Parallax:Generate(sourceSprite, parameters)
-    -- Save the values in the layer data
-    IterateOverLayers(sourceSprite.layers, function(layer)
-        local id = StackIndexId(layer)
-        layer.data = parameters["distance-" .. id] or 0
-    end)
-
     local destinationSprite = Sprite(sourceSprite.spec)
     destinationSprite:setPalette(sourceSprite.palettes[1])
 
@@ -277,3 +262,4 @@ end
 return Parallax
 
 -- FUTURE: Decide whether or not a layer is wrapping based on the fact if it spans the entire canvas length/width or not
+-- TODO: Consider restoring saving the last layer speed/distance
