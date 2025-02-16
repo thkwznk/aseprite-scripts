@@ -1,9 +1,9 @@
-local AdjustScale = function(scale)
+local function AdjustScale(scale)
     if scale < 0 then return 1 / (math.abs(scale) + 1) end
     return scale
 end
 
-local DrawCanvasGrid = function(sprite, image)
+local function DrawCanvasGrid(sprite, image)
     local docPref = app.preferences.document(sprite)
 
     local color1 = docPref.bg.color1
@@ -33,7 +33,7 @@ local DrawCanvasGrid = function(sprite, image)
     end
 end
 
-local DrawImageOnCanvas = function(sprite, image, position)
+local function DrawImageOnCanvas(sprite, image, position)
     local result = Image(sprite.width, sprite.height, sprite.colorMode)
     DrawCanvasGrid(sprite, result)
 
@@ -42,7 +42,7 @@ local DrawImageOnCanvas = function(sprite, image, position)
     return result
 end
 
-local PreviewCanvas = function(dialog, width, height, sprite, image, position)
+local function PreviewCanvas(dialog, width, height, sprite, image, position)
     local border = 3
     local padding = 8
     local maxCanvasSize = Rectangle(0, 0, 200, 200)

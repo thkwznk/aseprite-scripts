@@ -49,7 +49,7 @@ Future:
 
 Unreleased:
 
-- ...
+- [Improvement] Parallax - add a preview in the dialog window
 
 Future:
 
@@ -57,7 +57,6 @@ Future:
 - [Fix] Parallax doesn't generate correctly if the timeline is closed/hidden - cels aren't linked 
 - [Feature] Parallax - add an options for delaying layers reappearing
 - [Feature] Parallax - add an option to generate only from the selected frames
-- [Feature] Parallax - add alternative movement functions
 - [Improvement] Parallax - remember settings using the new `properties` 
 
 ## Magic Pencil

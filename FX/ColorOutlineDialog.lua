@@ -1,6 +1,6 @@
 local PreviewCanvas = dofile("./PreviewCanvas.lua")
 
-function GetNewBounds(image, directions)
+local function GetNewBounds(image, directions)
     local x, y = 0, 0
     local w, h = image.width, image.height
 
@@ -25,8 +25,8 @@ function GetNewBounds(image, directions)
     return {x = x, y = y, width = w, height = h}
 end
 
-function GetOutlinePixels(sprite, position, originalImage, newBounds, image,
-                          directions)
+local function GetOutlinePixels(sprite, position, originalImage, newBounds,
+                                image, directions)
     local result = {}
     local getPixel = image.getPixel
     local pixelColorCache = {}
@@ -80,8 +80,8 @@ function GetOutlinePixels(sprite, position, originalImage, newBounds, image,
     return result
 end
 
-function DrawOutlinePixels(image, pixels, directions, color, opacity,
-                           ignoreOutlineColor)
+local function DrawOutlinePixels(image, pixels, directions, color, opacity,
+                                 ignoreOutlineColor)
     local drawPixel = image.drawPixel
     local colorCache = {}
 
@@ -135,8 +135,8 @@ function DrawOutlinePixels(image, pixels, directions, color, opacity,
     end
 end
 
-function DrawOutline(sprite, cel, originalImage, newBounds, image, directions,
-                     color, opacity, ignoreOutlineColor)
+local function DrawOutline(sprite, cel, originalImage, newBounds, image,
+                           directions, color, opacity, ignoreOutlineColor)
     local getPixel, drawPixel = image.getPixel, image.drawPixel
     local pixelColorCache = {}
 
@@ -227,7 +227,7 @@ function DrawOutline(sprite, cel, originalImage, newBounds, image, directions,
     cel.image = image
 end
 
-function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
+local function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
     local sprite = cel.sprite
     local originalImage = cel.image
     local newBounds = GetNewBounds(originalImage, directions)
@@ -241,7 +241,7 @@ function ColorOutline(cel, opacity, color, directions, ignoreOutlineColor)
                          cel.position.y - newBounds.y)
 end
 
-function ColorOutlineDialog(options)
+local function ColorOutlineDialog(options)
     local image = options.previewImage
     local newBounds = GetNewBounds(image, {
         left = {enabled = true},

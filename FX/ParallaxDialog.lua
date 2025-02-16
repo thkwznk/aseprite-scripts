@@ -1,3 +1,4 @@
+local PreviewCanvas = dofile("./PreviewCanvas.lua")
 local Parallax = dofile("./fx/Parallax.lua")
 
 local function ParallaxDialog(options)
@@ -12,8 +13,6 @@ local function ParallaxDialog(options)
 
     local speedX = session:Get(sprite, "speedX") or defaultSpeed
     local speedY = session:Get(sprite, "speedY") or 0
-
-    dialog:separator{text = "Distance"}
 
     function AddLayerWidgets(layersToProcess, groupIndex)
         for i = #layersToProcess, 1, -1 do
@@ -59,8 +58,31 @@ local function ParallaxDialog(options)
         end
     end
 
+    local previewSprite = Parallax:InitPreview(sprite,
+                                               app.activeFrame.frameNumber)
+
+    local RepaintPreviewImage = PreviewCanvas(dialog, 100, 100,
+                                              app.activeSprite,
+                                              Image(previewSprite), Point(0, 0))
+
+    dialog -- 
+    :slider{
+        id = "shift", -- TODO: Replace with Play/Stop button playing preview in real-time
+        label = "Shift",
+        min = 0,
+        max = sprite.width,
+        value = 0,
+        onchange = function()
+            Parallax:Preview(dialog.data)
+
+            RepaintPreviewImage(Image(previewSprite))
+
+            app.refresh()
+        end
+    } --
+    :separator{text = "Distance"}
+
     AddLayerWidgets(sprite.layers)
-    Parallax:InitPreview(sprite, app.activeFrame.frameNumber, dialog.data)
 
     dialog --
     :separator{text = "Movement"} --
@@ -89,18 +111,6 @@ local function ParallaxDialog(options)
             }
         end
     } --
-    :separator{text = "Preview"} --
-    :slider{
-        id = "shift",
-        label = "Shift",
-        min = 0,
-        max = sprite.width,
-        value = 0,
-        onchange = function()
-            Parallax:Preview(dialog.data)
-            app.refresh()
-        end
-    } --
     :separator{text = "Output"} --
     :number{id = "frames", label = "Frames", text = tostring(defaultFrames)} --
     :separator() --
@@ -111,13 +121,6 @@ local function ParallaxDialog(options)
         onclick = function()
             Parallax:ClosePreview()
             dialog:close()
-
-            -- Save the values in the layer data
-            Parallax:_IterateOverLayers(sprite.layers, function(layer)
-                local id = Parallax:_GetLayerId(layer)
-                layer.data = dialog.data["distance-" .. id] or 0
-            end)
-
             Parallax:Generate(sprite, dialog.data)
         end
     } --

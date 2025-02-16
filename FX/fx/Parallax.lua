@@ -1,3 +1,16 @@
+local function IterateOverLayers(layers, action)
+    -- Iterate in reverse to go from top to bottom
+    for i = #layers, 1, -1 do
+        local layer = layers[i]
+
+        if layer.isGroup then
+            IterateOverLayers(layer.layers, action)
+        else
+            action(layer)
+        end
+    end
+end
+
 local Parallax = {initialPositions = {}}
 
 function Parallax:GetFullLayerName(layer)
@@ -12,20 +25,7 @@ function Parallax:GetFullLayerName(layer)
     return result
 end
 
-function Parallax:_IterateOverLayers(layers, action)
-    -- Iterate in reverse to go from top to bottom
-    for i = #layers, 1, -1 do
-        local layer = layers[i]
-
-        if layer.isGroup then
-            Parallax:_IterateOverLayers(layer.layers, action)
-        else
-            action(layer)
-        end
-    end
-end
-
-function Parallax:InitPreview(sourceSprite, sourceFrameNumber, parameters)
+function Parallax:InitPreview(sourceSprite, sourceFrameNumber)
     local width = sourceSprite.width
     local height = sourceSprite.height
 
@@ -41,7 +41,11 @@ function Parallax:InitPreview(sourceSprite, sourceFrameNumber, parameters)
 
     self.previewSprite:deleteLayer(firstLayer)
 
-    self:UpdatePreviewImages(parameters)
+    self:UpdatePreviewImages()
+
+    app.activeSprite = sourceSprite
+
+    return self.previewSprite
 end
 
 function Parallax:_CreatePreviewLayers(layers, parent)
@@ -64,19 +68,19 @@ function Parallax:_CreatePreviewLayers(layers, parent)
     end
 end
 
-function Parallax:UpdatePreviewImages(parameters)
+function Parallax:UpdatePreviewImages()
     local width = self.sourceSprite.width
     local height = self.sourceSprite.height
 
     -- Map source with 
     local layerMap = {}
 
-    self:_IterateOverLayers(self.sourceSprite.layers, function(layer)
+    IterateOverLayers(self.sourceSprite.layers, function(layer)
         local id = self:_GetLayerId(layer)
         layerMap[id] = {source = layer}
     end)
 
-    self:_IterateOverLayers(self.previewSprite.layers, function(layer)
+    IterateOverLayers(self.previewSprite.layers, function(layer)
         local id = self:_GetLayerId(layer)
         layerMap[id].preview = layer
     end)
@@ -121,7 +125,7 @@ function Parallax:_GetLayerId(layer)
 end
 
 function Parallax:Preview(parameters)
-    self:_IterateOverLayers(self.previewSprite.layers, function(layer)
+    IterateOverLayers(self.previewSprite.layers, function(layer)
         local cel = layer:cel(1)
 
         if cel then
@@ -151,6 +155,12 @@ end
 function Parallax:ClosePreview() self.previewSprite:close() end
 
 function Parallax:Generate(sourceSprite, parameters)
+    -- Save the values in the layer data
+    IterateOverLayers(sourceSprite.layers, function(layer)
+        local id = Parallax:_GetLayerId(layer)
+        layer.data = parameters["distance-" .. id] or 0
+    end)
+
     local destinationSprite = Sprite(sourceSprite.spec)
     destinationSprite:setPalette(sourceSprite.palettes[1])
 
