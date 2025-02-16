@@ -1,13 +1,14 @@
 local DropShadow = dofile("./fx/DropShadow.lua")
 local LCDScreen = dofile("./fx/LCDScreen.lua")
 local Neon = dofile("./fx/Neon.lua")
-local Parallax = dofile("./fx/Parallax.lua")
+local ParallaxDialog = dofile("./ParallaxDialog.lua")
 local ThreeShearRotation = dofile("./fx/ThreeShearRotation.lua")
 local ImageProcessor = dofile("./ImageProcessor.lua")
 local PreviewCanvas = dofile("./PreviewCanvas.lua")
 local ColorOutlineDialog = dofile("./ColorOutlineDialog.lua")
+local FxSession = dofile("./FxSession.lua")
 
-function Directions()
+local function Directions()
     return {
         topLeft = {enabled = false, dx = 1, dy = 1},
         top = {enabled = true, dx = 0, dy = 1},
@@ -24,35 +25,9 @@ end
 local InitialXOffset = 2
 local InitialYOffset = 2
 
-local FxSession = {}
 local Sqrt2 = math.sqrt(2)
 
-function FxSession:Get(sprite, key, defaultValue)
-    if defaultValue ~= nil then
-        if self[sprite.filename] then
-            if self[sprite.filename][key] ~= nil then
-                return self[sprite.filename][key]
-            end
-        else
-            self[sprite.filename] = {}
-        end
-
-        self[sprite.filename][key] = defaultValue
-        return defaultValue
-    end
-
-    if not self[sprite.filename] then return nil end
-
-    return self[sprite.filename][key]
-end
-
-function FxSession:Set(sprite, key, value)
-    if not self[sprite.filename] then self[sprite.filename] = {} end
-
-    self[sprite.filename][key] = value
-end
-
-function GetActiveSpritePreview()
+local function GetActiveSpritePreview()
     local sprite = app.activeSprite
     local cels = {}
 
@@ -78,7 +53,7 @@ function GetActiveSpritePreview()
     return Image(previewImage, bounds), position
 end
 
-function RotateCel(cel, angle)
+local function RotateCel(cel, angle)
     local image = cel.image
 
     if angle >= math.pi / 2 and angle <= math.pi * 1.5 then
@@ -117,146 +92,6 @@ end
 
 --     cel.sprite.selection:deselect()
 -- end
-
-function ParallaxOnClick()
-    local sprite = app.activeSprite
-    local dialog = Dialog {title = "Parallax"}
-
-    local defaultSpeed = math.floor(math.sqrt(math.sqrt(sprite.width)))
-    local defaultFrames = math.floor(sprite.width /
-                                         math.max((defaultSpeed / 2), 1))
-
-    local speedX = FxSession:Get(sprite, "speedX") or defaultSpeed
-    local speedY = FxSession:Get(sprite, "speedY") or 0
-
-    dialog:separator{text = "Distance"}
-
-    function AddLayerWidgets(layersToProcess, groupIndex)
-        for i = #layersToProcess, 1, -1 do
-            local layer = layersToProcess[i]
-
-            if not layer.isVisible then goto skipLayerWidget end
-
-            if layer.isGroup then
-                AddLayerWidgets(layer.layers, #layersToProcess - i)
-            else
-                local speed = defaultSpeed ^ (#layersToProcess - i)
-                if groupIndex then
-                    speed = defaultSpeed ^ groupIndex
-                end
-
-                if layer.isBackground then speed = 0 end
-
-                -- Save the initial position of the layers
-                local cel = layer.cels[1]
-
-                -- If there's saved speed, use it
-                if layer.data and #layer.data > 0 then
-                    speed = tonumber(layer.data) or speed
-                end
-
-                local id = Parallax:_GetLayerId(layer)
-                local label = Parallax:GetFullLayerName(layer)
-
-                if cel then
-                    dialog --
-                    :number{
-                        id = "distance-" .. id,
-                        label = label,
-                        decimals = 2,
-                        text = tostring(speed),
-                        enabled = not layer.isBackground,
-                        visible = not layer.isBackground
-                    }
-                end
-            end
-
-            ::skipLayerWidget::
-        end
-    end
-
-    AddLayerWidgets(sprite.layers)
-    Parallax:InitPreview(sprite, app.activeFrame.frameNumber, dialog.data)
-
-    dialog --
-    :separator{text = "Movement"} --
-    -- FUTURE: Enable different movement functions
-    -- :combobox{
-    --     id = "movementFunction",
-    --     label = "Type",
-    --     option = Parallax:GetDefaultMovementFunction(),
-    --     options = Parallax:GetMovementFunctions()
-    -- } --
-    :number{
-        id = "speedX",
-        label = "Speed [X/Y]",
-        text = tostring(speedX),
-        onchange = function()
-            FxSession:Set(sprite, "speedX", dialog.data.speedX)
-
-            dialog:modify{
-                id = "okButton",
-                enabled = dialog.data.speedX ~= 0 or dialog.data.speedY ~= 0
-            }
-        end
-    } --
-    :number{
-        id = "speedY",
-        text = tostring(speedY),
-        onchange = function()
-            FxSession:Set(sprite, "speedY", dialog.data.speedY)
-
-            dialog:modify{
-                id = "okButton",
-                enabled = dialog.data.speedX ~= 0 or dialog.data.speedY ~= 0
-            }
-        end
-    } --
-    :separator{text = "Preview"} --
-    :slider{
-        id = "shift",
-        label = "Shift",
-        min = 0,
-        max = sprite.width,
-        value = 0,
-        onchange = function()
-            Parallax:Preview(dialog.data)
-            app.refresh()
-        end
-    } --
-    :separator{text = "Output"} --
-    :number{id = "frames", label = "Frames", text = tostring(defaultFrames)} --
-    :separator() --
-    :button{
-        id = "okButton",
-        text = "&OK",
-        enabled = speedX ~= 0 or speedY ~= 0,
-        onclick = function()
-            Parallax:ClosePreview()
-            dialog:close()
-
-            -- Save the values in the layer data
-            Parallax:_IterateOverLayers(sprite.layers, function(layer)
-                local id = Parallax:_GetLayerId(layer)
-                layer.data = dialog.data["distance-" .. id] or 0
-            end)
-
-            Parallax:Generate(sprite, dialog.data)
-        end
-    } --
-    :button{
-        text = "&Cancel",
-        onclick = function()
-            Parallax:ClosePreview()
-            dialog:close()
-
-            -- Set active sprite back to the originally open file
-            app.activeSprite = sprite
-        end
-    }
-
-    dialog:show()
-end
 
 function init(plugin)
     plugin:newCommand{
@@ -428,7 +263,15 @@ function init(plugin)
         title = "Parallax",
         group = "edit_fx",
         onenabled = function() return app.activeSprite ~= nil end,
-        onclick = ParallaxOnClick
+        onclick = function()
+            local dialog = ParallaxDialog {
+                title = "Parallax",
+                sprite = app.activeSprite,
+                session = FxSession
+            }
+
+            dialog:show()
+        end
     }
 
     plugin:newCommand{
