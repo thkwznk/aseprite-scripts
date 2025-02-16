@@ -200,7 +200,7 @@ end
 
 local Parallax = {initialPositions = {}}
 
-function Parallax:Preview(sprite, parameters)
+function Parallax:Preview(sprite, parameters, shift)
     local previewImage = Image(sprite.width, sprite.height, sprite.colorMode)
 
     IterateOverLayers(sprite.layers, function(layer)
@@ -211,8 +211,8 @@ function Parallax:Preview(sprite, parameters)
             local distance = parameters["distance-" .. id]
             -- local wrap = parameters["wrap-" .. id]
 
-            local shiftX = parameters.speedX * (parameters.shift / distance)
-            local shiftY = parameters.speedY * (parameters.shift / distance)
+            local shiftX = parameters.speedX * (shift / distance)
+            local shiftY = parameters.speedY * (shift / distance)
 
             local x = cel.position.x + shiftX
             local y = cel.position.y + shiftY

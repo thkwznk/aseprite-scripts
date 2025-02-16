@@ -17,8 +17,12 @@ end
 local function ParallaxDialog(options)
     local session = options.session
     local sprite = options.sprite
+    local timer
 
-    local dialog = Dialog {title = options.title}
+    local dialog = Dialog {
+        title = options.title,
+        onclose = function() timer:stop() end
+    }
 
     local defaultSpeed = math.floor(math.sqrt(math.sqrt(sprite.width)))
     local defaultFrames = math.floor(sprite.width /
@@ -71,21 +75,19 @@ local function ParallaxDialog(options)
                                               app.activeSprite, Image(sprite),
                                               Point(0, 0))
 
-    dialog -- 
-    :slider{
-        id = "shift", -- TODO: Replace with Play/Stop button playing preview in real-time
-        label = "Shift",
-        min = 0,
-        max = sprite.width,
-        value = 0,
-        onchange = function()
-            local previewImage = Parallax:Preview(sprite, dialog.data)
-            RepaintPreviewImage(previewImage)
+    local shift = 0
 
-            app.refresh() -- TODO: remove?
+    timer = Timer {
+        interval = 0.1,
+        ontick = function()
+            shift = shift + 1
+            local previewImage = Parallax:Preview(sprite, dialog.data, shift)
+            RepaintPreviewImage(previewImage)
         end
-    } --
-    :separator{text = "Distance"}
+    }
+    timer:start()
+
+    dialog:separator{text = "Distance"}
 
     AddLayerWidgets(sprite.layers)
 
