@@ -75,7 +75,7 @@ local function ParallaxDialog(options)
                                               app.activeSprite, Image(sprite),
                                               Point(0, 0))
 
-    local shift = 0
+    local shift = 1
 
     timer = Timer {
         interval = 0.1,
