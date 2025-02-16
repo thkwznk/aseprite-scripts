@@ -1,6 +1,18 @@
 local PreviewCanvas = dofile("./PreviewCanvas.lua")
 local Parallax = dofile("./fx/Parallax.lua")
 
+local function GetFullLayerName(layer)
+    local result = layer.name
+    local parent = layer.parent
+
+    while parent ~= layer.sprite do
+        result = parent.name .. " > " .. result
+        parent = parent.parent
+    end
+
+    return result
+end
+
 local function ParallaxDialog(options)
     local session = options.session
     local sprite = options.sprite
@@ -36,8 +48,8 @@ local function ParallaxDialog(options)
                     speed = tonumber(layer.data) or speed
                 end
 
-                local id = Parallax:_GetLayerId(layer)
-                local label = Parallax:GetFullLayerName(layer)
+                local id = Parallax:GetLayerId(layer)
+                local label = GetFullLayerName(layer)
 
                 if cel then
                     dialog --

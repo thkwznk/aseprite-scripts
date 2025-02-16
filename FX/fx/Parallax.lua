@@ -165,21 +165,40 @@ local function RebuildLayer(sourceSprite, destinationSprite, sourceLayer,
     end
 end
 
-local Parallax = {initialPositions = {}}
+local function GenerateLayers(sourceSprite, destinationSprite, layers,
+                              parameters, parent)
+    -- Iterate over layers in reverse to keep the same order
+    for i = #layers, 1, -1 do
+        local layer = layers[i]
 
-function Parallax:GetFullLayerName(layer)
-    local result = layer.name
-    local parent = layer.parent
+        if layer.isGroup then
+            local newGroup = destinationSprite:newGroup()
+            newGroup.name = layer.name
+            newGroup.parent = parent
+            newGroup.stackIndex = 1
 
-    while parent ~= layer.sprite do
-        result = parent.name .. " > " .. result
-        parent = parent.parent
+            GenerateLayers(sourceSprite, destinationSprite, layer.layers,
+                           parameters, newGroup)
+        elseif layer.isVisible and not layer.isReference then
+            local linkedSourceCelsMap = MapLinkedSourceCels(layer)
+
+            local factor = 1.0 / tonumber(layer.data)
+
+            -- Create an abastract model of the layer
+            local celsModel = BuildCelsModel(sourceSprite, destinationSprite,
+                                             factor, parameters,
+                                             linkedSourceCelsMap)
+
+            -- Build the actual timeline in the destination sprite based on the model
+            RebuildLayer(sourceSprite, destinationSprite, layer, celsModel,
+                         parent, parameters)
+        end
     end
-
-    return result
 end
 
-function Parallax:_GetLayerId(layer)
+local Parallax = {initialPositions = {}}
+
+function Parallax:GetLayerId(layer)
     local id = tostring(layer.stackIndex)
 
     local parent = layer.parent
@@ -199,7 +218,7 @@ function Parallax:Preview(sprite, parameters)
         local cel = layer:cel(1)
 
         if cel then
-            local id = self:_GetLayerId(layer)
+            local id = self:GetLayerId(layer)
             local distance = parameters["distance-" .. id]
             -- local wrap = parameters["wrap-" .. id]
 
@@ -242,7 +261,7 @@ end
 function Parallax:Generate(sourceSprite, parameters)
     -- Save the values in the layer data
     IterateOverLayers(sourceSprite.layers, function(layer)
-        local id = Parallax:_GetLayerId(layer)
+        local id = Parallax:GetLayerId(layer)
         layer.data = parameters["distance-" .. id] or 0
     end)
 
@@ -255,46 +274,11 @@ function Parallax:Generate(sourceSprite, parameters)
     -- Fill the destination sprite with the required number of frames, assuming there's already one
     for _ = 2, parameters.frames do destinationSprite:newEmptyFrame() end
 
-    Parallax:_GenerateLayers(sourceSprite, destinationSprite,
-                             sourceSprite.layers, parameters, destinationSprite)
+    GenerateLayers(sourceSprite, destinationSprite, sourceSprite.layers,
+                   parameters, destinationSprite)
 
     -- Delete the first, defualt layer in the destination sprite
     destinationSprite:deleteLayer(firstLayer)
-end
-
-function Parallax:_GenerateLayers(sourceSprite, destinationSprite, layers,
-                                  parameters, parent)
-    -- Iterate over layers in reverse to keep the same order
-    for i = #layers, 1, -1 do
-        local layer = layers[i]
-
-        if not layer.isVisible then goto skipLayer end
-
-        if layer.isGroup then
-            local newGroup = destinationSprite:newGroup()
-            newGroup.name = layer.name
-            newGroup.parent = parent
-            newGroup.stackIndex = 1
-
-            self:_GenerateLayers(sourceSprite, destinationSprite, layer.layers,
-                                 parameters, newGroup)
-        else
-            local linkedSourceCelsMap = MapLinkedSourceCels(layer)
-
-            local factor = 1.0 / tonumber(layer.data)
-
-            -- Create an abastract model of the layer
-            local celsModel = BuildCelsModel(sourceSprite, destinationSprite,
-                                             factor, parameters,
-                                             linkedSourceCelsMap)
-
-            -- Build the actual timeline in the destination sprite based on the model
-            RebuildLayer(sourceSprite, destinationSprite, layer, celsModel,
-                         parent, parameters)
-        end
-
-        ::skipLayer::
-    end
 end
 
 return Parallax
