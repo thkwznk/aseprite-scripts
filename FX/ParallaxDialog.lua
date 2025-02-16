@@ -18,11 +18,9 @@ local function ParallaxDialog(options)
         for i = #layersToProcess, 1, -1 do
             local layer = layersToProcess[i]
 
-            if not layer.isVisible then goto skipLayerWidget end
-
             if layer.isGroup then
                 AddLayerWidgets(layer.layers, #layersToProcess - i)
-            else
+            elseif layer.isVisible and not layer.isReference then
                 local speed = defaultSpeed ^ (#layersToProcess - i)
                 if groupIndex then
                     speed = defaultSpeed ^ groupIndex
@@ -53,17 +51,12 @@ local function ParallaxDialog(options)
                     }
                 end
             end
-
-            ::skipLayerWidget::
         end
     end
 
-    local previewSprite = Parallax:InitPreview(sprite,
-                                               app.activeFrame.frameNumber)
-
     local RepaintPreviewImage = PreviewCanvas(dialog, 100, 100,
-                                              app.activeSprite,
-                                              Image(previewSprite), Point(0, 0))
+                                              app.activeSprite, Image(sprite),
+                                              Point(0, 0))
 
     dialog -- 
     :slider{
@@ -73,11 +66,10 @@ local function ParallaxDialog(options)
         max = sprite.width,
         value = 0,
         onchange = function()
-            Parallax:Preview(dialog.data)
+            local previewImage = Parallax:Preview(sprite, dialog.data)
+            RepaintPreviewImage(previewImage)
 
-            RepaintPreviewImage(Image(previewSprite))
-
-            app.refresh()
+            app.refresh() -- TODO: remove?
         end
     } --
     :separator{text = "Distance"}
@@ -119,7 +111,6 @@ local function ParallaxDialog(options)
         text = "&OK",
         enabled = speedX ~= 0 or speedY ~= 0,
         onclick = function()
-            Parallax:ClosePreview()
             dialog:close()
             Parallax:Generate(sprite, dialog.data)
         end
@@ -127,7 +118,6 @@ local function ParallaxDialog(options)
     :button{
         text = "&Cancel",
         onclick = function()
-            Parallax:ClosePreview()
             dialog:close()
 
             -- Set active sprite back to the originally open file

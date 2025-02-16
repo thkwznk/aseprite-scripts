@@ -1,219 +1,16 @@
 local function IterateOverLayers(layers, action)
-    -- Iterate in reverse to go from top to bottom
-    for i = #layers, 1, -1 do
+    for i = 1, #layers do
         local layer = layers[i]
 
         if layer.isGroup then
             IterateOverLayers(layer.layers, action)
-        else
+        elseif layer.isVisible and not layer.isReference then
             action(layer)
         end
     end
 end
 
-local Parallax = {initialPositions = {}}
-
-function Parallax:GetFullLayerName(layer)
-    local result = layer.name
-    local parent = layer.parent
-
-    while parent ~= layer.sprite do
-        result = parent.name .. " > " .. result
-        parent = parent.parent
-    end
-
-    return result
-end
-
-function Parallax:InitPreview(sourceSprite, sourceFrameNumber)
-    local width = sourceSprite.width
-    local height = sourceSprite.height
-
-    self.sourceSprite = sourceSprite
-    self.previewSprite = Sprite(width, height)
-    self.previewSprite:setPalette(self.sourceSprite.palettes[1])
-
-    self.sourceFrameNumber = sourceFrameNumber
-
-    local firstLayer = self.previewSprite.layers[1]
-
-    self:_CreatePreviewLayers(sourceSprite.layers, self.previewSprite)
-
-    self.previewSprite:deleteLayer(firstLayer)
-
-    self:UpdatePreviewImages()
-
-    app.activeSprite = sourceSprite
-
-    return self.previewSprite
-end
-
-function Parallax:_CreatePreviewLayers(layers, parent)
-    for _, layer in ipairs(layers) do
-        if layer.isGroup then
-            local previewGroup = self.previewSprite:newGroup()
-            previewGroup.name = layer.name
-            previewGroup.stackIndex = layer.stackIndex
-            previewGroup.isVisible = layer.isVisible
-            previewGroup.parent = parent
-
-            self:_CreatePreviewLayers(layer.layers, previewGroup)
-        else
-            local previewLayer = self.previewSprite:newLayer()
-            previewLayer.name = layer.name
-            previewLayer.stackIndex = layer.stackIndex
-            previewLayer.isVisible = layer.isVisible
-            previewLayer.parent = parent
-        end
-    end
-end
-
-function Parallax:UpdatePreviewImages()
-    local width = self.sourceSprite.width
-    local height = self.sourceSprite.height
-
-    -- Map source with 
-    local layerMap = {}
-
-    IterateOverLayers(self.sourceSprite.layers, function(layer)
-        local id = self:_GetLayerId(layer)
-        layerMap[id] = {source = layer}
-    end)
-
-    IterateOverLayers(self.previewSprite.layers, function(layer)
-        local id = self:_GetLayerId(layer)
-        layerMap[id].preview = layer
-    end)
-
-    for id, map in pairs(layerMap) do
-        local cel = map.source.cels[self.sourceFrameNumber]
-
-        if cel and map.source.isVisible and map.preview.isVisible then -- Save the initial position of the layers
-            local newImage
-
-            newImage = Image(cel.bounds.width + width,
-                             cel.bounds.height + height)
-
-            newImage:drawImage(cel.image, Point(0, 0))
-            newImage:drawImage(cel.image, Point(width, 0))
-
-            newImage:drawImage(cel.image, Point(0, height))
-            newImage:drawImage(cel.image, Point(width, height))
-
-            self.initialPositions[id] = Point(cel.position.x - width,
-                                              cel.position.y - height)
-
-            self.previewSprite:newCel(map.preview, 1, newImage,
-                                      self.initialPositions[id])
-        end
-    end
-
-    app.refresh()
-end
-
-function Parallax:_GetLayerId(layer)
-    local id = tostring(layer.stackIndex)
-
-    local parent = layer.parent
-
-    while parent ~= layer.sprite do
-        id = tostring(parent.stackIndex) .. "-" .. id
-        parent = parent.parent
-    end
-
-    return id
-end
-
-function Parallax:Preview(parameters)
-    IterateOverLayers(self.previewSprite.layers, function(layer)
-        local cel = layer:cel(1)
-
-        if cel then
-            local id = self:_GetLayerId(layer)
-            local distance = parameters["distance-" .. id]
-            -- local wrap = parameters["wrap-" .. id]
-
-            local initialPosition = self.initialPositions[id]
-            local shiftX = parameters.speedX * (parameters.shift / distance)
-            local shiftY = parameters.speedY * (parameters.shift / distance)
-
-            -- if wrap then
-            shiftX = shiftX % layer.sprite.width
-            shiftY = shiftY % layer.sprite.height
-            -- end
-
-            -- Fix for NaN
-            if shiftX ~= shiftX then shiftX = 0 end
-            if shiftY ~= shiftY then shiftY = 0 end
-
-            cel.position = Point(initialPosition.x + shiftX,
-                                 initialPosition.y + shiftY)
-        end
-    end)
-end
-
-function Parallax:ClosePreview() self.previewSprite:close() end
-
-function Parallax:Generate(sourceSprite, parameters)
-    -- Save the values in the layer data
-    IterateOverLayers(sourceSprite.layers, function(layer)
-        local id = Parallax:_GetLayerId(layer)
-        layer.data = parameters["distance-" .. id] or 0
-    end)
-
-    local destinationSprite = Sprite(sourceSprite.spec)
-    destinationSprite:setPalette(sourceSprite.palettes[1])
-
-    -- Save the reference to the first, default layer to delete it later
-    local firstLayer = destinationSprite.layers[1]
-
-    -- Fill the destination sprite with the required number of frames, assuming there's already one
-    for _ = 2, parameters.frames do destinationSprite:newEmptyFrame() end
-
-    Parallax:_GenerateLayers(sourceSprite, destinationSprite,
-                             sourceSprite.layers, parameters, destinationSprite)
-
-    -- Delete the first, defualt layer in the destination sprite
-    destinationSprite:deleteLayer(firstLayer)
-end
-
-function Parallax:_GenerateLayers(sourceSprite, destinationSprite, layers,
-                                  parameters, parent)
-    -- Iterate over layers in reverse to keep the same order
-    for i = #layers, 1, -1 do
-        local layer = layers[i]
-
-        if not layer.isVisible then goto skipLayer end
-
-        if layer.isGroup then
-            local newGroup = destinationSprite:newGroup()
-            newGroup.name = layer.name
-            newGroup.parent = parent
-            newGroup.stackIndex = 1
-
-            self:_GenerateLayers(sourceSprite, destinationSprite, layer.layers,
-                                 parameters, newGroup)
-        else
-            local linkedSourceCelsMap = self:_MapLinkedSourceCels(layer)
-
-            local factor = 1.0 / tonumber(layer.data)
-
-            -- Create an abastract model of the layer
-            local celsModel = self:_BuildCelsModel(sourceSprite,
-                                                   destinationSprite, factor,
-                                                   parameters,
-                                                   linkedSourceCelsMap)
-
-            -- Build the actual timeline in the destination sprite based on the model
-            self:_RebuildLayer(sourceSprite, destinationSprite, layer,
-                               celsModel, parent, parameters)
-        end
-
-        ::skipLayer::
-    end
-end
-
-function Parallax:_MapLinkedSourceCels(layer)
+local function MapLinkedSourceCels(layer)
     local map = {}
 
     for i = 1, #layer.cels do
@@ -234,8 +31,8 @@ function Parallax:_MapLinkedSourceCels(layer)
     return map
 end
 
-function Parallax:_BuildCelsModel(sourceSprite, destinationSprite, factor,
-                                  parameters, linkedSourceCelsMap)
+local function BuildCelsModel(sourceSprite, destinationSprite, factor,
+                              parameters, linkedSourceCelsMap)
     local celsModel = {}
 
     for frameNumber = 1, parameters.frames do
@@ -278,32 +75,9 @@ function Parallax:_BuildCelsModel(sourceSprite, destinationSprite, factor,
     return celsModel
 end
 
-function Parallax:_RebuildLayer(sourceSprite, destinationSprite, sourceLayer,
-                                celsModel, parent, parameters)
-    local newLayer = destinationSprite:newLayer()
-    newLayer.name = sourceLayer.name
-    newLayer.parent = parent
-    newLayer.stackIndex = 1
-
-    local celCache = {}
-    local sourceWidth, sourceHeight = sourceSprite.width, sourceSprite.height
-
-    for sourceFrameNumber, shiftX in pairs(celsModel) do
-        for x, shiftY in pairs(shiftX) do
-            for y, destinationFrames in pairs(shiftY) do
-                Parallax:_RebuildCel(sourceFrameNumber, destinationFrames, x, y,
-                                     sourceWidth, sourceHeight,
-                                     destinationSprite, sourceLayer, newLayer,
-                                     celCache, parameters)
-            end
-        end
-    end
-end
-
-function Parallax:_RebuildCel(sourceFrameNumber, destinationFrameNumbers,
-                              shiftX, shiftY, sourceWidth, sourceHeight,
-                              destinationSprite, sourceLayer, destinationLayer,
-                              celCache, parameters)
+local function RebuildCel(sourceFrameNumber, destinationFrameNumbers, shiftX,
+                          shiftY, sourceWidth, sourceHeight, destinationSprite,
+                          sourceLayer, destinationLayer, celCache, parameters)
     -- Validate parameters
     if parameters.speedX == 0 and parameters.speedY == 0 then return end
 
@@ -367,6 +141,159 @@ function Parallax:_RebuildCel(sourceFrameNumber, destinationFrameNumbers,
         app.range.frames = destinationFrameNumbers
         app.range.layers = {destinationLayer}
         app.command:LinkCels()
+    end
+end
+
+local function RebuildLayer(sourceSprite, destinationSprite, sourceLayer,
+                            celsModel, parent, parameters)
+    local newLayer = destinationSprite:newLayer()
+    newLayer.name = sourceLayer.name
+    newLayer.parent = parent
+    newLayer.stackIndex = 1
+
+    local celCache = {}
+    local sourceWidth, sourceHeight = sourceSprite.width, sourceSprite.height
+
+    for sourceFrameNumber, shiftX in pairs(celsModel) do
+        for x, shiftY in pairs(shiftX) do
+            for y, destinationFrames in pairs(shiftY) do
+                RebuildCel(sourceFrameNumber, destinationFrames, x, y,
+                           sourceWidth, sourceHeight, destinationSprite,
+                           sourceLayer, newLayer, celCache, parameters)
+            end
+        end
+    end
+end
+
+local Parallax = {initialPositions = {}}
+
+function Parallax:GetFullLayerName(layer)
+    local result = layer.name
+    local parent = layer.parent
+
+    while parent ~= layer.sprite do
+        result = parent.name .. " > " .. result
+        parent = parent.parent
+    end
+
+    return result
+end
+
+function Parallax:_GetLayerId(layer)
+    local id = tostring(layer.stackIndex)
+
+    local parent = layer.parent
+
+    while parent ~= layer.sprite do
+        id = tostring(parent.stackIndex) .. "-" .. id
+        parent = parent.parent
+    end
+
+    return id
+end
+
+function Parallax:Preview(sprite, parameters)
+    local previewImage = Image(sprite.width, sprite.height, sprite.colorMode)
+
+    IterateOverLayers(sprite.layers, function(layer)
+        local cel = layer:cel(1)
+
+        if cel then
+            local id = self:_GetLayerId(layer)
+            local distance = parameters["distance-" .. id]
+            -- local wrap = parameters["wrap-" .. id]
+
+            local shiftX = parameters.speedX * (parameters.shift / distance)
+            local shiftY = parameters.speedY * (parameters.shift / distance)
+
+            local x = cel.position.x + shiftX
+            local y = cel.position.y + shiftY
+
+            -- if wrap then
+            x = x % sprite.width
+            y = y % sprite.height
+            -- end
+
+            -- Fix for NaN
+            if x ~= x then x = 0 end
+            if y ~= y then y = 0 end
+
+            previewImage:drawImage(cel.image, Point(x, y))
+
+            -- TODO: These checks could also check the cel bounds
+            if x > 0 then
+                previewImage:drawImage(cel.image, Point(x - sprite.width, y))
+            elseif x < 0 then
+                previewImage:drawImage(cel.image, Point(x + sprite.width, y))
+            end
+
+            if y > 0 then
+                previewImage:drawImage(cel.image, Point(x, y - sprite.height))
+            elseif y < 0 then
+                previewImage:drawImage(cel.image, Point(x, y + sprite.height))
+
+            end
+        end
+    end)
+
+    return previewImage
+end
+
+function Parallax:Generate(sourceSprite, parameters)
+    -- Save the values in the layer data
+    IterateOverLayers(sourceSprite.layers, function(layer)
+        local id = Parallax:_GetLayerId(layer)
+        layer.data = parameters["distance-" .. id] or 0
+    end)
+
+    local destinationSprite = Sprite(sourceSprite.spec)
+    destinationSprite:setPalette(sourceSprite.palettes[1])
+
+    -- Save the reference to the first, default layer to delete it later
+    local firstLayer = destinationSprite.layers[1]
+
+    -- Fill the destination sprite with the required number of frames, assuming there's already one
+    for _ = 2, parameters.frames do destinationSprite:newEmptyFrame() end
+
+    Parallax:_GenerateLayers(sourceSprite, destinationSprite,
+                             sourceSprite.layers, parameters, destinationSprite)
+
+    -- Delete the first, defualt layer in the destination sprite
+    destinationSprite:deleteLayer(firstLayer)
+end
+
+function Parallax:_GenerateLayers(sourceSprite, destinationSprite, layers,
+                                  parameters, parent)
+    -- Iterate over layers in reverse to keep the same order
+    for i = #layers, 1, -1 do
+        local layer = layers[i]
+
+        if not layer.isVisible then goto skipLayer end
+
+        if layer.isGroup then
+            local newGroup = destinationSprite:newGroup()
+            newGroup.name = layer.name
+            newGroup.parent = parent
+            newGroup.stackIndex = 1
+
+            self:_GenerateLayers(sourceSprite, destinationSprite, layer.layers,
+                                 parameters, newGroup)
+        else
+            local linkedSourceCelsMap = MapLinkedSourceCels(layer)
+
+            local factor = 1.0 / tonumber(layer.data)
+
+            -- Create an abastract model of the layer
+            local celsModel = BuildCelsModel(sourceSprite, destinationSprite,
+                                             factor, parameters,
+                                             linkedSourceCelsMap)
+
+            -- Build the actual timeline in the destination sprite based on the model
+            RebuildLayer(sourceSprite, destinationSprite, layer, celsModel,
+                         parent, parameters)
+        end
+
+        ::skipLayer::
     end
 end
 
