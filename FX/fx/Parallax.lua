@@ -1,3 +1,5 @@
+local StackIndexId = dofile("../StackIndexId.lua")
+
 local function IterateOverLayers(layers, action)
     for i = 1, #layers do
         local layer = layers[i]
@@ -198,19 +200,6 @@ end
 
 local Parallax = {initialPositions = {}}
 
-function Parallax:GetLayerId(layer)
-    local id = tostring(layer.stackIndex)
-
-    local parent = layer.parent
-
-    while parent ~= layer.sprite do
-        id = tostring(parent.stackIndex) .. "-" .. id
-        parent = parent.parent
-    end
-
-    return id
-end
-
 function Parallax:Preview(sprite, parameters)
     local previewImage = Image(sprite.width, sprite.height, sprite.colorMode)
 
@@ -218,7 +207,7 @@ function Parallax:Preview(sprite, parameters)
         local cel = layer:cel(1)
 
         if cel then
-            local id = self:GetLayerId(layer)
+            local id = StackIndexId(layer)
             local distance = parameters["distance-" .. id]
             -- local wrap = parameters["wrap-" .. id]
 
@@ -261,7 +250,7 @@ end
 function Parallax:Generate(sourceSprite, parameters)
     -- Save the values in the layer data
     IterateOverLayers(sourceSprite.layers, function(layer)
-        local id = Parallax:GetLayerId(layer)
+        local id = StackIndexId(layer)
         layer.data = parameters["distance-" .. id] or 0
     end)
 

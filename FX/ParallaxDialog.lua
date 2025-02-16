@@ -1,5 +1,6 @@
 local PreviewCanvas = dofile("./PreviewCanvas.lua")
 local Parallax = dofile("./fx/Parallax.lua")
+local StackIndexId = dofile("./StackIndexId.lua")
 
 local function GetFullLayerName(layer)
     local result = layer.name
@@ -48,7 +49,7 @@ local function ParallaxDialog(options)
                     speed = tonumber(layer.data) or speed
                 end
 
-                local id = Parallax:GetLayerId(layer)
+                local id = StackIndexId(layer)
                 local label = GetFullLayerName(layer)
 
                 if cel then
