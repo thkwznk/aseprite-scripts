@@ -124,7 +124,7 @@ local function RebuildCel(sourceFrameNumber, destinationFrameNumbers, shiftX,
     -- Create the image to insert into the cel
     local newPosition
 
-    if parameters.speedX ~= 0 and parameters.speedY ~= 0 then
+    if parameters.speedX ~= 0 and parameters.speedY ~= 0 then -- TODO: This should probably be cleaned up
         newPosition = Point(-sourceWidth + position.x + shiftX,
                             -sourceHeight + position.y + shiftY)
     elseif parameters.speedX ~= 0 and parameters.speedY == 0 then
@@ -208,9 +208,11 @@ function Parallax:Preview(sprite, parameters, shift)
         if cel then
             local id = StackIndexId(layer)
             -- local wrap = parameters["wrap-" .. id]
+            local speedX = parameters["speed-x-" .. id]
+            local speedY = parameters["speed-y-" .. id]
 
-            local x = cel.position.x + parameters["speed-x-" .. id] * shift
-            local y = cel.position.y + parameters["speed-y-" .. id] * shift
+            local x = cel.position.x + speedX * shift
+            local y = cel.position.y + speedY * shift
 
             -- if wrap then
             x = x % sprite.width
@@ -226,15 +228,30 @@ function Parallax:Preview(sprite, parameters, shift)
             -- TODO: These checks could also check the cel bounds
             if x > 0 then
                 previewImage:drawImage(cel.image, Point(x - sprite.width, y))
+
+                if y > 0 then
+                    previewImage:drawImage(cel.image, Point(x - sprite.width,
+                                                            y - sprite.height))
+                elseif y < 0 then
+                    previewImage:drawImage(cel.image, Point(x - sprite.width,
+                                                            y + sprite.height))
+                end
             elseif x < 0 then
                 previewImage:drawImage(cel.image, Point(x + sprite.width, y))
+
+                if y < 0 then
+                    previewImage:drawImage(cel.image, Point(x + sprite.width,
+                                                            y + sprite.height))
+                elseif y > 0 then
+                    previewImage:drawImage(cel.image, Point(x + sprite.width,
+                                                            y - sprite.height))
+                end
             end
 
             if y > 0 then
                 previewImage:drawImage(cel.image, Point(x, y - sprite.height))
             elseif y < 0 then
                 previewImage:drawImage(cel.image, Point(x, y + sprite.height))
-
             end
         end
     end)
