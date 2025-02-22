@@ -14,6 +14,18 @@ local function GetFullLayerName(layer)
     return result
 end
 
+-- Source: https://rosettacode.org/wiki/Least_common_multiple#Lua
+local function gcd(m, n)
+    while n ~= 0 do
+        local q = m
+        m = n
+        n = q % n
+    end
+    return m
+end
+
+local function lcm(m, n) return (m ~= 0 and n ~= 0) and m * n / gcd(m, n) or 0 end
+
 local function ParallaxDialog(options)
     local session = options.session
     local sprite = options.sprite
@@ -23,6 +35,9 @@ local function ParallaxDialog(options)
         title = options.title,
         onclose = function() timer:stop() end
     }
+
+    local speedIds = {}
+    local frames = {}
 
     function AddLayerWidgets(layersToProcess, groupSpeed)
         for i = #layersToProcess, 1, -1 do
@@ -41,6 +56,11 @@ local function ParallaxDialog(options)
 
                 local id = StackIndexId(layer)
                 local label = GetFullLayerName(layer)
+
+                table.insert(speedIds, "speed-x-" .. id)
+                table.insert(speedIds, "speed-y-" .. id)
+
+                table.insert(frames, #layer.cels)
 
                 if cel then
                     dialog --
@@ -89,6 +109,36 @@ local function ParallaxDialog(options)
     dialog --
     :separator{text = "Output"} --
     :number{id = "frames", label = "Frames", text = tostring(sprite.width)} --
+    :button{
+        text = "Perfect Loop",
+        onclick = function()
+            local result = sprite.width
+
+            for _, id in ipairs(speedIds) do
+                local speed = dialog.data[id]
+                if speed ~= 0 then
+                    local z = sprite.width / speed
+
+                    if z % 1 ~= 0 then
+                        z = sprite.width * speed
+                    end
+
+                    result = lcm(result, z)
+                end
+            end
+
+            -- Take the number of animation frames into consideration
+            for _, f in ipairs(frames) do
+                if f > 1 then
+                    result = lcm(result, sprite.width / f)
+                end
+            end
+
+            -- TODO: If we're not supporting layers with variable frame number, then we can just take into account the sprites number of frames
+
+            dialog:modify{id = "frames", text = tostring(result)}
+        end
+    } --
     :separator() --
     :button{
         id = "okButton",

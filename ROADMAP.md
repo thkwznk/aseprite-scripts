@@ -51,10 +51,11 @@ Unreleased:
 
 - [Improvement] Parallax - add a preview in the dialog window
 - [Improvement] Parallax - add an option to input a layer speed directly
+- [Feature] Add an option to calculate a perfect loop
 
 Future:
 
-- [Feature] Parallax - a new mode for specifying speed per layer instead of distance + an option or a calculator for a perfect loop
+- [Feature] Parallax - a new mode for specifying speed per layer instead of distance
 - [Fix] Parallax doesn't generate correctly if the timeline is closed/hidden - cels aren't linked 
 - [Feature] Parallax - add an options for delaying layers reappearing
 - [Feature] Parallax - add an option to generate only from the selected frames
