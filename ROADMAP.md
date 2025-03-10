@@ -92,7 +92,9 @@ Update v2.0.0:
 
 Unreleased:
 
-- ...
+- [Improvement] [ImportAnimation] Add a button to open a new file from the Import Animation dialog
+- [Improvement] [LoopAnimation] Add information to the label about a minimum of 2 layers being required to loop an animation
+- [Fix] [LoopAnimation] Align button text with default Aseprite buttons
 
 Update v2.0.0:
 
