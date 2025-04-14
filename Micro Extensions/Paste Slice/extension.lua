@@ -176,6 +176,32 @@ local GetSlices = function()
     return slices, names
 end
 
+local function MergeImages(imageA, positionA, imageB, positionB)
+    local minX = math.min(positionA.x, positionB.x)
+    local minY = math.min(positionA.y, positionB.y)
+
+    local maxX =
+        math.max(positionA.x + imageA.width, positionB.x + imageB.width)
+    local maxY = math.max(positionA.y + imageA.height,
+                          positionB.y + imageB.height)
+
+    local newImage = Image(maxX - minX, maxY - minY)
+    local newPosition = Point(minX, minY)
+
+    newImage:drawImage(imageA, Point(positionA.x - minX, positionA.y - minY))
+    newImage:drawImage(imageB, Point(positionB.x - minX, positionB.y - minY))
+
+    return newImage, newPosition
+end
+
+local function PasteSlice(cel, slice, selection)
+    local sliceImagesParts = GetSliceImageParts(slice)
+    local sliceImage = GetSliceImage(sliceImagesParts, selection)
+
+    cel.image, cel.position = MergeImages(cel.image, cel.position, sliceImage,
+                                          selection)
+end
+
 local PasteSliceDialog = function(options)
     local sprite = app.activeSprite
     local dialog = Dialog("Paste Slice")
@@ -208,22 +234,15 @@ local PasteSliceDialog = function(options)
             end
 
             local cel = app.activeCel
+            local selection = app.activeSprite.selection.bounds
 
-            -- Copy the selection bounds and convert the position to the cel's space
-            local selection = Rectangle(app.activeSprite.selection.bounds)
-            selection.x = selection.x - cel.position.x
-            selection.y = selection.y - cel.position.y
-
-            local sliceImagesParts = GetSliceImageParts(selectedSlice)
-            local sliceImage = GetSliceImage(sliceImagesParts, selection)
-
-            cel.image:drawImage(sliceImage, selection.x, selection.y)
-
-            -- TODO: cel might need to be resized, I already have code for this in another extension
+            app.transaction(function()
+                PasteSlice(cel, selectedSlice, selection)
+                sprite.selection:deselect()
+            end)
 
             app.refresh()
             dialog:close()
-            sprite.selection:deselect()
         end
     } --
     :button{text = "Cancel"}
@@ -258,4 +277,3 @@ function exit(plugin) end
 
 -- TODO: Implement the Repeat Tile Mode
 -- TODO: Implement the Mirror Tile Mode
--- TODO: Extend the image when pasting a slice
