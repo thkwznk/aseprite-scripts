@@ -238,7 +238,6 @@ local PasteSliceDialog = function(options)
 
             app.transaction(function()
                 PasteSlice(cel, selectedSlice, selection)
-                sprite.selection:deselect()
             end)
 
             app.refresh()
