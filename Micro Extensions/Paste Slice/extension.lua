@@ -11,7 +11,7 @@ local GetImagePart = function(image, rectangle)
     return imagePart
 end
 
-local GetSliceImage = function(slice)
+local function GetSliceImageParts(slice)
     local sprite = slice.sprite
     local spriteImage = Image(sprite)
 
@@ -57,20 +57,9 @@ local GetSliceImage = function(slice)
         bottomCenter = GetImagePart(sliceImage, bottomCenter),
         bottomRight = GetImagePart(sliceImage, bottomRight)
     }
-
-    -- local sliceImage = Image(slice.bounds.width, slice.bounds.height)
-
-    -- for x = 0, slice.bounds.width - 1 do
-    --     for y = 0, slice.bounds.height - 1 do
-    --         sliceImage:drawPixel(x, y, spriteImage:getPixel(x + slice.bounds.x,
-    --                                                         y + slice.bounds.y))
-    --     end
-    -- end
-
-    -- return sliceImage
 end
 
-local DrawImageResized = function(sourceImage, targetImage, targetBounds)
+local function DrawImageResized(sourceImage, targetImage, targetBounds)
     for x = 0, targetBounds.width - 1 do
         for y = 0, targetBounds.height - 1 do
             -- TODO: Cache these for better performance
@@ -87,6 +76,63 @@ local DrawImageResized = function(sourceImage, targetImage, targetBounds)
             targetImage:drawPixel(targetX, targetY, pixelValue)
         end
     end
+end
+
+local function GetSliceImage(parts, bounds)
+    local image = Image(bounds.width, bounds.height) -- TODO: What about supporting different color modes
+
+    local leftX = 0
+    local centerX = parts.topLeft.width
+    local rightX = bounds.width - parts.topRight.width
+
+    local topY = 0
+    local middleY = parts.topLeft.height
+    local bottomY = bounds.height - parts.bottomLeft.height
+
+    -- Draw all corners
+    image:drawImage(parts.topLeft, Point(leftX, topY))
+    image:drawImage(parts.topRight, Point(rightX, topY))
+    image:drawImage(parts.bottomLeft, Point(leftX, bottomY))
+    image:drawImage(parts.bottomRight, Point(rightX, bottomY))
+
+    DrawImageResized(parts.topCenter, image, Rectangle(centerX, topY,
+                                                       bounds.width -
+                                                           parts.topLeft.width -
+                                                           parts.topRight.width,
+                                                       parts.topCenter.height))
+
+    DrawImageResized(parts.bottomCenter, image, Rectangle(centerX, bottomY,
+                                                          bounds.width -
+                                                              parts.bottomLeft
+                                                                  .width -
+                                                              parts.bottomRight
+                                                                  .width,
+                                                          parts.bottomCenter
+                                                              .height))
+
+    DrawImageResized(parts.middleLeft, image,
+                     Rectangle(leftX, middleY, parts.middleLeft.width,
+                               bounds.height - parts.topLeft.height -
+                                   parts.bottomLeft.height))
+
+    DrawImageResized(parts.middleRight, image,
+                     Rectangle(rightX, middleY, parts.middleRight.width,
+                               bounds.height - parts.topRight.height -
+                                   parts.bottomRight.height))
+
+    DrawImageResized(parts.middleCenter, image, Rectangle(centerX, middleY,
+                                                          bounds.width -
+                                                              parts.topLeft
+                                                                  .width -
+                                                              parts.topRight
+                                                                  .width,
+                                                          bounds.height -
+                                                              parts.topRight
+                                                                  .height -
+                                                              parts.bottomRight
+                                                                  .height))
+
+    return image
 end
 
 local GetSlices = function()
@@ -161,8 +207,6 @@ local PasteSliceDialog = function(options)
                 end
             end
 
-            local sliceImages = GetSliceImage(selectedSlice)
-
             local cel = app.activeCel
 
             -- Copy the selection bounds and convert the position to the cel's space
@@ -170,60 +214,10 @@ local PasteSliceDialog = function(options)
             selection.x = selection.x - cel.position.x
             selection.y = selection.y - cel.position.y
 
-            -- TODO: In the future, create the result slice in a separate image and only after that merge
+            local sliceImagesParts = GetSliceImageParts(selectedSlice)
+            local sliceImage = GetSliceImage(sliceImagesParts, selection)
 
-            local leftX = selection.x
-            local centerX = selection.x + sliceImages.topLeft.width
-            local rightX = selection.x + selection.width -
-                               sliceImages.topRight.width
-
-            local topY = selection.y
-            local middleY = selection.y + sliceImages.topLeft.height
-            local bottomY = selection.y + selection.height -
-                                sliceImages.bottomLeft.height
-
-            -- Draw all corners
-            cel.image:drawImage(sliceImages.topLeft, Point(leftX, topY))
-            cel.image:drawImage(sliceImages.topRight, Point(rightX, topY))
-            cel.image:drawImage(sliceImages.bottomLeft, Point(leftX, bottomY))
-            cel.image:drawImage(sliceImages.bottomRight, Point(rightX, bottomY))
-
-            DrawImageResized(sliceImages.topCenter, cel.image,
-                             Rectangle(centerX, topY,
-                                       selection.width -
-                                           sliceImages.topLeft.width -
-                                           sliceImages.topRight.width,
-                                       sliceImages.topCenter.height))
-
-            DrawImageResized(sliceImages.bottomCenter, cel.image,
-                             Rectangle(centerX, bottomY,
-                                       selection.width -
-                                           sliceImages.bottomLeft.width -
-                                           sliceImages.bottomRight.width,
-                                       sliceImages.bottomCenter.height))
-
-            DrawImageResized(sliceImages.middleLeft, cel.image,
-                             Rectangle(leftX, middleY,
-                                       sliceImages.middleLeft.width,
-                                       selection.height -
-                                           sliceImages.topLeft.height -
-                                           sliceImages.bottomLeft.height))
-
-            DrawImageResized(sliceImages.middleRight, cel.image,
-                             Rectangle(rightX, middleY,
-                                       sliceImages.middleRight.width,
-                                       selection.height -
-                                           sliceImages.topRight.height -
-                                           sliceImages.bottomRight.height))
-
-            DrawImageResized(sliceImages.middleCenter, cel.image,
-                             Rectangle(centerX, middleY,
-                                       selection.width -
-                                           sliceImages.topLeft.width -
-                                           sliceImages.topRight.width,
-                                       selection.height -
-                                           sliceImages.topRight.height -
-                                           sliceImages.bottomRight.height))
+            cel.image:drawImage(sliceImage, selection.x, selection.y)
 
             -- TODO: cel might need to be resized, I already have code for this in another extension
 
@@ -264,3 +258,4 @@ function exit(plugin) end
 
 -- TODO: Implement the Repeat Tile Mode
 -- TODO: Implement the Mirror Tile Mode
+-- TODO: Extend the image when pasting a slice
