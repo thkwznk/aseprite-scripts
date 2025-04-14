@@ -1,6 +1,11 @@
-local TileMode = {Stretch = "Stretch", Tile = "Repeat", Mirror = "Mirror"}
+local DrawMode = {
+    Stretch = "Stretch",
+    Repeat = "Repeat",
+    Mirror = "Mirror",
+    Skip = "Skip"
+}
 
-local GetImagePart = function(image, rectangle)
+local function GetImagePart(image, rectangle)
     local imagePart = Image(rectangle.width, rectangle.height)
 
     for pixel in image:pixels(rectangle) do
@@ -120,17 +125,18 @@ local function GetSliceImageStretched(parts, bounds)
                                bounds.height - parts.topRight.height -
                                    parts.bottomRight.height))
 
-    DrawImageResized(parts.middleCenter, image, Rectangle(centerX, middleY,
-                                                          bounds.width -
-                                                              parts.topLeft
-                                                                  .width -
-                                                              parts.topRight
-                                                                  .width,
-                                                          bounds.height -
-                                                              parts.topRight
-                                                                  .height -
-                                                              parts.bottomRight
-                                                                  .height))
+    return image
+end
+
+local function GetSliceCenterImageStretched(parts, bounds)
+    local image = Image(bounds.width - parts.topLeft.width -
+                            parts.topRight.width, bounds.height -
+                            parts.topLeft.height - parts.bottomLeft.height) -- TODO: What about supporting different color modes
+
+    local w = bounds.width - parts.topLeft.width - parts.topRight.width
+    local h = bounds.height - parts.topRight.height - parts.bottomRight.height
+
+    DrawImageResized(parts.middleCenter, image, Rectangle(0, 0, w, h))
 
     return image
 end
@@ -170,17 +176,52 @@ local function GetSliceImageTiled(parts, bounds)
     return image
 end
 
+local function GetSliceCenterImageTiled(parts, bounds)
+    local image = Image(bounds.width - parts.topLeft.width -
+                            parts.topRight.width, bounds.height -
+                            parts.topLeft.height - parts.bottomLeft.height) -- TODO: What about supporting different color modes
+
+    print(image.width, image.height)
+
+    local x = 0
+    while x < image.width do
+        local y = 0
+        while y < image.height do
+            print("drawing image at " .. tostring(x) .. " " .. tostring(y))
+            image:drawImage(parts.middleCenter, Point(x, y))
+
+            y = y + parts.middleCenter.height
+        end
+
+        x = x + parts.middleCenter.width
+    end
+
+    return image
+end
+
 local function GetSliceImage(parts, bounds, tileMode)
-    if tileMode == TileMode.Stretch then
+    if tileMode == DrawMode.Stretch then
         return GetSliceImageStretched(parts, bounds)
-    elseif tileMode == TileMode.Tile then
+    elseif tileMode == DrawMode.Repeat then
         return GetSliceImageTiled(parts, bounds)
-    elseif tileMode == TileMode.Mirror then
+    elseif tileMode == DrawMode.Mirror then
         -- TODO: Implement the Mirror Tile Mode
     end
 end
 
-local GetSlices = function()
+local function GetSliceCenterImage(parts, bounds, tileMode)
+    if tileMode == DrawMode.Stretch then
+        return GetSliceCenterImageStretched(parts, bounds)
+    elseif tileMode == DrawMode.Repeat then
+        return GetSliceCenterImageTiled(parts, bounds)
+    elseif tileMode == DrawMode.Mirror then
+        -- TODO: Implement the Mirror Tile Mode
+    else
+        return Image(0, 0)
+    end
+end
+
+local function GetSlices()
     local activeSprite = app.activeSprite
     local slices = {}
 
@@ -239,15 +280,20 @@ local function MergeImages(imageA, positionA, imageB, positionB)
     return newImage, newPosition
 end
 
-local function PasteSlice(cel, slice, selection, tileMode)
+local function PasteSlice(cel, slice, selection, frameDrawMode, centerDrawMode)
     local sliceImagesParts = GetSliceImageParts(slice)
-    local sliceImage = GetSliceImage(sliceImagesParts, selection, tileMode)
+    local frameImage = GetSliceImage(sliceImagesParts, selection, frameDrawMode)
+    local centerImage = GetSliceCenterImage(sliceImagesParts, selection,
+                                            centerDrawMode)
 
-    cel.image, cel.position = MergeImages(cel.image, cel.position, sliceImage,
+    frameImage:drawImage(centerImage, Point(sliceImagesParts.topLeft.width,
+                                            sliceImagesParts.topLeft.height))
+
+    cel.image, cel.position = MergeImages(cel.image, cel.position, frameImage,
                                           selection)
 end
 
-local PasteSliceDialog = function(options)
+local function PasteSliceDialog(options)
     local dialog = Dialog("Paste Slice")
     local slices, sliceNames = GetSlices()
 
@@ -258,11 +304,20 @@ local PasteSliceDialog = function(options)
         option = sliceNames[1],
         options = sliceNames
     } --
+    :separator{text = "Draw Mode"} --
     :combobox{
-        id = "tile-mode",
-        label = "Tile Mode:",
-        options = {TileMode.Stretch, TileMode.Tile, TileMode.Mirror},
-        option = TileMode.Stretch
+        id = "frame-draw-mode",
+        label = "Frame:",
+        options = {DrawMode.Stretch, DrawMode.Repeat, DrawMode.Mirror},
+        option = DrawMode.Stretch
+    } ---
+    :combobox{
+        id = "center-draw-mode",
+        label = "Center:",
+        options = {
+            DrawMode.Stretch, DrawMode.Repeat, DrawMode.Mirror, DrawMode.Skip
+        },
+        option = DrawMode.Stretch
     } ---
     :button{
         text = "OK",
@@ -278,10 +333,12 @@ local PasteSliceDialog = function(options)
 
             local cel = app.activeCel
             local selection = app.activeSprite.selection.bounds
-            local tileMode = dialog.data["tile-mode"]
+            local frameDrawMode = dialog.data["frame-draw-mode"]
+            local centerDrawMode = dialog.data["center-draw-mode"]
 
             app.transaction(function()
-                PasteSlice(cel, selectedSlice, selection, tileMode)
+                PasteSlice(cel, selectedSlice, selection, frameDrawMode,
+                           centerDrawMode)
             end)
 
             app.refresh()
@@ -318,4 +375,4 @@ end
 
 function exit(plugin) end
 
--- TODO: Draw the center of a slice separately, with it's own tiling mode (Add an option to skip the center)
+-- TODO: Test & optimize
