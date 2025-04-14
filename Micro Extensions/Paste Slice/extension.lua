@@ -1,4 +1,4 @@
-local TileMode = {Stretch = "Stretch", Tile = "Tile", Mirror = "Mirror"}
+local TileMode = {Stretch = "Stretch", Tile = "Repeat", Mirror = "Mirror"}
 
 local GetImagePart = function(image, rectangle)
     local imagePart = Image(rectangle.width, rectangle.height)
@@ -78,7 +78,7 @@ local function DrawImageResized(sourceImage, targetImage, targetBounds)
     end
 end
 
-local function GetSliceImage(parts, bounds)
+local function GetSliceImageStretched(parts, bounds)
     local image = Image(bounds.width, bounds.height) -- TODO: What about supporting different color modes
 
     local leftX = 0
@@ -133,6 +133,16 @@ local function GetSliceImage(parts, bounds)
                                                                   .height))
 
     return image
+end
+
+local function GetSliceImage(parts, bounds, tileMode)
+    if tileMode == TileMode.Stretch then
+        return GetSliceImageStretched(parts, bounds)
+    elseif tileMode == TileMode.Tile then
+        -- TODO: Implement the Repeat Tile Mode
+    elseif tileMode == TileMode.Mirror then
+        -- TODO: Implement the Mirror Tile Mode
+    end
 end
 
 local GetSlices = function()
@@ -194,18 +204,16 @@ local function MergeImages(imageA, positionA, imageB, positionB)
     return newImage, newPosition
 end
 
-local function PasteSlice(cel, slice, selection)
+local function PasteSlice(cel, slice, selection, tileMode)
     local sliceImagesParts = GetSliceImageParts(slice)
-    local sliceImage = GetSliceImage(sliceImagesParts, selection)
+    local sliceImage = GetSliceImage(sliceImagesParts, selection, tileMode)
 
     cel.image, cel.position = MergeImages(cel.image, cel.position, sliceImage,
                                           selection)
 end
 
 local PasteSliceDialog = function(options)
-    local sprite = app.activeSprite
     local dialog = Dialog("Paste Slice")
-
     local slices, sliceNames = GetSlices()
 
     dialog --
@@ -235,9 +243,10 @@ local PasteSliceDialog = function(options)
 
             local cel = app.activeCel
             local selection = app.activeSprite.selection.bounds
+            local tileMode = dialog.data["tile-mode"]
 
             app.transaction(function()
-                PasteSlice(cel, selectedSlice, selection)
+                PasteSlice(cel, selectedSlice, selection, tileMode)
             end)
 
             app.refresh()
@@ -273,6 +282,3 @@ function init(plugin)
 end
 
 function exit(plugin) end
-
--- TODO: Implement the Repeat Tile Mode
--- TODO: Implement the Mirror Tile Mode
