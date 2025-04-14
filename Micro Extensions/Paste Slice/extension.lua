@@ -87,20 +87,50 @@ local DrawImageResized = function(sourceImage, targetImage, targetBounds)
     end
 end
 
+local GetSlices = function()
+    local activeSprite = app.activeSprite
+    local slices = {}
+
+    for _, sprite in ipairs(app.sprites) do
+        local namePrefix = sprite == activeSprite and "" or
+                               app.fs.fileTitle(sprite.filename) .. " \\ "
+
+        for _, slice in ipairs(sprite.slices) do
+            if slice.center then
+                table.insert(slices, {
+                    name = namePrefix .. slice.name,
+                    sprite = slice.sprite,
+                    bounds = slice.bounds,
+                    center = slice.center
+                })
+            end
+        end
+    end
+
+    local nameCount = {}
+    local names = {}
+
+    for _, slice in ipairs(slices) do
+        if nameCount[slice.name] == nil then
+            nameCount[slice.name] = 1
+        else
+            nameCount[slice.name] = nameCount[slice.name] + 1
+        end
+
+        slice.name = nameCount[slice.name] == 1 and slice.name or slice.name ..
+                         " (" .. tostring(nameCount[slice.name]) .. ")"
+
+        table.insert(names, slice.name)
+    end
+
+    return slices, names
+end
+
 local PasteSliceDialog = function(options)
     local sprite = app.activeSprite
     local dialog = Dialog("Paste Slice")
 
-    local slices = {}
-    local sliceNames = {}
-
-    for _, slice in ipairs(sprite.slices) do
-        if slice.center then
-            table.insert(slices, slice)
-            -- TODO: Handle duplicates
-            table.insert(sliceNames, slice.name)
-        end
-    end
+    local slices, sliceNames = GetSlices()
 
     dialog --
     :combobox{
