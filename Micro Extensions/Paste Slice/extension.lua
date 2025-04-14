@@ -123,6 +123,8 @@ local GetSlices = function()
         table.insert(names, slice.name)
     end
 
+    table.sort(names)
+
     return slices, names
 end
 
