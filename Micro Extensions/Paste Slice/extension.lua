@@ -135,11 +135,46 @@ local function GetSliceImageStretched(parts, bounds)
     return image
 end
 
+local function GetSliceImageTiled(parts, bounds)
+    local image = Image(bounds.width, bounds.height) -- TODO: What about supporting different color modes
+
+    -- We're working under an assumption that topCenter and bottomCenter parts have the same width
+    local x = parts.topLeft.width
+    while x < image.width do
+        image:drawImage(parts.topCenter, Point(x, 0))
+        image:drawImage(parts.bottomCenter,
+                        Point(x, bounds.height - parts.bottomCenter.height))
+
+        x = x + parts.topCenter.width
+    end
+
+    local y = parts.topLeft.height
+    while y < image.height do
+        image:drawImage(parts.middleLeft, Point(0, y))
+        image:drawImage(parts.middleRight,
+                        Point(bounds.width - parts.middleRight.width, y))
+
+        y = y + parts.middleLeft.height
+    end
+
+    -- Draw all corners
+    image:drawImage(parts.topLeft, Point(0, 0))
+    image:drawImage(parts.topRight,
+                    Point(bounds.width - parts.topRight.width, 0))
+    image:drawImage(parts.bottomLeft,
+                    Point(0, bounds.height - parts.bottomLeft.height))
+    image:drawImage(parts.bottomRight,
+                    Point(bounds.width - parts.bottomRight.width,
+                          bounds.height - parts.bottomRight.height))
+
+    return image
+end
+
 local function GetSliceImage(parts, bounds, tileMode)
     if tileMode == TileMode.Stretch then
         return GetSliceImageStretched(parts, bounds)
     elseif tileMode == TileMode.Tile then
-        -- TODO: Implement the Repeat Tile Mode
+        return GetSliceImageTiled(parts, bounds)
     elseif tileMode == TileMode.Mirror then
         -- TODO: Implement the Mirror Tile Mode
     end
@@ -282,3 +317,5 @@ function init(plugin)
 end
 
 function exit(plugin) end
+
+-- TODO: Draw the center of a slice separately, with it's own tiling mode (Add an option to skip the center)
