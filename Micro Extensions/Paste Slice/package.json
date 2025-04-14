@@ -19,6 +19,12 @@
       {
         "path": "./extension.lua"
       }
+    ],
+    "keys": [
+      {
+        "id": "paste-slice-keys",
+        "path": "./extension-keys.aseprite-keys"
+      }
     ]
   }
 }
