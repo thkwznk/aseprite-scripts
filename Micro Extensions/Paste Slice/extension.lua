@@ -145,9 +145,9 @@ local PasteSliceDialog = function(options)
         onclick = function()
             local selectedSlice = nil
 
-            for i, sliceName in ipairs(sliceNames) do
-                if dialog.data["selected-slice"] == sliceName then
-                    selectedSlice = slices[i]
+            for _, slice in ipairs(slices) do
+                if dialog.data["selected-slice"] == slice.name then
+                    selectedSlice = slice
                     break
                 end
             end
@@ -155,7 +155,6 @@ local PasteSliceDialog = function(options)
             local sliceImages = GetSliceImage(selectedSlice)
 
             local cel = app.activeCel
-            -- TODO: Handle a nil cel much earlier
 
             -- Copy the selection bounds and convert the position to the cel's space
             local selection = Rectangle(app.activeSprite.selection.bounds)
@@ -234,6 +233,17 @@ function init(plugin)
         id = "PasteSlice",
         title = "Paste Slice",
         group = "edit_paste_special_new",
+        onenabled = function()
+            if app.activeSprite == nil then return false end
+
+            if app.activeCel == nil then return false end
+
+            for _, sprite in ipairs(app.sprites) do
+                if #sprite.slices > 0 then return true end
+            end
+
+            return false
+        end,
         onclick = function()
             local dialog = PasteSliceDialog()
             dialog:show()
