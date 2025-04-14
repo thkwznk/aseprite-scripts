@@ -157,18 +157,21 @@ local PasteSliceDialog = function(options)
             local cel = app.activeCel
             -- TODO: Handle a nil cel much earlier
 
-            local selection = app.activeSprite.selection
+            -- Copy the selection bounds and convert the position to the cel's space
+            local selection = Rectangle(app.activeSprite.selection.bounds)
+            selection.x = selection.x - cel.position.x
+            selection.y = selection.y - cel.position.y
 
             -- TODO: In the future, create the result slice in a separate image and only after that merge
 
-            local leftX = selection.bounds.x
-            local centerX = selection.bounds.x + sliceImages.topLeft.width
-            local rightX = selection.bounds.x + selection.bounds.width -
+            local leftX = selection.x
+            local centerX = selection.x + sliceImages.topLeft.width
+            local rightX = selection.x + selection.width -
                                sliceImages.topRight.width
 
-            local topY = selection.bounds.y
-            local middleY = selection.bounds.y + sliceImages.topLeft.height
-            local bottomY = selection.bounds.y + selection.bounds.height -
+            local topY = selection.y
+            local middleY = selection.y + sliceImages.topLeft.height
+            local bottomY = selection.y + selection.height -
                                 sliceImages.bottomLeft.height
 
             -- Draw all corners
@@ -179,14 +182,14 @@ local PasteSliceDialog = function(options)
 
             DrawImageResized(sliceImages.topCenter, cel.image,
                              Rectangle(centerX, topY,
-                                       selection.bounds.width -
+                                       selection.width -
                                            sliceImages.topLeft.width -
                                            sliceImages.topRight.width,
                                        sliceImages.topCenter.height))
 
             DrawImageResized(sliceImages.bottomCenter, cel.image,
                              Rectangle(centerX, bottomY,
-                                       selection.bounds.width -
+                                       selection.width -
                                            sliceImages.bottomLeft.width -
                                            sliceImages.bottomRight.width,
                                        sliceImages.bottomCenter.height))
@@ -194,23 +197,23 @@ local PasteSliceDialog = function(options)
             DrawImageResized(sliceImages.middleLeft, cel.image,
                              Rectangle(leftX, middleY,
                                        sliceImages.middleLeft.width,
-                                       selection.bounds.height -
+                                       selection.height -
                                            sliceImages.topLeft.height -
                                            sliceImages.bottomLeft.height))
 
             DrawImageResized(sliceImages.middleRight, cel.image,
                              Rectangle(rightX, middleY,
                                        sliceImages.middleRight.width,
-                                       selection.bounds.height -
+                                       selection.height -
                                            sliceImages.topRight.height -
                                            sliceImages.bottomRight.height))
 
             DrawImageResized(sliceImages.middleCenter, cel.image,
                              Rectangle(centerX, middleY,
-                                       selection.bounds.width -
+                                       selection.width -
                                            sliceImages.topLeft.width -
                                            sliceImages.topRight.width,
-                                       selection.bounds.height -
+                                       selection.height -
                                            sliceImages.topRight.height -
                                            sliceImages.bottomRight.height))
 
