@@ -1,3 +1,5 @@
+local TileMode = {Stretch = "Stretch", Tile = "Tile", Mirror = "Mirror"}
+
 local GetImagePart = function(image, rectangle)
     local imagePart = Image(rectangle.width, rectangle.height)
 
@@ -137,9 +139,16 @@ local PasteSliceDialog = function(options)
     dialog --
     :combobox{
         id = "selected-slice",
+        label = "Slice:",
         option = sliceNames[1],
         options = sliceNames
     } --
+    :combobox{
+        id = "tile-mode",
+        label = "Tile Mode:",
+        options = {TileMode.Stretch, TileMode.Tile, TileMode.Mirror},
+        option = TileMode.Stretch
+    } ---
     :button{
         text = "OK",
         onclick = function()
@@ -253,6 +262,5 @@ end
 
 function exit(plugin) end
 
--- TODO: Add a combobox for the Tile Modes - Stretch, Repeat, Mirror
 -- TODO: Implement the Repeat Tile Mode
 -- TODO: Implement the Mirror Tile Mode
