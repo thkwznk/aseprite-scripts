@@ -2,6 +2,7 @@ local DrawMode = {
     Stretch = "Stretch",
     Repeat = "Repeat",
     Mirror = "Mirror",
+    Center = "Center",
     Skip = "Skip"
 }
 
@@ -181,19 +182,117 @@ local function GetSliceCenterImageTiled(parts, bounds)
                             parts.topRight.width, bounds.height -
                             parts.topLeft.height - parts.bottomLeft.height) -- TODO: What about supporting different color modes
 
-    print(image.width, image.height)
-
     local x = 0
     while x < image.width do
         local y = 0
         while y < image.height do
-            print("drawing image at " .. tostring(x) .. " " .. tostring(y))
             image:drawImage(parts.middleCenter, Point(x, y))
 
             y = y + parts.middleCenter.height
         end
 
         x = x + parts.middleCenter.width
+    end
+
+    return image
+end
+
+local function GetSliceImageCentered(parts, bounds)
+    local image = Image(bounds.width, bounds.height) -- TODO: What about supporting different color modes
+
+    local function DrawCenteredHorizontally(frameBounds, part)
+        local topX = frameBounds.x + frameBounds.width / 2 - part.width / 2
+        image:drawImage(part, Point(topX, frameBounds.y))
+
+        for y = 0, part.height - 1 do
+            local leftPixel = part:getPixel(0, y)
+            for x = frameBounds.x, topX - 1 do
+                image:drawPixel(x, frameBounds.y + y, leftPixel)
+            end
+
+            local rightPixel = part:getPixel(part.width - 1, y)
+            for x = topX + part.width, frameBounds.x + frameBounds.width - 1 do
+                image:drawPixel(x, frameBounds.y + y, rightPixel)
+            end
+        end
+    end
+
+    local function DrawCenteredVertically(frameBounds, part)
+        local topY = frameBounds.y + frameBounds.height / 2 - part.height / 2
+        image:drawImage(part, Point(frameBounds.x, topY))
+
+        for x = 0, part.width - 1 do
+            local topPixel = part:getPixel(x, 0)
+            for y = frameBounds.y, topY - 1 do
+                image:drawPixel(frameBounds.x + x, y, topPixel)
+            end
+
+            local bottomPixel = part:getPixel(x, part.height - 1)
+            for y = topY + part.height, frameBounds.y + frameBounds.height - 1 do
+                image:drawPixel(frameBounds.x + x, y, bottomPixel)
+            end
+        end
+    end
+
+    -- Top
+    DrawCenteredHorizontally(Rectangle(parts.topLeft.width, 0, bounds.width -
+                                           parts.topLeft.width -
+                                           parts.topRight.width,
+                                       parts.topCenter.height), parts.topCenter)
+
+    -- Bottom
+    DrawCenteredHorizontally(Rectangle(parts.topLeft.width, bounds.height -
+                                           parts.bottomCenter.height,
+                                       bounds.width - parts.topLeft.width -
+                                           parts.topRight.width,
+                                       parts.bottomCenter.height),
+                             parts.bottomCenter)
+
+    -- Left
+    DrawCenteredVertically(Rectangle(0, parts.topLeft.height,
+                                     parts.middleLeft.width, bounds.height -
+                                         parts.topLeft.height -
+                                         parts.bottomLeft.height),
+                           parts.middleLeft)
+
+    -- Right
+    DrawCenteredVertically(Rectangle(bounds.width - parts.topRight.width,
+                                     parts.topRight.height,
+                                     parts.middleRight.width, bounds.height -
+                                         parts.topRight.height -
+                                         parts.bottomRight.height),
+                           parts.middleRight)
+
+    -- Draw all corners
+    image:drawImage(parts.topLeft, Point(0, 0))
+    image:drawImage(parts.topRight,
+                    Point(bounds.width - parts.topRight.width, 0))
+    image:drawImage(parts.bottomLeft,
+                    Point(0, bounds.height - parts.bottomLeft.height))
+    image:drawImage(parts.bottomRight,
+                    Point(bounds.width - parts.bottomRight.width,
+                          bounds.height - parts.bottomRight.height))
+
+    return image
+end
+
+local function GetSliceCenterImageCentered(parts, bounds)
+    local image = Image(bounds.width - parts.topLeft.width -
+                            parts.topRight.width, bounds.height -
+                            parts.topLeft.height - parts.bottomLeft.height) -- TODO: What about supporting different color modes
+
+    local cx = image.width / 2 - parts.middleCenter.width / 2
+    local cy = image.height / 2 - parts.middleCenter.height / 2
+
+    for x = 0, image.width do
+        for y = 0, image.height do
+            local lx = math.max(math.min(x - cx, parts.middleCenter.width - 1),
+                                0)
+            local ly = math.max(math.min(y - cy, parts.middleCenter.height - 1),
+                                0)
+            local pixel = parts.middleCenter:getPixel(lx, ly)
+            image:drawPixel(x, y, pixel)
+        end
     end
 
     return image
@@ -206,6 +305,8 @@ local function GetSliceImage(parts, bounds, tileMode)
         return GetSliceImageTiled(parts, bounds)
     elseif tileMode == DrawMode.Mirror then
         -- TODO: Implement the Mirror Tile Mode
+    elseif tileMode == DrawMode.Center then
+        return GetSliceImageCentered(parts, bounds)
     end
 end
 
@@ -216,6 +317,8 @@ local function GetSliceCenterImage(parts, bounds, tileMode)
         return GetSliceCenterImageTiled(parts, bounds)
     elseif tileMode == DrawMode.Mirror then
         -- TODO: Implement the Mirror Tile Mode
+    elseif tileMode == DrawMode.Center then
+        return GetSliceCenterImageCentered(parts, bounds)
     else
         return Image(0, 0)
     end
@@ -308,14 +411,17 @@ local function PasteSliceDialog(options)
     :combobox{
         id = "frame-draw-mode",
         label = "Frame:",
-        options = {DrawMode.Stretch, DrawMode.Repeat, DrawMode.Mirror},
+        options = {
+            DrawMode.Stretch, DrawMode.Repeat, DrawMode.Mirror, DrawMode.Center
+        },
         option = DrawMode.Stretch
     } ---
     :combobox{
         id = "center-draw-mode",
         label = "Center:",
         options = {
-            DrawMode.Stretch, DrawMode.Repeat, DrawMode.Mirror, DrawMode.Skip
+            DrawMode.Stretch, DrawMode.Repeat, DrawMode.Mirror, DrawMode.Center,
+            DrawMode.Skip
         },
         option = DrawMode.Stretch
     } ---
