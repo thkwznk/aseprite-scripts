@@ -392,11 +392,16 @@ local function PasteSlice(cel, slice, selection, frameDrawMode, centerDrawMode)
     frameImage:drawImage(centerImage, Point(sliceImagesParts.topLeft.width,
                                             sliceImagesParts.topLeft.height))
 
-    cel.image, cel.position = MergeImages(cel.image, cel.position, frameImage,
-                                          selection)
+    if cel == nil then
+        app.activeSprite:newCel(app.activeLayer, app.activeFrame, frameImage,
+                                Point(selection.x, selection.y))
+    else
+        cel.image, cel.position = MergeImages(cel.image, cel.position,
+                                              frameImage, selection)
+    end
 end
 
-local function PasteSliceDialog(options)
+local function PasteSliceDialog()
     local dialog = Dialog("Paste Slice")
     local slices, sliceNames = GetSlices()
 
@@ -463,7 +468,6 @@ function init(plugin)
         group = "edit_paste_special_new",
         onenabled = function()
             if app.activeSprite == nil then return false end
-            if app.activeCel == nil then return false end
 
             for _, sprite in ipairs(app.sprites) do
                 if #sprite.slices > 0 then return true end
