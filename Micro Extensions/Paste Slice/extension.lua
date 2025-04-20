@@ -401,15 +401,19 @@ local function PasteSlice(cel, slice, selection, frameDrawMode, centerDrawMode)
     end
 end
 
-local function PasteSliceDialog()
-    local dialog = Dialog("Paste Slice")
+local function PasteSliceDialog(options)
+    local dialog
+    dialog = Dialog {
+        title = "Paste Slice",
+        onclose = function() options.onclose(dialog.data) end
+    }
     local slices, sliceNames = GetSlices()
 
     dialog --
     :combobox{
         id = "selected-slice",
         label = "Slice:",
-        option = sliceNames[1],
+        option = options.selectedSlice or sliceNames[1],
         options = sliceNames
     } --
     :separator{text = "Draw Mode"} --
@@ -419,7 +423,7 @@ local function PasteSliceDialog()
         options = {
             DrawMode.Stretch, DrawMode.Repeat, DrawMode.Mirror, DrawMode.Center
         },
-        option = DrawMode.Stretch
+        option = options.frameDrawMode or DrawMode.Stretch
     } ---
     :combobox{
         id = "center-draw-mode",
@@ -428,7 +432,7 @@ local function PasteSliceDialog()
             DrawMode.Stretch, DrawMode.Repeat, DrawMode.Mirror, DrawMode.Center,
             DrawMode.Skip
         },
-        option = DrawMode.Stretch
+        option = options.centerDrawMode or DrawMode.Stretch
     } ---
     :button{
         text = "OK",
@@ -462,6 +466,8 @@ local function PasteSliceDialog()
 end
 
 function init(plugin)
+    local session = {}
+
     plugin:newCommand{
         id = "PasteSlice",
         title = "Paste Slice",
@@ -476,7 +482,16 @@ function init(plugin)
             return false
         end,
         onclick = function()
-            local dialog = PasteSliceDialog()
+            local dialog = PasteSliceDialog {
+                selectedSlice = session.selectedSlice,
+                frameDrawMode = session.frameDrawMode,
+                centerDrawMode = session.centerDrawMode,
+                onclose = function(data)
+                    session.selectedSlice = data["selected-slice"]
+                    session.frameDrawMode = data["frame-draw-mode"]
+                    session.centerDrawMode = data["center-draw-mode"]
+                end
+            }
             dialog:show()
         end
     }
@@ -486,4 +501,3 @@ function exit(plugin) end
 
 -- TODO: Test & optimize
 -- TODO: Consider making an optional "Paste Slice as a frame" that frames the selection (no center) OR make this an option in the dialog window (probably better this way)
--- TODO: Consider remembering the last selected options in the dialog for quick repeats
