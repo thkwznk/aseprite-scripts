@@ -65,13 +65,13 @@ local function GetSliceImageParts(slice)
 end
 
 local function DrawImageResized(sourceImage, targetImage, targetBounds)
-    for x = 0, targetBounds.width - 1 do
-        for y = 0, targetBounds.height - 1 do
-            -- TODO: Cache these for better performance
-            local sourceX = (x / (targetBounds.width - 1)) *
-                                (sourceImage.width - 1)
-            local sourceY = (y / (targetBounds.height - 1)) *
-                                (sourceImage.height - 1)
+    local sw, sh = sourceImage.width, sourceImage.height
+    local tw, th = targetBounds.width, targetBounds.height
+
+    for x = 0, tw - 1 do
+        for y = 0, th - 1 do
+            local sourceX = (x / tw) * sw
+            local sourceY = (y / th) * sh
 
             local pixelValue = sourceImage:getPixel(sourceX, sourceY)
 
@@ -357,7 +357,6 @@ function init(plugin)
         group = "edit_paste_special_new",
         onenabled = function()
             if app.activeSprite == nil then return false end
-
             if app.activeCel == nil then return false end
 
             for _, sprite in ipairs(app.sprites) do
@@ -376,3 +375,5 @@ end
 function exit(plugin) end
 
 -- TODO: Test & optimize
+-- TODO: Consider making an optional "Paste Slice as a frame" that frames the selection (no center) OR make this an option in the dialog window (probably better this way)
+-- TODO: Consider remembering the last selected options in the dialog for quick repeats
