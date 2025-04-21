@@ -201,24 +201,100 @@ end
 local function GetFrameImageTiled(parts, bounds, colorMode)
     local image = Image(bounds.width, bounds.height, colorMode)
 
-    -- We're working under an assumption that topCenter and bottomCenter parts have the same width
-    local x = parts.topLeft.width
-    while x < image.width do
-        image:drawImage(parts.topCenter, Point(x, 0))
-        image:drawImage(parts.bottomCenter,
-                        Point(x, bounds.height - parts.bottomCenter.height))
+    local function DrawTiledLeft(frameBounds, part)
+        local stop = frameBounds.x + frameBounds.width / 2
+        local middle = (frameBounds.width / 2) % part.width
 
-        x = x + parts.topCenter.width
+        local x = frameBounds.x
+
+        while x + part.width < stop do
+            image:drawImage(part, Point(x, frameBounds.y))
+            x = x + part.width
+        end
+
+        local partial = Image(part, Rectangle(0, 0, middle, part.height))
+        image:drawImage(partial, Point(x, frameBounds.y))
     end
 
-    local y = parts.topLeft.height
-    while y < image.height do
-        image:drawImage(parts.middleLeft, Point(0, y))
-        image:drawImage(parts.middleRight,
-                        Point(bounds.width - parts.middleRight.width, y))
+    local function DrawTiledRight(frameBounds, part)
+        local stop = frameBounds.x + frameBounds.width / 2
+        local middle = (frameBounds.width / 2) % part.width
 
-        y = y + parts.middleLeft.height
+        local x = frameBounds.x + frameBounds.width
+
+        while x - part.width > stop do
+            x = x - part.width
+            image:drawImage(part, Point(x, frameBounds.y))
+        end
+
+        x = x - middle
+        local partial = Image(part, Rectangle(0, 0, middle, part.height))
+        image:drawImage(partial, Point(x, frameBounds.y))
     end
+
+    local function DrawTiledTop(frameBounds, part)
+        local stop = frameBounds.y + frameBounds.height / 2
+        local middle = (frameBounds.height / 2) % part.height
+
+        local y = frameBounds.y
+
+        while y + part.height < stop do
+            image:drawImage(part, Point(frameBounds.x, y))
+            y = y + part.height
+        end
+
+        local partial = Image(part, Rectangle(0, 0, part.width, middle))
+        image:drawImage(partial, Point(frameBounds.x, y))
+    end
+
+    local function DrawTiledBottom(frameBounds, part)
+        local stop = frameBounds.y + frameBounds.height / 2
+        local middle = (frameBounds.height / 2) % part.height
+
+        local y = frameBounds.y + frameBounds.height
+
+        while y - part.height > stop do
+            y = y - part.height
+            image:drawImage(part, Point(frameBounds.x, y))
+        end
+
+        y = y - middle
+        local partial = Image(part, Rectangle(0, 0, part.width, middle))
+        image:drawImage(partial, Point(frameBounds.x, y))
+    end
+
+    local topBounds = Rectangle(parts.topLeft.width, 0, image.width -
+                                    parts.topLeft.width - parts.topRight.width,
+                                parts.topCenter.height)
+
+    DrawTiledLeft(topBounds, parts.topCenter)
+    DrawTiledRight(topBounds, parts.topCenter)
+
+    local bottomBounds = Rectangle(parts.topLeft.width,
+                                   image.height - parts.bottomCenter.height,
+                                   image.width - parts.topLeft.width -
+                                       parts.topRight.width,
+                                   parts.bottomCenter.height)
+
+    DrawTiledLeft(bottomBounds, parts.bottomCenter)
+    DrawTiledRight(bottomBounds, parts.bottomCenter)
+
+    local leftBounds = Rectangle(0, parts.topLeft.height,
+                                 parts.middleLeft.width, image.height -
+                                     parts.topLeft.height -
+                                     parts.bottomLeft.height)
+
+    DrawTiledTop(leftBounds, parts.middleLeft)
+    DrawTiledBottom(leftBounds, parts.middleLeft)
+
+    local rightBounds = Rectangle(image.width - parts.topRight.width,
+                                  parts.topRight.height,
+                                  parts.middleRight.width, image.height -
+                                      parts.topRight.height -
+                                      parts.bottomRight.height)
+
+    DrawTiledTop(rightBounds, parts.middleRight)
+    DrawTiledBottom(rightBounds, parts.middleRight)
 
     -- Draw all corners
     image:drawImage(parts.topLeft, Point(0, 0))
@@ -569,5 +645,3 @@ function init(plugin)
 end
 
 function exit(plugin) end
-
--- TODO: Test changing the Repeat draw mode to draw from each end separately and leave the mismatched pixels in the center
