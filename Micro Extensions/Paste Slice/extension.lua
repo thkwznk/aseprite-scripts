@@ -67,7 +67,7 @@ local function GetImagePart(image, rectangle)
     return imagePart
 end
 
-local function GetSliceImageParts(slice, targetSprite)
+local function GetSliceParts(slice, targetSprite)
     local sourceSprite = slice.sprite
 
     -- Get just the slice image
@@ -143,7 +143,7 @@ local function GetCenterBounds(parts, bounds)
     )
 end
 
-local function GetSliceImageStretched(parts, bounds, colorMode)
+local function GetFrameImageStretched(parts, bounds, colorMode)
     local image = Image(bounds.width, bounds.height, colorMode)
 
     local leftX = 0
@@ -188,7 +188,7 @@ local function GetSliceImageStretched(parts, bounds, colorMode)
     return image
 end
 
-local function GetSliceCenterImageStretched(parts, bounds, colorMode)
+local function GetCenterImageStretched(parts, bounds, colorMode)
     local image = Image(bounds.width, bounds.height, colorMode)
 
     DrawImageResized(parts.middleCenter, image, image.bounds)
@@ -196,7 +196,7 @@ local function GetSliceCenterImageStretched(parts, bounds, colorMode)
     return image
 end
 
-local function GetSliceImageTiled(parts, bounds, colorMode)
+local function GetFrameImageTiled(parts, bounds, colorMode)
     local image = Image(bounds.width, bounds.height, colorMode)
 
     -- We're working under an assumption that topCenter and bottomCenter parts have the same width
@@ -231,7 +231,7 @@ local function GetSliceImageTiled(parts, bounds, colorMode)
     return image
 end
 
-local function GetSliceCenterImageTiled(parts, bounds, colorMode)
+local function GetCenterImageTiled(parts, bounds, colorMode)
     local image = Image(bounds.width, bounds.height, colorMode)
 
     local x = 0
@@ -249,7 +249,7 @@ local function GetSliceCenterImageTiled(parts, bounds, colorMode)
     return image
 end
 
-local function GetSliceImageCentered(parts, bounds, colorMode)
+local function GetFrameImageCentered(parts, bounds, colorMode)
     local image = Image(bounds.width, bounds.height, colorMode)
 
     local function DrawCenteredHorizontally(frameBounds, part)
@@ -328,7 +328,7 @@ local function GetSliceImageCentered(parts, bounds, colorMode)
     return image
 end
 
-local function GetSliceCenterImageCentered(parts, bounds, colorMode)
+local function GetCenterImageCentered(parts, bounds, colorMode)
     local image = Image(bounds.width, bounds.height, colorMode)
 
     local cx = image.width / 2 - parts.middleCenter.width / 2
@@ -348,23 +348,23 @@ local function GetSliceCenterImageCentered(parts, bounds, colorMode)
     return image
 end
 
-local function GetSliceImage(parts, bounds, tileMode, colorMode)
+local function GetFrameImage(parts, bounds, tileMode, colorMode)
     if tileMode == DrawMode.Stretch then
-        return GetSliceImageStretched(parts, bounds, colorMode)
+        return GetFrameImageStretched(parts, bounds, colorMode)
     elseif tileMode == DrawMode.Repeat then
-        return GetSliceImageTiled(parts, bounds, colorMode)
+        return GetFrameImageTiled(parts, bounds, colorMode)
     elseif tileMode == DrawMode.Center then
-        return GetSliceImageCentered(parts, bounds, colorMode)
+        return GetFrameImageCentered(parts, bounds, colorMode)
     end
 end
 
-local function GetSliceCenterImage(parts, bounds, tileMode, colorMode)
+local function GetCenterImage(parts, bounds, tileMode, colorMode)
     if tileMode == DrawMode.Stretch then
-        return GetSliceCenterImageStretched(parts, bounds, colorMode)
+        return GetCenterImageStretched(parts, bounds, colorMode)
     elseif tileMode == DrawMode.Repeat then
-        return GetSliceCenterImageTiled(parts, bounds, colorMode)
+        return GetCenterImageTiled(parts, bounds, colorMode)
     elseif tileMode == DrawMode.Center then
-        return GetSliceCenterImageCentered(parts, bounds, colorMode)
+        return GetCenterImageCentered(parts, bounds, colorMode)
     else
         return Image(0, 0, colorMode)
     end
@@ -431,13 +431,13 @@ end
 
 local function PasteSlice(sprite, cel, slice, selection, frameDrawMode,
                           centerDrawMode)
-    local sliceImagesParts = GetSliceImageParts(slice, sprite)
-    local frameImage = GetSliceImage(sliceImagesParts, selection, frameDrawMode,
+    local sliceParts = GetSliceParts(slice, sprite)
+    local frameImage = GetFrameImage(sliceParts, selection, frameDrawMode,
                                      sprite.colorMode)
 
-    local center = GetCenterBounds(sliceImagesParts, selection)
-    local centerImage = GetSliceCenterImage(sliceImagesParts, center,
-                                            centerDrawMode, sprite.colorMode)
+    local center = GetCenterBounds(sliceParts, selection)
+    local centerImage = GetCenterImage(sliceParts, center, centerDrawMode,
+                                       sprite.colorMode)
 
     frameImage:drawImage(centerImage, Point(center.x, center.y))
 
@@ -547,5 +547,5 @@ end
 
 function exit(plugin) end
 
--- TODO: Test & optimize
 -- TODO: Consider making an optional "Paste Slice as a frame" that frames the selection (no center) OR make this an option in the dialog window (probably better this way)
+-- TODO: Test changing the Repeat draw mode to draw from each end separately and leave the mismatched pixels in the center
