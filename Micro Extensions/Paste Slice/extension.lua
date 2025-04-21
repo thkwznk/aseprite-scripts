@@ -1,3 +1,7 @@
+local Red, Green, Blue, Alpha = app.pixelColor.rgbaR, app.pixelColor.rgbaG,
+                                app.pixelColor.rgbaB, app.pixelColor.rgbaA
+local Gray, GrayAlpha = app.pixelColor.grayaV, app.pixelColor.grayaA
+
 local DrawMode = {
     Stretch = "Stretch",
     Repeat = "Repeat",
@@ -6,51 +10,55 @@ local DrawMode = {
     Skip = "Skip"
 }
 
+local function GetColor(value, colorMode, palette)
+    if colorMode == ColorMode.INDEXED then
+        local color = palette:getColor(value)
+
+        -- Correction for the indexed mask color
+        if value == 0 then color.alpha = 0 end
+
+        return color
+    elseif palette.colorMode == ColorMode.GRAY then
+        return Color {gray = Gray(value), alpha = GrayAlpha(value)}
+    end
+
+    return Color {
+        r = Red(value),
+        g = Green(value),
+        b = Blue(value),
+        a = Alpha(value)
+    }
+end
+
+local function GetColorValue(color, colorMode)
+    if colorMode == ColorMode.INDEXED then
+        return color.index
+    elseif colorMode == ColorMode.GRAY then
+        return color.grayPixel
+    end
+
+    return color.rgbaPixel
+end
+
 local function GetImagePartInColorMode(sourceSprite, rectangle, colorMode)
     local sourceImage = Image(sourceSprite)
-    local imagePart = Image(rectangle.width, rectangle.height, colorMode)
+    local sourceColorMode = sourceSprite.colorMode
     local sourcePalette = sourceSprite.palettes[1]
 
+    local imagePart = Image(rectangle.width, rectangle.height, colorMode)
+
     for pixel in sourceImage:pixels(rectangle) do
-        local value = pixel()
-        local x = pixel.x - rectangle.x
-        local y = pixel.y - rectangle.y
+        local color = GetColor(pixel(), sourceColorMode, sourcePalette)
 
-        local color
-
-        if sourceSprite.colorMode == ColorMode.RGB then
-            color = Color {
-                red = app.pixelColor.rgbaR(value),
-                green = app.pixelColor.rgbaG(value),
-                blue = app.pixelColor.rgbaB(value),
-                alpha = app.pixelColor.rgbaA(value)
-            }
-        elseif sourceSprite.colorMode == ColorMode.INDEXED then
-            color = sourcePalette:getColor(value)
-            if value == 0 then color.alpha = 0 end
-        elseif sourceSprite.colorMode == ColorMode.GRAY then
-            color = Color {
-                gray = app.pixelColor.grayaV(value),
-                alpha = app.pixelColor.grayaA(value)
-            }
-        end
-
-        if colorMode == ColorMode.RGB then
-            imagePart:drawPixel(x, y, color.rgbaPixel)
-        elseif colorMode == ColorMode.GRAY then
-            imagePart:drawPixel(x, y, color.grayPixel)
-        else
-            imagePart:drawPixel(x, y, color.index)
-
-        end
-
+        imagePart:drawPixel(pixel.x - rectangle.x, pixel.y - rectangle.y,
+                            GetColorValue(color, colorMode))
     end
 
     return imagePart
 end
 
-local function GetImagePart(image, rectangle, colorMode)
-    local imagePart = Image(rectangle.width, rectangle.height, colorMode)
+local function GetImagePart(image, rectangle)
+    local imagePart = Image(rectangle.width, rectangle.height, image.colorMode)
 
     for pixel in image:pixels(rectangle) do
         imagePart:drawPixel(pixel.x - rectangle.x, pixel.y - rectangle.y,
@@ -96,19 +104,15 @@ local function GetSliceImageParts(slice, targetSprite)
                                   bottomHeight)
 
     return {
-        topLeft = GetImagePart(sliceImage, topLeft, targetSprite.colorMode),
-        topCenter = GetImagePart(sliceImage, topCenter, targetSprite.colorMode),
-        topRight = GetImagePart(sliceImage, topRight, targetSprite.colorMode),
-        middleLeft = GetImagePart(sliceImage, middleLeft, targetSprite.colorMode),
-        middleCenter = GetImagePart(sliceImage, middleCenter,
-                                    targetSprite.colorMode),
-        middleRight = GetImagePart(sliceImage, middleRight,
-                                   targetSprite.colorMode),
-        bottomLeft = GetImagePart(sliceImage, bottomLeft, targetSprite.colorMode),
-        bottomCenter = GetImagePart(sliceImage, bottomCenter,
-                                    targetSprite.colorMode),
-        bottomRight = GetImagePart(sliceImage, bottomRight,
-                                   targetSprite.colorMode)
+        topLeft = GetImagePart(sliceImage, topLeft),
+        topCenter = GetImagePart(sliceImage, topCenter),
+        topRight = GetImagePart(sliceImage, topRight),
+        middleLeft = GetImagePart(sliceImage, middleLeft),
+        middleCenter = GetImagePart(sliceImage, middleCenter),
+        middleRight = GetImagePart(sliceImage, middleRight),
+        bottomLeft = GetImagePart(sliceImage, bottomLeft),
+        bottomCenter = GetImagePart(sliceImage, bottomCenter),
+        bottomRight = GetImagePart(sliceImage, bottomRight)
     }
 end
 
@@ -129,6 +133,15 @@ local function DrawImageResized(sourceImage, targetImage, targetBounds)
             targetImage:drawPixel(targetX, targetY, pixelValue)
         end
     end
+end
+
+local function GetCenterBounds(parts, bounds)
+    return Rectangle( --
+    parts.topLeft.width, --
+    parts.topLeft.height, --
+    bounds.width - parts.topLeft.width - parts.topRight.width, --
+    bounds.height - parts.topLeft.height - parts.bottomLeft.height --
+    )
 end
 
 local function GetSliceImageStretched(parts, bounds, colorMode)
@@ -177,15 +190,9 @@ local function GetSliceImageStretched(parts, bounds, colorMode)
 end
 
 local function GetSliceCenterImageStretched(parts, bounds, colorMode)
-    local image = Image(bounds.width - parts.topLeft.width -
-                            parts.topRight.width, bounds.height -
-                            parts.topLeft.height - parts.bottomLeft.height,
-                        colorMode)
+    local image = Image(bounds.width, bounds.height, colorMode)
 
-    local w = bounds.width - parts.topLeft.width - parts.topRight.width
-    local h = bounds.height - parts.topRight.height - parts.bottomRight.height
-
-    DrawImageResized(parts.middleCenter, image, Rectangle(0, 0, w, h))
+    DrawImageResized(parts.middleCenter, image, image.bounds)
 
     return image
 end
@@ -226,10 +233,7 @@ local function GetSliceImageTiled(parts, bounds, colorMode)
 end
 
 local function GetSliceCenterImageTiled(parts, bounds, colorMode)
-    local image = Image(bounds.width - parts.topLeft.width -
-                            parts.topRight.width, bounds.height -
-                            parts.topLeft.height - parts.bottomLeft.height,
-                        colorMode)
+    local image = Image(bounds.width, bounds.height, colorMode)
 
     local x = 0
     while x < image.width do
@@ -326,10 +330,7 @@ local function GetSliceImageCentered(parts, bounds, colorMode)
 end
 
 local function GetSliceCenterImageCentered(parts, bounds, colorMode)
-    local image = Image(bounds.width - parts.topLeft.width -
-                            parts.topRight.width, bounds.height -
-                            parts.topLeft.height - parts.bottomLeft.height,
-                        colorMode)
+    local image = Image(bounds.width, bounds.height, colorMode)
 
     local cx = image.width / 2 - parts.middleCenter.width / 2
     local cy = image.height / 2 - parts.middleCenter.height / 2
@@ -438,11 +439,12 @@ local function PasteSlice(sprite, cel, slice, selection, frameDrawMode,
     local sliceImagesParts = GetSliceImageParts(slice, sprite)
     local frameImage = GetSliceImage(sliceImagesParts, selection, frameDrawMode,
                                      sprite.colorMode)
-    local centerImage = GetSliceCenterImage(sliceImagesParts, selection,
+
+    local center = GetCenterBounds(sliceImagesParts, selection)
+    local centerImage = GetSliceCenterImage(sliceImagesParts, center,
                                             centerDrawMode, sprite.colorMode)
 
-    frameImage:drawImage(centerImage, Point(sliceImagesParts.topLeft.width,
-                                            sliceImagesParts.topLeft.height))
+    frameImage:drawImage(centerImage, Point(center.x, center.y))
 
     if cel == nil then
         app.activeSprite:newCel(app.activeLayer, app.activeFrame, frameImage,
