@@ -2,6 +2,8 @@ local Red, Green, Blue, Alpha = app.pixelColor.rgbaR, app.pixelColor.rgbaG,
                                 app.pixelColor.rgbaB, app.pixelColor.rgbaA
 local Gray, GrayAlpha = app.pixelColor.grayaV, app.pixelColor.grayaA
 
+local SelectionMode = {Fill = "Fill", Frame = "Frame"}
+
 local DrawMode = {
     Stretch = "Stretch",
     Repeat = "Repeat",
@@ -17,7 +19,7 @@ local function GetColor(value, colorMode, palette)
         if value == 0 then color.alpha = 0 end
 
         return color
-    elseif palette.colorMode == ColorMode.GRAY then
+    elseif colorMode == ColorMode.GRAY then
         return Color {gray = Gray(value), alpha = GrayAlpha(value)}
     end
 
@@ -429,9 +431,19 @@ local function MergeImages(imageA, positionA, imageB, positionB, colorMode)
     return newImage, newPosition
 end
 
-local function PasteSlice(sprite, cel, slice, selection, frameDrawMode,
-                          centerDrawMode)
+local function PasteSlice(sprite, cel, slice, selection, selectionMode,
+                          frameDrawMode, centerDrawMode)
     local sliceParts = GetSliceParts(slice, sprite)
+
+    if selectionMode == SelectionMode.Frame then
+        selection = Rectangle(selection.x - sliceParts.topLeft.width,
+                              selection.y - sliceParts.topLeft.height,
+                              selection.width + sliceParts.topLeft.width +
+                                  sliceParts.topRight.width, selection.height +
+                                  sliceParts.topLeft.height +
+                                  sliceParts.bottomRight.height)
+    end
+
     local frameImage = GetFrameImage(sliceParts, selection, frameDrawMode,
                                      sprite.colorMode)
 
@@ -466,7 +478,13 @@ local function PasteSliceDialog(options)
         option = options.selectedSlice or sliceNames[1],
         options = sliceNames
     } --
-    :separator{text = "Draw Mode"} --
+    :separator{text = "Options"} --
+    :combobox{
+        id = "selection-mode",
+        label = "Selection:",
+        options = {SelectionMode.Fill, SelectionMode.Frame},
+        option = options.selectionMode or SelectionMode.Fill
+    } --
     :combobox{
         id = "frame-draw-mode",
         label = "Frame:",
@@ -476,11 +494,13 @@ local function PasteSliceDialog(options)
     :combobox{
         id = "center-draw-mode",
         label = "Center:",
+        enabled = not options.isFrame,
         options = {
             DrawMode.Stretch, DrawMode.Repeat, DrawMode.Center, DrawMode.Skip
         },
         option = options.centerDrawMode or DrawMode.Stretch
-    } ---
+    } --
+    :separator() --
     :button{
         text = "OK",
         onclick = function()
@@ -496,12 +516,13 @@ local function PasteSliceDialog(options)
             local sprite = app.activeSprite
             local cel = app.activeCel
             local selection = app.activeSprite.selection.bounds
+            local selectionMode = dialog.data["selection-mode"]
             local frameDrawMode = dialog.data["frame-draw-mode"]
             local centerDrawMode = dialog.data["center-draw-mode"]
 
             app.transaction(function()
-                PasteSlice(sprite, cel, selectedSlice, selection, frameDrawMode,
-                           centerDrawMode)
+                PasteSlice(sprite, cel, selectedSlice, selection, selectionMode,
+                           frameDrawMode, centerDrawMode)
             end)
 
             app.refresh()
@@ -534,10 +555,12 @@ function init(plugin)
                 selectedSlice = session.selectedSlice,
                 frameDrawMode = session.frameDrawMode,
                 centerDrawMode = session.centerDrawMode,
+                selectionMode = session.selectionMode,
                 onclose = function(data)
                     session.selectedSlice = data["selected-slice"]
                     session.frameDrawMode = data["frame-draw-mode"]
                     session.centerDrawMode = data["center-draw-mode"]
+                    session.selectionMode = data["selection-mode"]
                 end
             }
             dialog:show()
@@ -547,5 +570,4 @@ end
 
 function exit(plugin) end
 
--- TODO: Consider making an optional "Paste Slice as a frame" that frames the selection (no center) OR make this an option in the dialog window (probably better this way)
 -- TODO: Test changing the Repeat draw mode to draw from each end separately and leave the mismatched pixels in the center
