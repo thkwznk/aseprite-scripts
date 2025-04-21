@@ -6,8 +6,51 @@ local DrawMode = {
     Skip = "Skip"
 }
 
-local function GetImagePart(image, rectangle)
-    local imagePart = Image(rectangle.width, rectangle.height)
+local function GetImagePartInColorMode(sourceSprite, rectangle, colorMode)
+    local sourceImage = Image(sourceSprite)
+    local imagePart = Image(rectangle.width, rectangle.height, colorMode)
+    local sourcePalette = sourceSprite.palettes[1]
+
+    for pixel in sourceImage:pixels(rectangle) do
+        local value = pixel()
+        local x = pixel.x - rectangle.x
+        local y = pixel.y - rectangle.y
+
+        local color
+
+        if sourceSprite.colorMode == ColorMode.RGB then
+            color = Color {
+                red = app.pixelColor.rgbaR(value),
+                green = app.pixelColor.rgbaG(value),
+                blue = app.pixelColor.rgbaB(value),
+                alpha = app.pixelColor.rgbaA(value)
+            }
+        elseif sourceSprite.colorMode == ColorMode.INDEXED then
+            color = sourcePalette:getColor(value)
+            if value == 0 then color.alpha = 0 end
+        elseif sourceSprite.colorMode == ColorMode.GRAY then
+            color = Color {
+                gray = app.pixelColor.grayaV(value),
+                alpha = app.pixelColor.grayaA(value)
+            }
+        end
+
+        if colorMode == ColorMode.RGB then
+            imagePart:drawPixel(x, y, color.rgbaPixel)
+        elseif colorMode == ColorMode.GRAY then
+            imagePart:drawPixel(x, y, color.grayPixel)
+        else
+            imagePart:drawPixel(x, y, color.index)
+
+        end
+
+    end
+
+    return imagePart
+end
+
+local function GetImagePart(image, rectangle, colorMode)
+    local imagePart = Image(rectangle.width, rectangle.height, colorMode)
 
     for pixel in image:pixels(rectangle) do
         imagePart:drawPixel(pixel.x - rectangle.x, pixel.y - rectangle.y,
@@ -17,12 +60,12 @@ local function GetImagePart(image, rectangle)
     return imagePart
 end
 
-local function GetSliceImageParts(slice)
-    local sprite = slice.sprite
-    local spriteImage = Image(sprite)
+local function GetSliceImageParts(slice, targetSprite)
+    local sourceSprite = slice.sprite
 
     -- Get just the slice image
-    local sliceImage = GetImagePart(spriteImage, slice.bounds)
+    local sliceImage = GetImagePartInColorMode(sourceSprite, slice.bounds,
+                                               targetSprite.colorMode)
 
     local leftWidth = slice.center.x
     local centerWidth = slice.center.width
@@ -53,15 +96,19 @@ local function GetSliceImageParts(slice)
                                   bottomHeight)
 
     return {
-        topLeft = GetImagePart(sliceImage, topLeft),
-        topCenter = GetImagePart(sliceImage, topCenter),
-        topRight = GetImagePart(sliceImage, topRight),
-        middleLeft = GetImagePart(sliceImage, middleLeft),
-        middleCenter = GetImagePart(sliceImage, middleCenter),
-        middleRight = GetImagePart(sliceImage, middleRight),
-        bottomLeft = GetImagePart(sliceImage, bottomLeft),
-        bottomCenter = GetImagePart(sliceImage, bottomCenter),
-        bottomRight = GetImagePart(sliceImage, bottomRight)
+        topLeft = GetImagePart(sliceImage, topLeft, targetSprite.colorMode),
+        topCenter = GetImagePart(sliceImage, topCenter, targetSprite.colorMode),
+        topRight = GetImagePart(sliceImage, topRight, targetSprite.colorMode),
+        middleLeft = GetImagePart(sliceImage, middleLeft, targetSprite.colorMode),
+        middleCenter = GetImagePart(sliceImage, middleCenter,
+                                    targetSprite.colorMode),
+        middleRight = GetImagePart(sliceImage, middleRight,
+                                   targetSprite.colorMode),
+        bottomLeft = GetImagePart(sliceImage, bottomLeft, targetSprite.colorMode),
+        bottomCenter = GetImagePart(sliceImage, bottomCenter,
+                                    targetSprite.colorMode),
+        bottomRight = GetImagePart(sliceImage, bottomRight,
+                                   targetSprite.colorMode)
     }
 end
 
@@ -84,8 +131,8 @@ local function DrawImageResized(sourceImage, targetImage, targetBounds)
     end
 end
 
-local function GetSliceImageStretched(parts, bounds)
-    local image = Image(bounds.width, bounds.height) -- TODO: What about supporting different color modes
+local function GetSliceImageStretched(parts, bounds, colorMode)
+    local image = Image(bounds.width, bounds.height, colorMode)
 
     local leftX = 0
     local centerX = parts.topLeft.width
@@ -129,10 +176,11 @@ local function GetSliceImageStretched(parts, bounds)
     return image
 end
 
-local function GetSliceCenterImageStretched(parts, bounds)
+local function GetSliceCenterImageStretched(parts, bounds, colorMode)
     local image = Image(bounds.width - parts.topLeft.width -
                             parts.topRight.width, bounds.height -
-                            parts.topLeft.height - parts.bottomLeft.height) -- TODO: What about supporting different color modes
+                            parts.topLeft.height - parts.bottomLeft.height,
+                        colorMode)
 
     local w = bounds.width - parts.topLeft.width - parts.topRight.width
     local h = bounds.height - parts.topRight.height - parts.bottomRight.height
@@ -142,8 +190,8 @@ local function GetSliceCenterImageStretched(parts, bounds)
     return image
 end
 
-local function GetSliceImageTiled(parts, bounds)
-    local image = Image(bounds.width, bounds.height) -- TODO: What about supporting different color modes
+local function GetSliceImageTiled(parts, bounds, colorMode)
+    local image = Image(bounds.width, bounds.height, colorMode)
 
     -- We're working under an assumption that topCenter and bottomCenter parts have the same width
     local x = parts.topLeft.width
@@ -177,10 +225,11 @@ local function GetSliceImageTiled(parts, bounds)
     return image
 end
 
-local function GetSliceCenterImageTiled(parts, bounds)
+local function GetSliceCenterImageTiled(parts, bounds, colorMode)
     local image = Image(bounds.width - parts.topLeft.width -
                             parts.topRight.width, bounds.height -
-                            parts.topLeft.height - parts.bottomLeft.height) -- TODO: What about supporting different color modes
+                            parts.topLeft.height - parts.bottomLeft.height,
+                        colorMode)
 
     local x = 0
     while x < image.width do
@@ -197,8 +246,8 @@ local function GetSliceCenterImageTiled(parts, bounds)
     return image
 end
 
-local function GetSliceImageCentered(parts, bounds)
-    local image = Image(bounds.width, bounds.height) -- TODO: What about supporting different color modes
+local function GetSliceImageCentered(parts, bounds, colorMode)
+    local image = Image(bounds.width, bounds.height, colorMode)
 
     local function DrawCenteredHorizontally(frameBounds, part)
         local topX = frameBounds.x + frameBounds.width / 2 - part.width / 2
@@ -276,10 +325,11 @@ local function GetSliceImageCentered(parts, bounds)
     return image
 end
 
-local function GetSliceCenterImageCentered(parts, bounds)
+local function GetSliceCenterImageCentered(parts, bounds, colorMode)
     local image = Image(bounds.width - parts.topLeft.width -
                             parts.topRight.width, bounds.height -
-                            parts.topLeft.height - parts.bottomLeft.height) -- TODO: What about supporting different color modes
+                            parts.topLeft.height - parts.bottomLeft.height,
+                        colorMode)
 
     local cx = image.width / 2 - parts.middleCenter.width / 2
     local cy = image.height / 2 - parts.middleCenter.height / 2
@@ -298,29 +348,29 @@ local function GetSliceCenterImageCentered(parts, bounds)
     return image
 end
 
-local function GetSliceImage(parts, bounds, tileMode)
+local function GetSliceImage(parts, bounds, tileMode, colorMode)
     if tileMode == DrawMode.Stretch then
-        return GetSliceImageStretched(parts, bounds)
+        return GetSliceImageStretched(parts, bounds, colorMode)
     elseif tileMode == DrawMode.Repeat then
-        return GetSliceImageTiled(parts, bounds)
+        return GetSliceImageTiled(parts, bounds, colorMode)
     elseif tileMode == DrawMode.Mirror then
         -- TODO: Implement the Mirror Tile Mode
     elseif tileMode == DrawMode.Center then
-        return GetSliceImageCentered(parts, bounds)
+        return GetSliceImageCentered(parts, bounds, colorMode)
     end
 end
 
-local function GetSliceCenterImage(parts, bounds, tileMode)
+local function GetSliceCenterImage(parts, bounds, tileMode, colorMode)
     if tileMode == DrawMode.Stretch then
-        return GetSliceCenterImageStretched(parts, bounds)
+        return GetSliceCenterImageStretched(parts, bounds, colorMode)
     elseif tileMode == DrawMode.Repeat then
-        return GetSliceCenterImageTiled(parts, bounds)
+        return GetSliceCenterImageTiled(parts, bounds, colorMode)
     elseif tileMode == DrawMode.Mirror then
         -- TODO: Implement the Mirror Tile Mode
     elseif tileMode == DrawMode.Center then
-        return GetSliceCenterImageCentered(parts, bounds)
+        return GetSliceCenterImageCentered(parts, bounds, colorMode)
     else
-        return Image(0, 0)
+        return Image(0, 0, colorMode)
     end
 end
 
@@ -365,7 +415,7 @@ local function GetSlices()
     return slices, names
 end
 
-local function MergeImages(imageA, positionA, imageB, positionB)
+local function MergeImages(imageA, positionA, imageB, positionB, colorMode)
     local minX = math.min(positionA.x, positionB.x)
     local minY = math.min(positionA.y, positionB.y)
 
@@ -374,7 +424,7 @@ local function MergeImages(imageA, positionA, imageB, positionB)
     local maxY = math.max(positionA.y + imageA.height,
                           positionB.y + imageB.height)
 
-    local newImage = Image(maxX - minX, maxY - minY)
+    local newImage = Image(maxX - minX, maxY - minY, colorMode)
     local newPosition = Point(minX, minY)
 
     newImage:drawImage(imageA, Point(positionA.x - minX, positionA.y - minY))
@@ -383,11 +433,13 @@ local function MergeImages(imageA, positionA, imageB, positionB)
     return newImage, newPosition
 end
 
-local function PasteSlice(cel, slice, selection, frameDrawMode, centerDrawMode)
-    local sliceImagesParts = GetSliceImageParts(slice)
-    local frameImage = GetSliceImage(sliceImagesParts, selection, frameDrawMode)
+local function PasteSlice(sprite, cel, slice, selection, frameDrawMode,
+                          centerDrawMode)
+    local sliceImagesParts = GetSliceImageParts(slice, sprite)
+    local frameImage = GetSliceImage(sliceImagesParts, selection, frameDrawMode,
+                                     sprite.colorMode)
     local centerImage = GetSliceCenterImage(sliceImagesParts, selection,
-                                            centerDrawMode)
+                                            centerDrawMode, sprite.colorMode)
 
     frameImage:drawImage(centerImage, Point(sliceImagesParts.topLeft.width,
                                             sliceImagesParts.topLeft.height))
@@ -397,7 +449,8 @@ local function PasteSlice(cel, slice, selection, frameDrawMode, centerDrawMode)
                                 Point(selection.x, selection.y))
     else
         cel.image, cel.position = MergeImages(cel.image, cel.position,
-                                              frameImage, selection)
+                                              frameImage, selection,
+                                              sprite.colorMode)
     end
 end
 
@@ -446,13 +499,14 @@ local function PasteSliceDialog(options)
                 end
             end
 
+            local sprite = app.activeSprite
             local cel = app.activeCel
             local selection = app.activeSprite.selection.bounds
             local frameDrawMode = dialog.data["frame-draw-mode"]
             local centerDrawMode = dialog.data["center-draw-mode"]
 
             app.transaction(function()
-                PasteSlice(cel, selectedSlice, selection, frameDrawMode,
+                PasteSlice(sprite, cel, selectedSlice, selection, frameDrawMode,
                            centerDrawMode)
             end)
 
