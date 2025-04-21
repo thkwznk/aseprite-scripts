@@ -5,7 +5,6 @@ local Gray, GrayAlpha = app.pixelColor.grayaV, app.pixelColor.grayaA
 local DrawMode = {
     Stretch = "Stretch",
     Repeat = "Repeat",
-    Mirror = "Mirror",
     Center = "Center",
     Skip = "Skip"
 }
@@ -354,8 +353,6 @@ local function GetSliceImage(parts, bounds, tileMode, colorMode)
         return GetSliceImageStretched(parts, bounds, colorMode)
     elseif tileMode == DrawMode.Repeat then
         return GetSliceImageTiled(parts, bounds, colorMode)
-    elseif tileMode == DrawMode.Mirror then
-        -- TODO: Implement the Mirror Tile Mode
     elseif tileMode == DrawMode.Center then
         return GetSliceImageCentered(parts, bounds, colorMode)
     end
@@ -366,8 +363,6 @@ local function GetSliceCenterImage(parts, bounds, tileMode, colorMode)
         return GetSliceCenterImageStretched(parts, bounds, colorMode)
     elseif tileMode == DrawMode.Repeat then
         return GetSliceCenterImageTiled(parts, bounds, colorMode)
-    elseif tileMode == DrawMode.Mirror then
-        -- TODO: Implement the Mirror Tile Mode
     elseif tileMode == DrawMode.Center then
         return GetSliceCenterImageCentered(parts, bounds, colorMode)
     else
@@ -475,17 +470,14 @@ local function PasteSliceDialog(options)
     :combobox{
         id = "frame-draw-mode",
         label = "Frame:",
-        options = {
-            DrawMode.Stretch, DrawMode.Repeat, DrawMode.Mirror, DrawMode.Center
-        },
+        options = {DrawMode.Stretch, DrawMode.Repeat, DrawMode.Center},
         option = options.frameDrawMode or DrawMode.Stretch
     } ---
     :combobox{
         id = "center-draw-mode",
         label = "Center:",
         options = {
-            DrawMode.Stretch, DrawMode.Repeat, DrawMode.Mirror, DrawMode.Center,
-            DrawMode.Skip
+            DrawMode.Stretch, DrawMode.Repeat, DrawMode.Center, DrawMode.Skip
         },
         option = options.centerDrawMode or DrawMode.Stretch
     } ---
