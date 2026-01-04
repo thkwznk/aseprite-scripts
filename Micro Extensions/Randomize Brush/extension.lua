@@ -9,7 +9,7 @@ local Option = {
     RandomSet = "Random [Set]"
 }
 
-local SplitString = function(string, separator)
+local function SplitString(string, separator)
     local result = {}
 
     if type(string) ~= "string" or type(separator) ~= "string" then
@@ -32,7 +32,7 @@ local SplitString = function(string, separator)
     return result
 end
 
-local GetToolPreferences = function(toolId)
+local function GetToolPreferences(toolId)
     return app.preferences.tool(toolId or app.activeTool)
 end
 
@@ -197,9 +197,9 @@ local OnColorChange = function()
     end
 end
 
-local BrushPropertiesDialog = function()
+local function BrushPropertiesDialog()
     local dialog = Dialog {
-        title = "Brush Properties", -- Randomize Brush in Aseprite 
+        title = "Brush Properties",
         onclose = function() isDialogOpen = false end
     }
 
@@ -383,3 +383,5 @@ function exit(plugin)
     app.events:off(onSiteChangeListener)
     app.events:off(onColorChangeListener)
 end
+
+-- TODO: Add an option to loop selected colors
