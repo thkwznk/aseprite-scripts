@@ -271,7 +271,7 @@ local function CenterImageInActiveSprite(options)
         return
     end
 
-    app.transaction(function()
+    app.transaction("Center", function()
         local sprite = app.activeSprite
         local selection = sprite.selection
 
@@ -287,6 +287,7 @@ local function CenterImageInActiveSprite(options)
         end
     end)
 
+    app.tip("Image centered")
     app.refresh()
 end
 

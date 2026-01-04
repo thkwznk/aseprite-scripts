@@ -153,3 +153,10 @@ Unreleased:
 Future:
 
 - [Feature] Fill - add a new option in the context menu which extends the cel both directions (backwards and forwards)
+
+## Center Image
+
+Unreleased:
+
+- All action made with the extension display correctly as "Center" in the Undo History
+- Successfully centring an image now displays a tooltip "Image centred"
