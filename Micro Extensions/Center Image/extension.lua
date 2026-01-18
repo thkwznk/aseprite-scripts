@@ -224,7 +224,6 @@ local function CenterSelection(cel, options, sprite)
     end
 
     sprite:newCel(cel.layer, cel.frameNumber, newImage, newPosition)
-
 end
 
 local function GetCanvasCenter(sprite)
@@ -266,6 +265,97 @@ local function CanCenterImage()
     return true
 end
 
+local function HasSolidBorder(cel, selection)
+    -- TODO: Support selection types other than a rectangular one
+    local localBounds = Rectangle(selection.bounds)
+    localBounds.x = localBounds.x - cel.bounds.x
+    localBounds.y = localBounds.y - cel.bounds.y
+
+    local getPixel = cel.image.getPixel
+    local borderColor = getPixel(cel.image, localBounds.x, localBounds.y)
+
+    -- Top & Bottom
+    for x = localBounds.x, localBounds.x + localBounds.width - 1 do
+        local topColor = getPixel(cel.image, x, localBounds.y)
+        local bottomColor = getPixel(cel.image, x,
+                                     localBounds.y + localBounds.height - 1)
+
+        if topColor ~= borderColor or bottomColor ~= borderColor then
+            return false
+        end
+    end
+
+    for y = localBounds.y + 1, localBounds.y + localBounds.height - 2 do
+        local leftColor = getPixel(cel.image, localBounds.x, y)
+        local rightColor = getPixel(cel.image,
+                                    localBounds.x + localBounds.width - 1, y)
+
+        if leftColor ~= borderColor or rightColor ~= borderColor then
+            return false
+        end
+    end
+
+    return true
+end
+
+local function CenterSelectionWithSolid(cel, options, sprite)
+    local selection = sprite.selection
+
+    local imagePartBounds = Rectangle(selection.bounds)
+    imagePartBounds.x = imagePartBounds.x - cel.bounds.x
+    imagePartBounds.y = imagePartBounds.y - cel.bounds.y
+
+    local getPixel = cel.image.getPixel
+    local drawPixel = cel.image.drawPixel
+    local borderColor =
+        getPixel(cel.image, imagePartBounds.x, imagePartBounds.y)
+
+    local newImage = Image(cel.image)
+    local pixels = {}
+
+    local minX, minY, maxX, maxY = math.maxinteger, math.maxinteger,
+                                   math.mininteger, math.mininteger
+
+    -- TODO: Only get pixels that are within the selection
+    for pixel in cel.image:pixels(imagePartBounds) do
+        if pixel() ~= borderColor then
+            local x = pixel.x
+            local y = pixel.y
+
+            minX = math.min(minX, x)
+            minY = math.min(minY, y)
+            maxX = math.max(maxX, x)
+            maxY = math.max(maxY, y)
+
+            drawPixel(newImage, x, y, borderColor)
+
+            table.insert(pixels, {x = x, y = y, value = pixel()})
+        end
+    end
+
+    local contentWidth = maxX - minX
+    local contentHeight = maxY - minY
+
+    local centeredOriginX = imagePartBounds.x + (imagePartBounds.width / 2) -
+                                (contentWidth / 2)
+    local centeredOriginY = imagePartBounds.y + (imagePartBounds.height / 2) -
+                                (contentHeight / 2)
+
+    for _, pixel in ipairs(pixels) do
+        local x = pixel.x
+        local y = pixel.y
+
+        if options.xAxis then x = x - minX + centeredOriginX end
+        if options.yAxis then y = y - minY + centeredOriginY end
+
+        drawPixel(newImage, x, y, pixel.value)
+    end
+
+    -- TODO: Implement weighted center
+
+    cel.image = newImage
+end
+
 local function CenterImageInActiveSprite(options)
     if options == nil or (not options.xAxis and not options.yAxis) then
         return
@@ -277,9 +367,16 @@ local function CenterImageInActiveSprite(options)
 
         for _, cel in ipairs(app.range.cels) do
             if cel.layer.isEditable then
-                -- If the entire cel image is within the selection, then move the cel
+                -- If the cel is within the selection, then move the cel
+                -- If the selection is within the cel and has a solid color border, then move the contents that are not the color of the selection border
+                -- Otherwise move the part of the image within the selection
+
                 if selection.isEmpty or selection.bounds:contains(cel.bounds) then
                     CenterCel(cel, options, sprite)
+                elseif cel.bounds:contains(selection.bounds) and
+                    HasSolidBorder(cel, selection) then
+                    print("Has Solid Border")
+                    CenterSelectionWithSolid(cel, options, sprite)
                 else
                     CenterSelection(cel, options, sprite)
                 end
@@ -287,7 +384,8 @@ local function CenterImageInActiveSprite(options)
         end
     end)
 
-    app.tip("Image centered")
+    if app.apiVersion >= 35 then app.tip("Image centered") end
+
     app.refresh()
 end
 
@@ -372,3 +470,7 @@ function init(plugin)
 end
 
 function exit(plugin) end
+
+-- TODO: Maybe still consider adding an option to ignore a background color when centering? It's a fairly non-standard behaviour for Aseprite though
+-- TODO: Center only pixels within the actual selection (not only rectangle selection bounds)
+-- TODO: Weighted center of a selection (additional option)
