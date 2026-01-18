@@ -1,14 +1,16 @@
 local function GetContentBounds(cel, selection)
-    local imageSelection = Rectangle(selection.x - cel.bounds.x,
-                                     selection.y - cel.bounds.y,
-                                     selection.width, selection.height)
+    local imageSelection = Rectangle(selection.bounds.x - cel.bounds.x,
+                                     selection.bounds.y - cel.bounds.y,
+                                     selection.bounds.width,
+                                     selection.bounds.height)
 
     -- Calculate selection content bounds
     local minX, maxX, minY, maxY = math.maxinteger, math.mininteger,
                                    math.maxinteger, math.mininteger
 
     for pixel in cel.image:pixels(imageSelection) do
-        if pixel() > 0 then
+        if pixel() > 0 and
+            selection:contains(pixel.x + cel.bounds.x, pixel.y + cel.bounds.y) then
             minX = math.min(minX, pixel.x)
             maxX = math.max(maxX, pixel.x)
 
@@ -177,21 +179,23 @@ local function GetTrimmedImageBounds(image)
 end
 
 local function CenterSelection(cel, options, sprite)
-    local selection = sprite.selection.bounds
+    local selectionBounds = sprite.selection.bounds
 
     local selectedImagePart, selectedImagePartBounds = CutImagePart(cel,
-                                                                    selection)
+                                                                    sprite.selection)
     local imageCenter = GetImageCenter(selectedImagePart, options)
 
     local x = selectedImagePartBounds.x
     local y = selectedImagePartBounds.y
 
     if options.xAxis then
-        x = selection.x + math.floor(selection.width / 2) - imageCenter.x
+        x = selectionBounds.x + math.floor(selectionBounds.width / 2) -
+                imageCenter.x
     end
 
     if options.yAxis then
-        y = selection.y + math.floor(selection.height / 2) - imageCenter.y
+        y = selectionBounds.y + math.floor(selectionBounds.height / 2) -
+                imageCenter.y
     end
 
     local contentNewBounds = Rectangle(x, y, selectedImagePart.width,
@@ -316,9 +320,9 @@ local function CenterSelectionWithSolid(cel, options, sprite)
     local minX, minY, maxX, maxY = math.maxinteger, math.maxinteger,
                                    math.mininteger, math.mininteger
 
-    -- TODO: Only get pixels that are within the selection
     for pixel in cel.image:pixels(imagePartBounds) do
-        if pixel() ~= borderColor then
+        if pixel() ~= borderColor and
+            selection:contains(pixel.x + cel.bounds.x, pixel.y + cel.bounds.y) then
             local x = pixel.x
             local y = pixel.y
 
@@ -472,5 +476,4 @@ end
 function exit(plugin) end
 
 -- TODO: Maybe still consider adding an option to ignore a background color when centering? It's a fairly non-standard behaviour for Aseprite though
--- TODO: Center only pixels within the actual selection (not only rectangle selection bounds)
 -- TODO: Weighted center of a selection (additional option)
