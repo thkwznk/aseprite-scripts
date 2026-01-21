@@ -162,3 +162,4 @@ Unreleased:
 - Successfully centring an image now displays a tooltip "Image centred"
 - Centring an image will ignore solid color backgrounds
 - Center only pixels within the actual selection (not only rectangle selection bounds)
+- Weighted center of a selection (additional option)

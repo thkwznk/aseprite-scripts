@@ -178,25 +178,73 @@ local function GetTrimmedImageBounds(image)
     return Rectangle(left, top, right - left + 1, bottom - top + 1)
 end
 
+local function GetSelectionCenter(selection, options)
+    local bounds = selection.bounds
+    local centerX, centerY = bounds.x + math.floor(bounds.width / 2),
+                             bounds.y + math.floor(bounds.height / 2)
+
+    if options.weightedSelectionCenter then
+        local total = 0
+        local rows = {}
+
+        for x = bounds.x, bounds.x + bounds.width - 1 do
+            for y = bounds.y, bounds.y + bounds.height - 1 do
+                if selection:contains(x, y) then
+                    total = total + 1
+                end
+            end
+
+            table.insert(rows, total)
+        end
+
+        local centerValue = total / 2
+
+        for i = 1, #rows do
+            if rows[i] >= centerValue then
+                centerX = bounds.x + i - 1
+                break
+            end
+        end
+
+        total = 0
+        local columns = {}
+
+        for y = bounds.y, bounds.y + bounds.height - 1 do
+            for x = bounds.x, bounds.width - 1 do
+                if selection:contains(x, y) then
+                    total = total + 1
+                end
+            end
+
+            table.insert(columns, total)
+        end
+
+        centerValue = total / 2
+
+        for i = 1, #columns do
+            if columns[i] >= centerValue then
+                centerY = bounds.y + i - 1
+                break
+            end
+        end
+    end
+
+    return Point(centerX, centerY)
+end
+
 local function CenterSelection(cel, options, sprite)
-    local selectionBounds = sprite.selection.bounds
+    local selection = sprite.selection
 
     local selectedImagePart, selectedImagePartBounds = CutImagePart(cel,
-                                                                    sprite.selection)
+                                                                    selection)
     local imageCenter = GetImageCenter(selectedImagePart, options)
+    local selectionCenter = GetSelectionCenter(selection, options)
 
     local x = selectedImagePartBounds.x
     local y = selectedImagePartBounds.y
 
-    if options.xAxis then
-        x = selectionBounds.x + math.floor(selectionBounds.width / 2) -
-                imageCenter.x
-    end
-
-    if options.yAxis then
-        y = selectionBounds.y + math.floor(selectionBounds.height / 2) -
-                imageCenter.y
-    end
+    if options.xAxis then x = selectionCenter.x - imageCenter.x end
+    if options.yAxis then y = selectionCenter.y - imageCenter.y end
 
     local contentNewBounds = Rectangle(x, y, selectedImagePart.width,
                                        selectedImagePart.height)
@@ -231,30 +279,20 @@ local function CenterSelection(cel, options, sprite)
 end
 
 local function GetCanvasCenter(sprite)
-    local selection = sprite.selection
-    local x, y
-
-    if selection.isEmpty then
-
-        x = sprite.width / 2
-        y = sprite.height / 2
-    else
-        x = selection.bounds.width / 2 + selection.bounds.x
-        y = selection.bounds.height / 2 + selection.bounds.y
-    end
-
-    return Point(math.floor(x), math.floor(y))
+    return Point(math.floor(sprite.width / 2), math.floor(sprite.height / 2))
 end
 
 local function CenterCel(cel, options, sprite)
     local x = cel.bounds.x
     local y = cel.bounds.y
 
-    local canvasCenter = GetCanvasCenter(sprite)
+    local center = sprite.selection.isEmpty and GetCanvasCenter(sprite) or
+                       GetSelectionCenter(sprite.selection, options)
+
     local imageCenter = GetImageCenter(cel.image, options)
 
-    if options.xAxis then x = canvasCenter.x - imageCenter.x end
-    if options.yAxis then y = canvasCenter.y - imageCenter.y end
+    if options.xAxis then x = center.x - imageCenter.x end
+    if options.yAxis then y = center.y - imageCenter.y end
 
     cel.position = Point(x, y)
 end
@@ -340,6 +378,7 @@ local function CenterSelectionWithSolid(cel, options, sprite)
     local contentWidth = maxX - minX
     local contentHeight = maxY - minY
 
+    -- TODO: Use weighted selection center option
     local centeredOriginX = imagePartBounds.x + (imagePartBounds.width / 2) -
                                 (contentWidth / 2)
     local centeredOriginY = imagePartBounds.y + (imagePartBounds.height / 2) -
@@ -412,7 +451,12 @@ function init(plugin)
         group = parentGroup,
         onenabled = CanCenterImage,
         onclick = function()
-            CenterImageInActiveSprite {xAxis = true, yAxis = true}
+            CenterImageInActiveSprite {
+                xAxis = true,
+                yAxis = true,
+                weightedSelectionCenter = plugin.preferences
+                    .weightedSelectionCenter
+            }
         end
     }
 
@@ -422,7 +466,12 @@ function init(plugin)
         group = app.apiVersion >= 22 and parentGroup or nil,
         onenabled = CanCenterImage,
         onclick = function()
-            CenterImageInActiveSprite {xAxis = true, yAxis = false}
+            CenterImageInActiveSprite {
+                xAxis = true,
+                yAxis = false,
+                weightedSelectionCenter = plugin.preferences
+                    .weightedSelectionCenter
+            }
         end
     }
 
@@ -432,7 +481,12 @@ function init(plugin)
         group = app.apiVersion >= 22 and parentGroup or nil,
         onenabled = CanCenterImage,
         onclick = function()
-            CenterImageInActiveSprite {xAxis = false, yAxis = true}
+            CenterImageInActiveSprite {
+                xAxis = false,
+                yAxis = true,
+                weightedSelectionCenter = plugin.preferences
+                    .weightedSelectionCenter
+            }
         end
     }
 
@@ -447,7 +501,9 @@ function init(plugin)
             CenterImageInActiveSprite {
                 xAxis = true,
                 yAxis = true,
-                weighted = true
+                weighted = true,
+                weightedSelectionCenter = plugin.preferences
+                    .weightedSelectionCenter
             }
         end
     }
@@ -458,7 +514,12 @@ function init(plugin)
         group = app.apiVersion >= 22 and parentGroup or nil,
         onenabled = CanCenterImage,
         onclick = function()
-            CenterImageInActiveSprite {xAxis = true, weighted = true}
+            CenterImageInActiveSprite {
+                xAxis = true,
+                weighted = true,
+                weightedSelectionCenter = plugin.preferences
+                    .weightedSelectionCenter
+            }
         end
     }
 
@@ -468,12 +529,34 @@ function init(plugin)
         group = app.apiVersion >= 22 and parentGroup or nil,
         onenabled = CanCenterImage,
         onclick = function()
-            CenterImageInActiveSprite {yAxis = true, weighted = true}
+            CenterImageInActiveSprite {
+                yAxis = true,
+                weighted = true,
+                weightedSelectionCenter = plugin.preferences
+                    .weightedSelectionCenter
+            }
         end
     }
+
+    if app.apiVersion >= 35 then
+        plugin:newMenuSeparator{group = parentGroup}
+
+        plugin:newCommand{
+            id = "WeightedSelectionCenterToggle",
+            title = "Use Weighted Selection Center",
+            group = parentGroup,
+            onchecked = function()
+                return plugin.preferences.weightedSelectionCenter
+            end,
+            onclick = function()
+                plugin.preferences.weightedSelectionCenter =
+                    not plugin.preferences.weightedSelectionCenter
+            end
+        }
+    end
 end
 
 function exit(plugin) end
 
 -- TODO: Maybe still consider adding an option to ignore a background color when centering? It's a fairly non-standard behaviour for Aseprite though
--- TODO: Weighted center of a selection (additional option)
+-- TODO: Refactor - pack calculating a center (canvas/selection/selection-weighted) into a single method
