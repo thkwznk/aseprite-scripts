@@ -1,4 +1,4 @@
-local function GetContentBounds(cel, selection)
+local function GetContentCenter(cel, selection, options)
     local imageSelection = Rectangle(selection.bounds.x - cel.bounds.x,
                                      selection.bounds.y - cel.bounds.y,
                                      selection.bounds.width,
@@ -8,27 +8,153 @@ local function GetContentBounds(cel, selection)
     local minX, maxX, minY, maxY = math.maxinteger, math.mininteger,
                                    math.maxinteger, math.mininteger
 
-    for pixel in cel.image:pixels(imageSelection) do
-        if pixel() > 0 and
-            selection:contains(pixel.x + cel.bounds.x, pixel.y + cel.bounds.y) then
-            minX = math.min(minX, pixel.x)
-            maxX = math.max(maxX, pixel.x)
+    local bgColorValue =
+        options.ignoreBackgroundColor and app.bgColor.rgbaPixel or 0
 
-            minY = math.min(minY, pixel.y)
-            maxY = math.max(maxY, pixel.y)
+    local rows, columns, pixels = {}, {}, {}
+    local total = 0
+    local hasAlpha = false
+
+    for pixel in cel.image:pixels(imageSelection) do
+        local x, y, value = pixel.x, pixel.y, pixel()
+        local inSelection = selection:contains(x + cel.bounds.x,
+                                               y + cel.bounds.y)
+
+        if value == 0 and inSelection then hasAlpha = true end
+
+        if value > 0 and value ~= bgColorValue and inSelection then
+            minX = math.min(minX, x)
+            maxX = math.max(maxX, x)
+
+            minY = math.min(minY, y)
+            maxY = math.max(maxY, y)
+
+            table.insert(pixels, {x = x, y = y, value = value})
+
+            rows[y] = (rows[y] or 0) + 1
+            columns[x] = (columns[x] or 0) + 1
+            total = total + 1
         end
     end
 
-    return Rectangle(minX, minY, maxX - minX + 1, maxY - minY + 1)
+    local centerX = minX + (maxX - minX + 1) / 2
+    local centerY = minY + (maxY - minY + 1) / 2
+
+    if options.weighted then
+        local centerValue = total / 2
+        local rowsTotal, columnsTotal = 0, 0
+
+        for y = imageSelection.y, imageSelection.y + imageSelection.height - 1 do
+            if rows[y] then
+                rowsTotal = rowsTotal + rows[y]
+                if rowsTotal >= centerValue then
+                    centerY = y - 1
+                    break
+                end
+            end
+        end
+
+        for x = imageSelection.x, imageSelection.x + imageSelection.width - 1 do
+            if columns[x] then
+                columnsTotal = columnsTotal + columns[x]
+                if columnsTotal >= centerValue then
+                    centerX = x - 1
+                    break
+                end
+            end
+        end
+    end
+
+    return Point(centerX, centerY), pixels, hasAlpha
 end
 
-local function CutImagePart(cel, selection)
-    local partBounds = GetContentBounds(cel, selection)
-    local imagePart = Image(cel.image, partBounds)
+local function FindFirstGreaterOrEqual(collection, value)
+    for i = 1, #collection do if collection[i] >= value then return i end end
+end
 
-    return imagePart,
-           Rectangle(cel.bounds.x + partBounds.x, cel.bounds.y + partBounds.y,
-                     partBounds.width, partBounds.height)
+local function GetSelectionCenter(selection, options)
+    local bounds = selection.bounds
+    local centerX, centerY = math.floor(bounds.width / 2),
+                             math.floor(bounds.height / 2)
+
+    if options.weightedSelectionCenter then
+        local count = 0
+        local rows, columns = {}, {}
+
+        for x = bounds.x, bounds.x + bounds.width - 1 do
+            for y = bounds.y, bounds.y + bounds.height - 1 do
+                if selection:contains(x, y) then
+                    count = count + 1
+                end
+            end
+
+            table.insert(columns, count)
+        end
+
+        local centerValue = count / 2
+        centerX = FindFirstGreaterOrEqual(columns, centerValue) - 1
+
+        count = 0
+
+        for y = bounds.y, bounds.y + bounds.height - 1 do
+            for x = bounds.x, bounds.x + bounds.width - 1 do
+                if selection:contains(x, y) then
+                    count = count + 1
+                end
+            end
+
+            table.insert(rows, count)
+        end
+
+        centerY = FindFirstGreaterOrEqual(rows, centerValue) - 1
+    end
+
+    return Point(bounds.x + centerX, bounds.y + centerY)
+end
+
+local function CenterSelectionWithSolid(cel, options, sprite)
+    local selection = sprite.selection
+
+    local imagePartBounds = Rectangle(selection.bounds)
+    imagePartBounds.x = imagePartBounds.x - cel.bounds.x
+    imagePartBounds.y = imagePartBounds.y - cel.bounds.y
+
+    local drawPixel = cel.image.drawPixel
+    local bgColorValue = app.bgColor.rgbaPixel
+
+    local newImage = Image(cel.image)
+    local center, pixels, hasAlpha = GetContentCenter(cel, selection, options)
+
+    -- Use the mask color if at least one pixel in the selection is empty
+    if hasAlpha then bgColorValue = 0 end
+
+    local selectionCenter = GetSelectionCenter(selection, options)
+    local shiftX, shiftY = 0, 0
+
+    if options.xAxis then
+        shiftX = (selectionCenter.x - cel.position.x) - center.x
+    end
+    if options.yAxis then
+        shiftY = (selectionCenter.y - cel.position.y) - center.y
+    end
+
+    -- Clear pixels
+    for _, pixel in ipairs(pixels) do
+        drawPixel(newImage, pixel.x, pixel.y, bgColorValue)
+    end
+
+    -- Draw pixels in their new positions
+    for _, pixel in ipairs(pixels) do
+        local x = pixel.x
+        local y = pixel.y
+
+        if options.xAxis then x = x + shiftX end
+        if options.yAxis then y = y + shiftY end
+
+        drawPixel(newImage, x, y, pixel.value)
+    end
+
+    cel.image = newImage
 end
 
 local function GetImageCenter(image, options)
@@ -37,7 +163,7 @@ local function GetImageCenter(image, options)
 
     if options.weighted then
         local total = 0
-        local rows = {}
+        local columns = {}
 
         for x = 0, image.width do
             for y = 0, image.height do
@@ -46,18 +172,11 @@ local function GetImageCenter(image, options)
                 end
             end
 
-            table.insert(rows, total)
+            table.insert(columns, total)
         end
 
         local centerValue = total / 2
-        centerX = 0
-
-        for i = 1, #rows do
-            if rows[i] >= centerValue then
-                centerX = i - 1
-                break
-            end
-        end
+        centerX = FindFirstGreaterOrEqual(columns, centerValue) - 1
     else
         centerX = math.floor(image.width / 2)
     end
@@ -66,7 +185,7 @@ local function GetImageCenter(image, options)
 
     if options.weighted then
         local total = 0
-        local columns = {}
+        local rows = {}
 
         for y = 0, image.height do
             for x = 0, image.width do
@@ -75,18 +194,11 @@ local function GetImageCenter(image, options)
                 end
             end
 
-            table.insert(columns, total)
+            table.insert(rows, total)
         end
 
         local centerValue = total / 2
-        centerY = 0
-
-        for i = 1, #columns do
-            if columns[i] >= centerValue then
-                centerY = i - 1
-                break
-            end
-        end
+        centerY = FindFirstGreaterOrEqual(rows, centerValue) - 1
     else
         centerY = math.floor(image.height / 2)
     end
@@ -94,188 +206,32 @@ local function GetImageCenter(image, options)
     return Point(centerX, centerY)
 end
 
-local function ClearImage(image, bounds, outerBounds)
-    if outerBounds then
-        bounds = Rectangle(bounds.x - outerBounds.x, bounds.y - outerBounds.y,
-                           bounds.width, bounds.height)
-    end
-
-    if app.apiVersion >= 23 then
-        image:clear(bounds)
-    else
-        -- Draw an empty image to erase the part
-        image:drawImage(Image(bounds.width, bounds.height),
-                        Point(bounds.x, bounds.y), 255, BlendMode.SRC)
-    end
-end
-
-local function GetTrimmedImageBounds(image)
-    -- From API v21, we can use Image:shrinkBounds() for this
-    if app.apiVersion >= 21 then return image:shrinkBounds() end
-
-    local found, left, top, right, bottom
-
-    -- Left
-    found = false
-
-    for x = 0, image.width - 1 do
-        for y = 0, image.height - 1 do
-            if image:getPixel(x, y) > 0 then
-                left = x
-                found = true
-                break
-            end
-        end
-
-        if found then break end
-    end
-
-    -- Top
-    found = false
-
-    for y = 0, image.height - 1 do
-        for x = 0, image.width - 1 do
-            if image:getPixel(x, y) > 0 then
-                top = y
-                found = true
-                break
-            end
-        end
-
-        if found then break end
-    end
-
-    -- Right
-    found = false
-
-    for x = image.width - 1, 0, -1 do
-        for y = 0, image.height - 1 do
-            if image:getPixel(x, y) > 0 then
-                right = x
-                found = true
-                break
-            end
-        end
-
-        if found then break end
-    end
-
-    -- Bottom
-    found = false
-
-    for y = image.height - 1, 0, -1 do
-        for x = 0, image.width - 1 do
-            if image:getPixel(x, y) > 0 then
-                bottom = y
-                found = true
-                break
-            end
-        end
-
-        if found then break end
-    end
-
-    return Rectangle(left, top, right - left + 1, bottom - top + 1)
-end
-
-local function GetSelectionCenter(selection, options)
-    local bounds = selection.bounds
-    local centerX, centerY = bounds.x + math.floor(bounds.width / 2),
-                             bounds.y + math.floor(bounds.height / 2)
-
-    if options.weightedSelectionCenter then
-        local total = 0
-        local rows = {}
-
-        for x = bounds.x, bounds.x + bounds.width - 1 do
-            for y = bounds.y, bounds.y + bounds.height - 1 do
-                if selection:contains(x, y) then
-                    total = total + 1
-                end
-            end
-
-            table.insert(rows, total)
-        end
-
-        local centerValue = total / 2
-
-        for i = 1, #rows do
-            if rows[i] >= centerValue then
-                centerX = bounds.x + i - 1
-                break
-            end
-        end
-
-        total = 0
-        local columns = {}
-
-        for y = bounds.y, bounds.y + bounds.height - 1 do
-            for x = bounds.x, bounds.width - 1 do
-                if selection:contains(x, y) then
-                    total = total + 1
-                end
-            end
-
-            table.insert(columns, total)
-        end
-
-        centerValue = total / 2
-
-        for i = 1, #columns do
-            if columns[i] >= centerValue then
-                centerY = bounds.y + i - 1
-                break
-            end
-        end
-    end
-
-    return Point(centerX, centerY)
+local function MoveContent(direction, quantity)
+    app.command.MoveMask {
+        target = "content",
+        wrap = true,
+        direction = direction,
+        units = "pixel",
+        quantity = quantity
+    }
 end
 
 local function CenterSelection(cel, options, sprite)
     local selection = sprite.selection
 
-    local selectedImagePart, selectedImagePartBounds = CutImagePart(cel,
-                                                                    selection)
-    local imageCenter = GetImageCenter(selectedImagePart, options)
+    local imageCenter = GetContentCenter(cel, selection, options)
     local selectionCenter = GetSelectionCenter(selection, options)
+    local x, y = 0, 0
 
-    local x = selectedImagePartBounds.x
-    local y = selectedImagePartBounds.y
-
-    if options.xAxis then x = selectionCenter.x - imageCenter.x end
-    if options.yAxis then y = selectionCenter.y - imageCenter.y end
-
-    local contentNewBounds = Rectangle(x, y, selectedImagePart.width,
-                                       selectedImagePart.height)
-
-    local newImageBounds = contentNewBounds:union(cel.bounds)
-    local newImage = Image(newImageBounds.width, newImageBounds.height,
-                           sprite.colorMode)
-
-    -- Draw the original image
-    newImage:drawImage(cel.image, Point(cel.position.x - newImageBounds.x,
-                                        cel.position.y - newImageBounds.y))
-
-    -- Clear the selected image part from it's original position
-    ClearImage(newImage, selectedImagePartBounds, newImageBounds)
-
-    -- Redraw the selected image part in the new position
-    newImage:drawImage(selectedImagePart,
-                       Point(x - newImageBounds.x, y - newImageBounds.y))
-
-    local newPosition = Point(newImageBounds.x, newImageBounds.y)
-    local trimmedBounds = GetTrimmedImageBounds(newImage)
-
-    -- Only trim image if necessary
-    if trimmedBounds.width ~= newImage.width or trimmedBounds.height ~=
-        newImage.height then
-        newPosition = Point(newPosition.x + trimmedBounds.x,
-                            newPosition.y + trimmedBounds.y)
-        newImage = Image(newImage, trimmedBounds)
+    if options.xAxis then
+        x = (selectionCenter.x - cel.position.x) - imageCenter.x
+    end
+    if options.yAxis then
+        y = (selectionCenter.y - cel.position.y) - imageCenter.y
     end
 
-    sprite:newCel(cel.layer, cel.frameNumber, newImage, newPosition)
+    if x ~= 0 then MoveContent(x > 0 and "right" or "left", math.abs(x)) end
+    if y ~= 0 then MoveContent(y > 0 and "down" or "up", math.abs(y)) end
 end
 
 local function GetCanvasCenter(sprite)
@@ -307,98 +263,6 @@ local function CanCenterImage()
     return true
 end
 
-local function HasSolidBorder(cel, selection)
-    -- TODO: Support selection types other than a rectangular one
-    local localBounds = Rectangle(selection.bounds)
-    localBounds.x = localBounds.x - cel.bounds.x
-    localBounds.y = localBounds.y - cel.bounds.y
-
-    local getPixel = cel.image.getPixel
-    local borderColor = getPixel(cel.image, localBounds.x, localBounds.y)
-
-    -- Top & Bottom
-    for x = localBounds.x, localBounds.x + localBounds.width - 1 do
-        local topColor = getPixel(cel.image, x, localBounds.y)
-        local bottomColor = getPixel(cel.image, x,
-                                     localBounds.y + localBounds.height - 1)
-
-        if topColor ~= borderColor or bottomColor ~= borderColor then
-            return false
-        end
-    end
-
-    for y = localBounds.y + 1, localBounds.y + localBounds.height - 2 do
-        local leftColor = getPixel(cel.image, localBounds.x, y)
-        local rightColor = getPixel(cel.image,
-                                    localBounds.x + localBounds.width - 1, y)
-
-        if leftColor ~= borderColor or rightColor ~= borderColor then
-            return false
-        end
-    end
-
-    return true
-end
-
-local function CenterSelectionWithSolid(cel, options, sprite)
-    local selection = sprite.selection
-
-    local imagePartBounds = Rectangle(selection.bounds)
-    imagePartBounds.x = imagePartBounds.x - cel.bounds.x
-    imagePartBounds.y = imagePartBounds.y - cel.bounds.y
-
-    local getPixel = cel.image.getPixel
-    local drawPixel = cel.image.drawPixel
-    local borderColor =
-        getPixel(cel.image, imagePartBounds.x, imagePartBounds.y)
-
-    local newImage = Image(cel.image)
-    local pixels = {}
-
-    local minX, minY, maxX, maxY = math.maxinteger, math.maxinteger,
-                                   math.mininteger, math.mininteger
-
-    for pixel in cel.image:pixels(imagePartBounds) do
-        if pixel() ~= borderColor and
-            selection:contains(pixel.x + cel.bounds.x, pixel.y + cel.bounds.y) then
-            local x = pixel.x
-            local y = pixel.y
-
-            minX = math.min(minX, x)
-            minY = math.min(minY, y)
-            maxX = math.max(maxX, x)
-            maxY = math.max(maxY, y)
-
-            drawPixel(newImage, x, y, borderColor)
-
-            table.insert(pixels, {x = x, y = y, value = pixel()})
-        end
-    end
-
-    local contentWidth = maxX - minX
-    local contentHeight = maxY - minY
-
-    -- TODO: Use weighted selection center option
-    local centeredOriginX = imagePartBounds.x + (imagePartBounds.width / 2) -
-                                (contentWidth / 2)
-    local centeredOriginY = imagePartBounds.y + (imagePartBounds.height / 2) -
-                                (contentHeight / 2)
-
-    for _, pixel in ipairs(pixels) do
-        local x = pixel.x
-        local y = pixel.y
-
-        if options.xAxis then x = x - minX + centeredOriginX end
-        if options.yAxis then y = y - minY + centeredOriginY end
-
-        drawPixel(newImage, x, y, pixel.value)
-    end
-
-    -- TODO: Implement weighted center
-
-    cel.image = newImage
-end
-
 local function CenterImageInActiveSprite(options)
     if options == nil or (not options.xAxis and not options.yAxis) then
         return
@@ -410,15 +274,11 @@ local function CenterImageInActiveSprite(options)
 
         for _, cel in ipairs(app.range.cels) do
             if cel.layer.isEditable then
-                -- If the cel is within the selection, then move the cel
-                -- If the selection is within the cel and has a solid color border, then move the contents that are not the color of the selection border
-                -- Otherwise move the part of the image within the selection
-
-                if selection.isEmpty or selection.bounds:contains(cel.bounds) then
+                if selection.isEmpty or
+                    (selection.bounds:contains(cel.bounds) and selection.bounds ~=
+                        cel.bounds) then
                     CenterCel(cel, options, sprite)
-                elseif cel.bounds:contains(selection.bounds) and
-                    HasSolidBorder(cel, selection) then
-                    print("Has Solid Border")
+                elseif options.ignoreBackgroundColor then
                     CenterSelectionWithSolid(cel, options, sprite)
                 else
                     CenterSelection(cel, options, sprite)
@@ -455,7 +315,8 @@ function init(plugin)
                 xAxis = true,
                 yAxis = true,
                 weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter
+                    .weightedSelectionCenter,
+                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
             }
         end
     }
@@ -470,7 +331,8 @@ function init(plugin)
                 xAxis = true,
                 yAxis = false,
                 weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter
+                    .weightedSelectionCenter,
+                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
             }
         end
     }
@@ -485,7 +347,8 @@ function init(plugin)
                 xAxis = false,
                 yAxis = true,
                 weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter
+                    .weightedSelectionCenter,
+                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
             }
         end
     }
@@ -503,7 +366,8 @@ function init(plugin)
                 yAxis = true,
                 weighted = true,
                 weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter
+                    .weightedSelectionCenter,
+                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
             }
         end
     }
@@ -518,7 +382,8 @@ function init(plugin)
                 xAxis = true,
                 weighted = true,
                 weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter
+                    .weightedSelectionCenter,
+                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
             }
         end
     }
@@ -533,7 +398,8 @@ function init(plugin)
                 yAxis = true,
                 weighted = true,
                 weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter
+                    .weightedSelectionCenter,
+                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
             }
         end
     }
@@ -553,10 +419,20 @@ function init(plugin)
                     not plugin.preferences.weightedSelectionCenter
             end
         }
+
+        plugin:newCommand{
+            id = "IgnoreBackgroundColorToggle",
+            title = "Ignore Background Color",
+            group = parentGroup,
+            onchecked = function()
+                return plugin.preferences.ignoreBackgroundColor
+            end,
+            onclick = function()
+                plugin.preferences.ignoreBackgroundColor =
+                    not plugin.preferences.ignoreBackgroundColor
+            end
+        }
     end
 end
 
 function exit(plugin) end
-
--- TODO: Maybe still consider adding an option to ignore a background color when centering? It's a fairly non-standard behaviour for Aseprite though
--- TODO: Refactor - pack calculating a center (canvas/selection/selection-weighted) into a single method

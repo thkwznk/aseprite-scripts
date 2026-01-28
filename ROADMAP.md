@@ -160,6 +160,6 @@ Unreleased:
 
 - All action made with the extension display correctly as "Center" in the Undo History
 - Successfully centring an image now displays a tooltip "Image centred"
-- Centring an image will ignore solid color backgrounds
+- Centring an image will ignore solid color backgrounds (additional option)
 - Center only pixels within the actual selection (not only rectangle selection bounds)
 - Weighted center of a selection (additional option)
