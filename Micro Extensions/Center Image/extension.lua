@@ -124,8 +124,6 @@ local function CenterSelection(cel, options, sprite)
     local drawPixel = cel.image.drawPixel
     local bgColorValue = app.bgColor.rgbaPixel
 
-    -- TODO: Optimize to only create the new image once, even if it needs to be resized
-    local newImage = Image(cel.image)
     local center, pixels, hasAlpha = GetContentCenter(cel, selection, options)
 
     -- Use the mask color if at least one pixel in the selection is empty
@@ -141,13 +139,9 @@ local function CenterSelection(cel, options, sprite)
         shiftY = (selectionCenter.y - cel.position.y) - center.y
     end
 
-    -- Clear pixels
-    for _, pixel in ipairs(pixels) do
-        drawPixel(newImage, pixel.x, pixel.y, bgColorValue)
-    end
-
     -- Expand the image
     local cx, cy = cel.position.x, cel.position.y
+    local iw, ih = cel.image.width, cel.image.height
     local left, right, up, down = 0, 0, 0, 0
 
     local CanBeMoved = function(x, y)
@@ -164,32 +158,32 @@ local function CenterSelection(cel, options, sprite)
         if CanBeMoved(x, y) then
             if x < 0 then left = math.max(math.abs(x), left) end
             if y < 0 then up = math.max(math.abs(y), up) end
-            if x >= newImage.width then
-                right = math.max(x - newImage.width + 1, right)
-            end
-            if y >= newImage.height then
-                down = math.max(y - newImage.height + 1, down)
-            end
+            if x >= iw then right = math.max(x - iw + 1, right) end
+            if y >= ih then down = math.max(y - ih + 1, down) end
         end
     end
 
+    local newImage
     if left > 0 or right > 0 or up > 0 or down > 0 then
         cx = cx - left
         cy = cy - up
 
-        local resizedImage = Image(newImage.width + left + right,
-                                   newImage.height + up + down,
-                                   newImage.colorMode)
-        resizedImage:drawImage(newImage, Point(left, up))
+        local resizedImage = Image(iw + left + right, ih + up + down,
+                                   cel.image.colorMode)
+        resizedImage:drawImage(cel.image, Point(left, up))
         newImage = resizedImage
+    else
+        newImage = Image(cel.image)
+    end
 
-        shiftX = shiftX + left
-        shiftY = shiftY + up
+    -- Clear pixels
+    for _, pixel in ipairs(pixels) do
+        drawPixel(newImage, pixel.x + left, pixel.y + up, bgColorValue)
     end
 
     -- Draw pixels in their new positions
     for _, pixel in ipairs(pixels) do
-        local x, y = pixel.x, pixel.y
+        local x, y = pixel.x + left, pixel.y + up
 
         if options.xAxis then x = x + shiftX end
         if options.yAxis then y = y + shiftY end
