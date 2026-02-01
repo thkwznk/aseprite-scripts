@@ -150,19 +150,26 @@ local function CenterSelection(cel, options, sprite)
     local cx, cy = cel.position.x, cel.position.y
     local left, right, up, down = 0, 0, 0, 0
 
+    local CanBeMoved = function(x, y)
+        return (options.cut and selection:contains(cx + x, cy + y)) or
+                   options.moveOutside
+    end
+
     for _, pixel in ipairs(pixels) do
         local x, y = pixel.x, pixel.y
 
         if options.xAxis then x = x + shiftX end
         if options.yAxis then y = y + shiftY end
 
-        if x < 0 then left = math.max(math.abs(x), left) end
-        if y < 0 then up = math.max(math.abs(y), up) end
-        if x >= newImage.width then
-            right = math.max(x - newImage.width + 1, right)
-        end
-        if y >= newImage.height then
-            down = math.max(y - newImage.height + 1, down)
+        if CanBeMoved(x, y) then
+            if x < 0 then left = math.max(math.abs(x), left) end
+            if y < 0 then up = math.max(math.abs(y), up) end
+            if x >= newImage.width then
+                right = math.max(x - newImage.width + 1, right)
+            end
+            if y >= newImage.height then
+                down = math.max(y - newImage.height + 1, down)
+            end
         end
     end
 
@@ -187,10 +194,7 @@ local function CenterSelection(cel, options, sprite)
         if options.xAxis then x = x + shiftX end
         if options.yAxis then y = y + shiftY end
 
-        if (options.cut and selection:contains(cx + x, cy + y)) or
-            options.moveOutside then
-            drawPixel(newImage, x, y, pixel.value)
-        end
+        if CanBeMoved(x, y) then drawPixel(newImage, x, y, pixel.value) end
     end
 
     -- Replace the image with the new one
@@ -251,12 +255,16 @@ local function GetCanvasCenter(sprite)
     return Point(math.floor(sprite.width / 2), math.floor(sprite.height / 2))
 end
 
-local function CenterCel(cel, options, sprite)
-    local x = cel.bounds.x
-    local y = cel.bounds.y
+local function IsWhollyWithin(boundsA, boundsB)
+    return boundsA ~= boundsB and boundsB:contains(boundsA)
+end
 
-    local center = sprite.selection.isEmpty and GetCanvasCenter(sprite) or
-                       GetSelectionCenter(sprite.selection, options)
+local function CenterCel(cel, options, sprite)
+    local selection = sprite.selection
+    local x, y = cel.bounds.x, cel.bounds.y
+
+    local center = selection.isEmpty and GetCanvasCenter(sprite) or
+                       GetSelectionCenter(selection, options)
 
     local imageCenter = GetImageCenter(cel.image, options)
 
@@ -264,6 +272,16 @@ local function CenterCel(cel, options, sprite)
     if options.yAxis then y = center.y - imageCenter.y end
 
     cel.position = Point(x, y)
+
+    if options.cut and not IsWhollyWithin(cel.bounds, selection.bounds) then
+        local common = cel.bounds:intersect(selection.bounds)
+        local imagePart = Rectangle(common)
+        imagePart.x = imagePart.x - cel.bounds.x
+        imagePart.y = imagePart.y - cel.bounds.y
+
+        cel.image = Image(cel.image, imagePart)
+        cel.position = Point(common.x, common.y)
+    end
 end
 
 local function CanCenterImage()
@@ -274,10 +292,6 @@ local function CanCenterImage()
     if #app.range.cels == 0 then return false end
 
     return true
-end
-
-local function IsWhollyWithin(boundsA, boundsB)
-    return boundsA ~= boundsB and boundsB:contains(boundsA)
 end
 
 local function CenterImageInActiveSprite(options)
@@ -291,8 +305,9 @@ local function CenterImageInActiveSprite(options)
 
         for _, cel in ipairs(app.range.cels) do
             if cel.layer.isEditable then
-                if selection.isEmpty or
-                    IsWhollyWithin(cel.bounds, selection.bounds) then
+                if (selection.isEmpty or
+                    IsWhollyWithin(cel.bounds, selection.bounds)) and
+                    not options.ignoreBackgroundColor then
                     CenterCel(cel, options, sprite)
                 else
                     CenterSelection(cel, options, sprite)
@@ -474,6 +489,3 @@ function init(plugin)
 end
 
 function exit(plugin) end
-
--- TODO: Handle not exapnding an image if pixels would be cut anyway
--- TODO: Handle cutting pixels/image when moving an entire cel
