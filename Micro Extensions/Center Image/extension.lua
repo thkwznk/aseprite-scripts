@@ -40,6 +40,8 @@ local function GetContentCenter(cel, selection, options)
     local centerX = minX + (maxX - minX + 1) / 2
     local centerY = minY + (maxY - minY + 1) / 2
 
+    -- TODO: Test these calculations, they seem to be off by a single pixel
+
     if options.weighted then
         local centerValue = total / 2
         local rowsTotal, columnsTotal = 0, 0
@@ -112,7 +114,7 @@ local function GetSelectionCenter(selection, options)
     return Point(bounds.x + centerX, bounds.y + centerY)
 end
 
-local function CenterSelectionWithSolid(cel, options, sprite)
+local function CenterSelection(cel, options, sprite)
     local selection = sprite.selection
 
     local imagePartBounds = Rectangle(selection.bounds)
@@ -122,6 +124,7 @@ local function CenterSelectionWithSolid(cel, options, sprite)
     local drawPixel = cel.image.drawPixel
     local bgColorValue = app.bgColor.rgbaPixel
 
+    -- TODO: Optimize to only create the new image once, even if it needs to be resized
     local newImage = Image(cel.image)
     local center, pixels, hasAlpha = GetContentCenter(cel, selection, options)
 
@@ -143,18 +146,56 @@ local function CenterSelectionWithSolid(cel, options, sprite)
         drawPixel(newImage, pixel.x, pixel.y, bgColorValue)
     end
 
-    -- Draw pixels in their new positions
+    -- Expand the image
+    local cx, cy = cel.position.x, cel.position.y
+    local left, right, up, down = 0, 0, 0, 0
+
     for _, pixel in ipairs(pixels) do
-        local x = pixel.x
-        local y = pixel.y
+        local x, y = pixel.x, pixel.y
 
         if options.xAxis then x = x + shiftX end
         if options.yAxis then y = y + shiftY end
 
-        drawPixel(newImage, x, y, pixel.value)
+        if x < 0 then left = math.max(math.abs(x), left) end
+        if y < 0 then up = math.max(math.abs(y), up) end
+        if x >= newImage.width then
+            right = math.max(x - newImage.width + 1, right)
+        end
+        if y >= newImage.height then
+            down = math.max(y - newImage.height + 1, down)
+        end
     end
 
+    if left > 0 or right > 0 or up > 0 or down > 0 then
+        cx = cx - left
+        cy = cy - up
+
+        local resizedImage = Image(newImage.width + left + right,
+                                   newImage.height + up + down,
+                                   newImage.colorMode)
+        resizedImage:drawImage(newImage, Point(left, up))
+        newImage = resizedImage
+
+        shiftX = shiftX + left
+        shiftY = shiftY + up
+    end
+
+    -- Draw pixels in their new positions
+    for _, pixel in ipairs(pixels) do
+        local x, y = pixel.x, pixel.y
+
+        if options.xAxis then x = x + shiftX end
+        if options.yAxis then y = y + shiftY end
+
+        if (options.cut and selection:contains(cx + x, cy + y)) or
+            options.moveOutside then
+            drawPixel(newImage, x, y, pixel.value)
+        end
+    end
+
+    -- Replace the image with the new one
     cel.image = newImage
+    cel.position = Point(cx, cy)
 end
 
 local function GetImageCenter(image, options)
@@ -206,34 +247,6 @@ local function GetImageCenter(image, options)
     return Point(centerX, centerY)
 end
 
-local function MoveContent(direction, quantity)
-    app.command.MoveMask {
-        target = "content",
-        wrap = true,
-        direction = direction,
-        units = "pixel",
-        quantity = quantity
-    }
-end
-
-local function CenterSelection(cel, options, sprite)
-    local selection = sprite.selection
-
-    local imageCenter = GetContentCenter(cel, selection, options)
-    local selectionCenter = GetSelectionCenter(selection, options)
-    local x, y = 0, 0
-
-    if options.xAxis then
-        x = (selectionCenter.x - cel.position.x) - imageCenter.x
-    end
-    if options.yAxis then
-        y = (selectionCenter.y - cel.position.y) - imageCenter.y
-    end
-
-    if x ~= 0 then MoveContent(x > 0 and "right" or "left", math.abs(x)) end
-    if y ~= 0 then MoveContent(y > 0 and "down" or "up", math.abs(y)) end
-end
-
 local function GetCanvasCenter(sprite)
     return Point(math.floor(sprite.width / 2), math.floor(sprite.height / 2))
 end
@@ -263,6 +276,10 @@ local function CanCenterImage()
     return true
 end
 
+local function IsWhollyWithin(boundsA, boundsB)
+    return boundsA ~= boundsB and boundsB:contains(boundsA)
+end
+
 local function CenterImageInActiveSprite(options)
     if options == nil or (not options.xAxis and not options.yAxis) then
         return
@@ -275,11 +292,8 @@ local function CenterImageInActiveSprite(options)
         for _, cel in ipairs(app.range.cels) do
             if cel.layer.isEditable then
                 if selection.isEmpty or
-                    (selection.bounds:contains(cel.bounds) and selection.bounds ~=
-                        cel.bounds) then
+                    IsWhollyWithin(cel.bounds, selection.bounds) then
                     CenterCel(cel, options, sprite)
-                elseif options.ignoreBackgroundColor then
-                    CenterSelectionWithSolid(cel, options, sprite)
                 else
                     CenterSelection(cel, options, sprite)
                 end
@@ -293,6 +307,25 @@ local function CenterImageInActiveSprite(options)
 end
 
 function init(plugin)
+    local preferences = plugin.preferences
+
+    -- Set defaults preferences
+    if preferences.cut == nil and preferences.moveOutside == nil then
+        preferences.moveOutside = true
+    end
+
+    local function CenterOptions(options)
+        return {
+            xAxis = options.xAxis or false,
+            yAxis = options.yAxis or false,
+            weighted = options.weighted or false,
+            weightedSelectionCenter = preferences.weightedSelectionCenter,
+            ignoreBackgroundColor = preferences.ignoreBackgroundColor,
+            cut = preferences.cut,
+            moveOutside = preferences.moveOutside
+        }
+    end
+
     local parentGroup = "edit_transform"
 
     if app.apiVersion >= 22 then
@@ -311,13 +344,8 @@ function init(plugin)
         group = parentGroup,
         onenabled = CanCenterImage,
         onclick = function()
-            CenterImageInActiveSprite {
-                xAxis = true,
-                yAxis = true,
-                weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter,
-                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
-            }
+            local options = CenterOptions {xAxis = true, yAxis = true}
+            CenterImageInActiveSprite(options)
         end
     }
 
@@ -327,13 +355,8 @@ function init(plugin)
         group = app.apiVersion >= 22 and parentGroup or nil,
         onenabled = CanCenterImage,
         onclick = function()
-            CenterImageInActiveSprite {
-                xAxis = true,
-                yAxis = false,
-                weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter,
-                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
-            }
+            local options = CenterOptions {xAxis = true}
+            CenterImageInActiveSprite(options)
         end
     }
 
@@ -343,13 +366,8 @@ function init(plugin)
         group = app.apiVersion >= 22 and parentGroup or nil,
         onenabled = CanCenterImage,
         onclick = function()
-            CenterImageInActiveSprite {
-                xAxis = false,
-                yAxis = true,
-                weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter,
-                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
-            }
+            local options = CenterOptions {yAxis = true}
+            CenterImageInActiveSprite(options)
         end
     }
 
@@ -361,14 +379,12 @@ function init(plugin)
         group = parentGroup,
         onenabled = CanCenterImage,
         onclick = function()
-            CenterImageInActiveSprite {
+            local options = CenterOptions {
                 xAxis = true,
                 yAxis = true,
-                weighted = true,
-                weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter,
-                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
+                weighted = true
             }
+            CenterImageInActiveSprite(options)
         end
     }
 
@@ -378,13 +394,8 @@ function init(plugin)
         group = app.apiVersion >= 22 and parentGroup or nil,
         onenabled = CanCenterImage,
         onclick = function()
-            CenterImageInActiveSprite {
-                xAxis = true,
-                weighted = true,
-                weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter,
-                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
-            }
+            local options = CenterOptions {xAxis = true, weighted = true}
+            CenterImageInActiveSprite(options)
         end
     }
 
@@ -394,45 +405,75 @@ function init(plugin)
         group = app.apiVersion >= 22 and parentGroup or nil,
         onenabled = CanCenterImage,
         onclick = function()
-            CenterImageInActiveSprite {
-                yAxis = true,
-                weighted = true,
-                weightedSelectionCenter = plugin.preferences
-                    .weightedSelectionCenter,
-                ignoreBackgroundColor = plugin.preferences.ignoreBackgroundColor
-            }
+            local options = CenterOptions {yAxis = true, weighted = true}
+            CenterImageInActiveSprite(options)
         end
     }
 
     if app.apiVersion >= 35 then
         plugin:newMenuSeparator{group = parentGroup}
 
+        plugin:newMenuGroup{
+            id = "center_options",
+            title = "Options",
+            group = parentGroup
+        }
+
         plugin:newCommand{
-            id = "WeightedSelectionCenterToggle",
-            title = "Use Weighted Selection Center",
-            group = parentGroup,
-            onchecked = function()
-                return plugin.preferences.weightedSelectionCenter
-            end,
+            id = "EnableCenterCut",
+            title = "Cut Pixels Outside Selection",
+            group = "center_options",
+            onchecked = function() return preferences.cut end,
             onclick = function()
-                plugin.preferences.weightedSelectionCenter =
-                    not plugin.preferences.weightedSelectionCenter
+                preferences.cut = true
+                preferences.moveOutside = false
             end
         }
 
         plugin:newCommand{
-            id = "IgnoreBackgroundColorToggle",
-            title = "Ignore Background Color",
-            group = parentGroup,
+            id = "EnableCenterMoveOutside",
+            title = "Move Pixels Outside Selection",
+            group = "center_options",
+            onchecked = function() return preferences.moveOutside end,
+            onclick = function()
+                preferences.cut = false
+                preferences.moveOutside = true
+            end
+        }
+
+        plugin:newMenuSeparator{group = "center_options"}
+
+        plugin:newCommand{
+            id = "WeightedSelectionCenterToggle",
+            title = "Use Weighted Selection Center",
+            group = "center_options",
             onchecked = function()
-                return plugin.preferences.ignoreBackgroundColor
+                return preferences.weightedSelectionCenter
             end,
             onclick = function()
-                plugin.preferences.ignoreBackgroundColor =
-                    not plugin.preferences.ignoreBackgroundColor
+                preferences.weightedSelectionCenter =
+                    not preferences.weightedSelectionCenter
+            end
+        }
+
+        plugin:newMenuSeparator{group = "center_options"}
+
+        plugin:newCommand{
+            id = "IgnoreBackgroundColorToggle",
+            title = "Ignore Background Color",
+            group = "center_options",
+            onchecked = function()
+                return preferences.ignoreBackgroundColor
+            end,
+            onclick = function()
+                preferences.ignoreBackgroundColor =
+                    not preferences.ignoreBackgroundColor
             end
         }
     end
 end
 
 function exit(plugin) end
+
+-- TODO: Handle not exapnding an image if pixels would be cut anyway
+-- TODO: Handle cutting pixels/image when moving an entire cel
