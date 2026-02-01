@@ -37,20 +37,18 @@ local function GetContentCenter(cel, selection, options)
         end
     end
 
-    local centerX = minX + (maxX - minX + 1) / 2
-    local centerY = minY + (maxY - minY + 1) / 2
-
-    -- TODO: Test these calculations, they seem to be off by a single pixel
+    local centerX = minX + math.floor((maxX - minX + 1) / 2) - 1
+    local centerY = minY + math.floor((maxY - minY + 1) / 2) - 1
 
     if options.weighted then
-        local centerValue = total / 2
+        local centerValue = math.floor(total / 2)
         local rowsTotal, columnsTotal = 0, 0
 
         for y = imageSelection.y, imageSelection.y + imageSelection.height - 1 do
             if rows[y] then
                 rowsTotal = rowsTotal + rows[y]
                 if rowsTotal >= centerValue then
-                    centerY = y - 1
+                    centerY = y
                     break
                 end
             end
@@ -60,7 +58,7 @@ local function GetContentCenter(cel, selection, options)
             if columns[x] then
                 columnsTotal = columnsTotal + columns[x]
                 if columnsTotal >= centerValue then
-                    centerX = x - 1
+                    centerX = x
                     break
                 end
             end
@@ -93,8 +91,8 @@ local function GetSelectionCenter(selection, options)
             table.insert(columns, count)
         end
 
-        local centerValue = count / 2
-        centerX = FindFirstGreaterOrEqual(columns, centerValue) - 1
+        local centerValue = math.floor(count / 2)
+        centerX = FindFirstGreaterOrEqual(columns, centerValue)
 
         count = 0
 
@@ -108,10 +106,10 @@ local function GetSelectionCenter(selection, options)
             table.insert(rows, count)
         end
 
-        centerY = FindFirstGreaterOrEqual(rows, centerValue) - 1
+        centerY = FindFirstGreaterOrEqual(rows, centerValue)
     end
 
-    return Point(bounds.x + centerX, bounds.y + centerY)
+    return Point(bounds.x + centerX - 1, bounds.y + centerY - 1)
 end
 
 local function CenterSelection(cel, options, sprite)
@@ -138,6 +136,9 @@ local function CenterSelection(cel, options, sprite)
     if options.yAxis then
         shiftY = (selectionCenter.y - cel.position.y) - center.y
     end
+
+    print("image center = ", center.x, center.y)
+    print("selection center = ", selectionCenter.x, selectionCenter.y)
 
     -- Expand the image
     local cx, cy = cel.position.x, cel.position.y
@@ -196,6 +197,7 @@ local function CenterSelection(cel, options, sprite)
     cel.position = Point(cx, cy)
 end
 
+-- TODO: Remove this functin and use only a modified version of the GetContentCenter
 local function GetImageCenter(image, options)
     local getPixel = image.getPixel
     local centerX = 0
@@ -214,8 +216,8 @@ local function GetImageCenter(image, options)
             table.insert(columns, total)
         end
 
-        local centerValue = total / 2
-        centerX = FindFirstGreaterOrEqual(columns, centerValue) - 1
+        local centerValue = math.floor(total / 2)
+        centerX = FindFirstGreaterOrEqual(columns, centerValue)
     else
         centerX = math.floor(image.width / 2)
     end
@@ -236,8 +238,8 @@ local function GetImageCenter(image, options)
             table.insert(rows, total)
         end
 
-        local centerValue = total / 2
-        centerY = FindFirstGreaterOrEqual(rows, centerValue) - 1
+        local centerValue = math.floor(total / 2)
+        centerY = FindFirstGreaterOrEqual(rows, centerValue)
     else
         centerY = math.floor(image.height / 2)
     end
@@ -299,9 +301,11 @@ local function CenterImageInActiveSprite(options)
 
         for _, cel in ipairs(app.range.cels) do
             if cel.layer.isEditable then
-                if (selection.isEmpty or
-                    IsWhollyWithin(cel.bounds, selection.bounds)) and
-                    not options.ignoreBackgroundColor then
+                local centerWhole = selection.isEmpty or
+                                        IsWhollyWithin(cel.bounds,
+                                                       selection.bounds)
+
+                if centerWhole and not options.ignoreBackgroundColor then
                     CenterCel(cel, options, sprite)
                 else
                     CenterSelection(cel, options, sprite)
