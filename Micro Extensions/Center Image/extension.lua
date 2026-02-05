@@ -1,10 +1,21 @@
-local function GetContentCenter(cel, selection, options)
-    local imageSelection = Rectangle(selection.bounds.x - cel.bounds.x,
-                                     selection.bounds.y - cel.bounds.y,
-                                     selection.bounds.width,
-                                     selection.bounds.height)
+local function GetSelectedImageBounds(cel, selection)
+    local bounds = Rectangle(selection.bounds)
 
-    -- Calculate selection content bounds
+    if selection.isEmpty then
+        bounds = Rectangle(0, 0, cel.sprite.width, cel.sprite.height)
+    end
+
+    bounds.x = bounds.x - cel.bounds.x
+    bounds.y = bounds.y - cel.bounds.y
+
+    return bounds
+end
+
+local function GetContentCenter(cel, selection, options)
+    local imageBounds = GetSelectedImageBounds(cel, selection)
+    print("imageBounds", imageBounds)
+
+    -- Calculate selected content bounds
     local minX, maxX, minY, maxY = math.maxinteger, math.mininteger,
                                    math.maxinteger, math.mininteger
 
@@ -14,11 +25,14 @@ local function GetContentCenter(cel, selection, options)
     local rows, columns, pixels = {}, {}, {}
     local total = 0
     local hasAlpha = false
+    local InSelection = function(x, y)
+        return selection.isEmpty or
+                   selection:contains(x + cel.bounds.x, y + cel.bounds.y)
+    end
 
-    for pixel in cel.image:pixels(imageSelection) do
+    for pixel in cel.image:pixels(imageBounds) do
         local x, y, value = pixel.x, pixel.y, pixel()
-        local inSelection = selection:contains(x + cel.bounds.x,
-                                               y + cel.bounds.y)
+        local inSelection = InSelection(x, y)
 
         if value == 0 and inSelection then hasAlpha = true end
 
@@ -44,7 +58,7 @@ local function GetContentCenter(cel, selection, options)
         local centerValue = math.floor(total / 2)
         local rowsTotal, columnsTotal = 0, 0
 
-        for y = imageSelection.y, imageSelection.y + imageSelection.height - 1 do
+        for y = imageBounds.y, imageBounds.y + imageBounds.height - 1 do
             if rows[y] then
                 rowsTotal = rowsTotal + rows[y]
                 if rowsTotal >= centerValue then
@@ -54,7 +68,7 @@ local function GetContentCenter(cel, selection, options)
             end
         end
 
-        for x = imageSelection.x, imageSelection.x + imageSelection.width - 1 do
+        for x = imageBounds.x, imageBounds.x + imageBounds.width - 1 do
             if columns[x] then
                 columnsTotal = columnsTotal + columns[x]
                 if columnsTotal >= centerValue then
@@ -72,7 +86,13 @@ local function FindFirstGreaterOrEqual(collection, value)
     for i = 1, #collection do if collection[i] >= value then return i end end
 end
 
-local function GetSelectionCenter(selection, options)
+local function GetSelectionCenter(sprite, options)
+    local selection = sprite.selection
+    if selection.isEmpty then
+        return Point(math.floor(sprite.width / 2) - 1,
+                     math.floor(sprite.height / 2) - 1)
+    end
+
     local bounds = selection.bounds
     local centerX, centerY = math.floor(bounds.width / 2),
                              math.floor(bounds.height / 2)
@@ -112,22 +132,11 @@ local function GetSelectionCenter(selection, options)
     return Point(bounds.x + centerX - 1, bounds.y + centerY - 1)
 end
 
-local function CenterSelection(cel, options, sprite)
+local function CenterPart(cel, options, sprite)
     local selection = sprite.selection
-
-    local imagePartBounds = Rectangle(selection.bounds)
-    imagePartBounds.x = imagePartBounds.x - cel.bounds.x
-    imagePartBounds.y = imagePartBounds.y - cel.bounds.y
-
-    local drawPixel = cel.image.drawPixel
-    local bgColorValue = app.bgColor.rgbaPixel
-
     local center, pixels, hasAlpha = GetContentCenter(cel, selection, options)
 
-    -- Use the mask color if at least one pixel in the selection is empty
-    if hasAlpha then bgColorValue = 0 end
-
-    local selectionCenter = GetSelectionCenter(selection, options)
+    local selectionCenter = GetSelectionCenter(sprite, options)
     local shiftX, shiftY = 0, 0
 
     if options.xAxis then
@@ -137,17 +146,22 @@ local function CenterSelection(cel, options, sprite)
         shiftY = (selectionCenter.y - cel.position.y) - center.y
     end
 
-    print("image center = ", center.x, center.y)
-    print("selection center = ", selectionCenter.x, selectionCenter.y)
+    print("center", center)
+    print("selectionCenter", selectionCenter)
+    print("shiftX, shiftY", shiftX, shiftY)
+    print("---")
 
     -- Expand the image
     local cx, cy = cel.position.x, cel.position.y
     local iw, ih = cel.image.width, cel.image.height
     local left, right, up, down = 0, 0, 0, 0
 
+    local InSelection = function(x, y)
+        return selection.isEmpty or selection:contains(cx + x, cy + y)
+    end
+
     local CanBeMoved = function(x, y)
-        return (options.cut and selection:contains(cx + x, cy + y)) or
-                   options.moveOutside
+        return (options.cut and InSelection(x, y)) or options.moveOutside
     end
 
     for _, pixel in ipairs(pixels) do
@@ -164,6 +178,9 @@ local function CenterSelection(cel, options, sprite)
         end
     end
 
+    print("left, right, up, down", left, right, up, down)
+    print("===")
+
     local newImage
     if left > 0 or right > 0 or up > 0 or down > 0 then
         cx = cx - left
@@ -177,7 +194,13 @@ local function CenterSelection(cel, options, sprite)
         newImage = Image(cel.image)
     end
 
+    local drawPixel = cel.image.drawPixel
+
     -- Clear pixels
+    -- Use the mask color if at least one pixel in the selection is empty
+    local bgColorValue = app.bgColor.rgbaPixel
+    if hasAlpha then bgColorValue = 0 end
+
     for _, pixel in ipairs(pixels) do
         drawPixel(newImage, pixel.x + left, pixel.y + up, bgColorValue)
     end
@@ -190,6 +213,14 @@ local function CenterSelection(cel, options, sprite)
         if options.yAxis then y = y + shiftY end
 
         if CanBeMoved(x, y) then drawPixel(newImage, x, y, pixel.value) end
+    end
+
+    -- Trim the image at the end
+    if left > 0 or right > 0 or up > 0 or down > 0 then
+        local shrunkBounds = newImage:shrinkBounds()
+        newImage = Image(newImage, shrunkBounds)
+        cx = cx + shrunkBounds.x
+        cy = cy + shrunkBounds.y
     end
 
     -- Replace the image with the new one
@@ -247,21 +278,14 @@ local function GetImageCenter(image, options)
     return Point(centerX, centerY)
 end
 
-local function GetCanvasCenter(sprite)
-    return Point(math.floor(sprite.width / 2), math.floor(sprite.height / 2))
-end
-
 local function IsWhollyWithin(boundsA, boundsB)
     return boundsA ~= boundsB and boundsB:contains(boundsA)
 end
 
 local function CenterCel(cel, options, sprite)
-    local selection = sprite.selection
     local x, y = cel.bounds.x, cel.bounds.y
 
-    local center = selection.isEmpty and GetCanvasCenter(sprite) or
-                       GetSelectionCenter(selection, options)
-
+    local center = GetSelectionCenter(sprite, options)
     local imageCenter = GetImageCenter(cel.image, options)
 
     if options.xAxis then x = center.x - imageCenter.x end
@@ -269,7 +293,10 @@ local function CenterCel(cel, options, sprite)
 
     cel.position = Point(x, y)
 
-    if options.cut and not IsWhollyWithin(cel.bounds, selection.bounds) then
+    local selection = sprite.selection
+    if options.cut -- 
+    and not selection.isEmpty --
+    and not IsWhollyWithin(cel.bounds, selection.bounds) then
         local common = cel.bounds:intersect(selection.bounds)
         local imagePart = Rectangle(common)
         imagePart.x = imagePart.x - cel.bounds.x
@@ -308,7 +335,7 @@ local function CenterImageInActiveSprite(options)
                 if centerWhole and not options.ignoreBackgroundColor then
                     CenterCel(cel, options, sprite)
                 else
-                    CenterSelection(cel, options, sprite)
+                    CenterPart(cel, options, sprite)
                 end
             end
         end
