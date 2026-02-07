@@ -56,6 +56,20 @@ local function GetSelectedImageBounds(cel, selection)
     return bounds
 end
 
+local function FindFirstAndLastIndex(table, start, stop)
+    local min, max
+    for i = start, stop do
+        if table[i] then
+            if min == nil then
+                min = i
+            else
+                max = i
+            end
+        end
+    end
+    return min, max
+end
+
 local function GetContentCenter(image, options)
     local bgColorValue =
         options.ignoreBackgroundColor and app.bgColor.rgbaPixel or 0
@@ -85,6 +99,9 @@ local function GetContentCenter(image, options)
         end
     end
 
+    local minX, maxX = FindFirstAndLastIndex(columns, 0, width - 1)
+    local minY, maxY = FindFirstAndLastIndex(rows, 0, height - 1)
+
     local centerX = 0
     local centerY = 0
 
@@ -96,8 +113,10 @@ local function GetContentCenter(image, options)
         centerY = FindFirstAccumulatedGreaterOrEqual(rows, 0, height - 1,
                                                      centerValue)
     else
-        centerX = math.floor(width / 2) - 1
-        centerY = math.floor(height / 2) - 1
+        local w = maxX - minX + 1
+        local h = maxY - minY + 1
+        centerX = minX + math.floor(w / 2)
+        centerY = minY + math.floor(h / 2)
     end
 
     return Point(centerX, centerY), pixels, hasAlpha
@@ -120,7 +139,6 @@ local function GetSelectedContentCenter(cel, selection, options)
 
     -- Map coordinates to the plane of the entire image
     for _, pixel in ipairs(pixels) do
-        -- TODO: Maybe store position as a Point and just add them?
         pixel.x = pixel.x + shrunkImagePartBounds.x + imagePartBounds.x
         pixel.y = pixel.y + shrunkImagePartBounds.y + imagePartBounds.y
     end
