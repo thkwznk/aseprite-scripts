@@ -1,55 +1,46 @@
-local function FindFirstGreaterOrEqual(collection, value)
-    for i = 1, #collection do if collection[i] >= value then return i end end
+local function FindFirstAccumulatedGreaterOrEqual(collection, startIndex,
+                                                  endIndex, value)
+    local accumulator = 0
+    for i = startIndex, endIndex do
+        local c = collection[i]
+        if c then accumulator = accumulator + c end
+        if accumulator >= value then return i end
+    end
 end
 
--- TODO: Remove this functin and use only a modified version of the GetContentCenter
 local function GetImageCenter(image, options)
-    local getPixel = image.getPixel
-    local centerX = 0
+    local width, height, getPixel = image.width, image.height, image.getPixel
+    local centerX, centerY = 0, 0
 
     if options.weighted then
         local total = 0
-        local columns = {}
+        local rows, columns = {}, {}
+        -- Rows need to be initialized beforehand
+        for y = 0, height do rows[y] = 0 end
 
-        for x = 0, image.width do
-            for y = 0, image.height do
+        for x = 0, width do
+            local xx = 0
+            for y = 0, height do
                 if getPixel(image, x, y) > 0 then
-                    total = total + 1
+                    rows[y] = rows[y] + 1
+                    xx = xx + 1
                 end
             end
 
-            table.insert(columns, total)
+            columns[x] = xx
+            total = total + xx
         end
 
-        local centerValue = math.floor(total / 2)
-        centerX = FindFirstGreaterOrEqual(columns, centerValue)
+        local mid = total / 2
+
+        centerX = FindFirstAccumulatedGreaterOrEqual(columns, 0, width, mid)
+        centerY = FindFirstAccumulatedGreaterOrEqual(rows, 0, height, mid)
     else
-        centerX = math.floor(image.width / 2)
+        centerX = math.floor(width / 2)
+        centerY = math.floor(height / 2)
     end
 
-    local centerY = 0
-
-    if options.weighted then
-        local total = 0
-        local rows = {}
-
-        for y = 0, image.height do
-            for x = 0, image.width do
-                if getPixel(image, x, y) > 0 then
-                    total = total + 1
-                end
-            end
-
-            table.insert(rows, total)
-        end
-
-        local centerValue = math.floor(total / 2)
-        centerY = FindFirstGreaterOrEqual(rows, centerValue)
-    else
-        centerY = math.floor(image.height / 2)
-    end
-
-    return Point(centerX, centerY)
+    return Point(centerX - 1, centerY - 1)
 end
 
 local function GetSelectedImageBounds(cel, selection)
@@ -65,41 +56,27 @@ local function GetSelectedImageBounds(cel, selection)
     return bounds
 end
 
-local function GetContentCenter(cel, selection, options)
-    local imageBounds = GetSelectedImageBounds(cel, selection)
-    print("imageBounds", imageBounds)
-
-    -- Calculate selected content bounds
-    local minX, maxX, minY, maxY = math.maxinteger, math.mininteger,
-                                   math.maxinteger, math.mininteger
-
+local function GetContentCenter(image, options)
     local bgColorValue =
         options.ignoreBackgroundColor and app.bgColor.rgbaPixel or 0
 
     local rows, columns, pixels = {}, {}, {}
     local total = 0
     local hasAlpha = false
-    local InSelection = function(x, y)
-        return selection.isEmpty or
-                   selection:contains(x + cel.bounds.x, y + cel.bounds.y)
-    end
 
-    for pixel in cel.image:pixels(imageBounds) do
-        local x, y = pixel.x, pixel.y
+    -- Keep references to these to save time on indexing
+    local insert = table.insert
+    local getPixel, width, height = image.getPixel, image.width, image.height
 
-        if InSelection(x, y) then
-            local value = pixel()
+    -- Using xy coordinates and getPixel is a bit faster than :pixels
+    for x = 0, width - 1 do
+        for y = 0, height - 1 do
+            local value = getPixel(image, x, y)
 
-            if value == 0 then hasAlpha = true end
-
-            if value > 0 and value ~= bgColorValue then
-                minX = math.min(minX, x)
-                maxX = math.max(maxX, x)
-
-                minY = math.min(minY, y)
-                maxY = math.max(maxY, y)
-
-                table.insert(pixels, {x = x, y = y, value = value})
+            if value == 0 then
+                hasAlpha = true
+            elseif value ~= bgColorValue then
+                insert(pixels, {x = x, y = y, value = value})
 
                 rows[y] = (rows[y] or 0) + 1
                 columns[x] = (columns[x] or 0) + 1
@@ -108,35 +85,48 @@ local function GetContentCenter(cel, selection, options)
         end
     end
 
-    local centerX = minX + math.floor((maxX - minX + 1) / 2) - 1
-    local centerY = minY + math.floor((maxY - minY + 1) / 2) - 1
+    local centerX = 0
+    local centerY = 0
 
     if options.weighted then
         local centerValue = math.floor(total / 2)
-        local rowsTotal, columnsTotal = 0, 0
 
-        for y = imageBounds.y, imageBounds.y + imageBounds.height - 1 do
-            if rows[y] then
-                rowsTotal = rowsTotal + rows[y]
-                if rowsTotal >= centerValue then
-                    centerY = y
-                    break
-                end
-            end
-        end
-
-        for x = imageBounds.x, imageBounds.x + imageBounds.width - 1 do
-            if columns[x] then
-                columnsTotal = columnsTotal + columns[x]
-                if columnsTotal >= centerValue then
-                    centerX = x
-                    break
-                end
-            end
-        end
+        centerX = FindFirstAccumulatedGreaterOrEqual(columns, 0, width - 1,
+                                                     centerValue)
+        centerY = FindFirstAccumulatedGreaterOrEqual(rows, 0, height - 1,
+                                                     centerValue)
+    else
+        centerX = math.floor(width / 2) - 1
+        centerY = math.floor(height / 2) - 1
     end
 
     return Point(centerX, centerY), pixels, hasAlpha
+end
+
+local function GetSelectedContentCenter(cel, selection, options)
+    local imagePartBounds = GetSelectedImageBounds(cel, selection)
+    local imagePart = Image(cel.image, imagePartBounds)
+
+    -- Calculate selected content bounds
+    local shrunkImagePartBounds = imagePart:shrinkBounds()
+    if shrunkImagePartBounds.x > 0 --
+    or shrunkImagePartBounds.y > 0 --
+    or shrunkImagePartBounds.width < imagePartBounds.width --
+    or shrunkImagePartBounds.height < imagePartBounds.height then
+        imagePart = Image(imagePart, shrunkImagePartBounds)
+    end
+
+    local center, pixels, hasAlpha = GetContentCenter(imagePart, options)
+
+    -- Map coordinates to the plane of the entire image
+    for _, pixel in ipairs(pixels) do
+        -- TODO: Maybe store position as a Point and just add them?
+        pixel.x = pixel.x + shrunkImagePartBounds.x + imagePartBounds.x
+        pixel.y = pixel.y + shrunkImagePartBounds.y + imagePartBounds.y
+    end
+
+    return (center + shrunkImagePartBounds.origin + imagePartBounds.origin),
+           pixels, hasAlpha
 end
 
 local function GetSelectionCenter(sprite, options)
@@ -151,35 +141,36 @@ local function GetSelectionCenter(sprite, options)
                              math.floor(bounds.height / 2)
 
     if options.weightedSelectionCenter then
-        local count = 0
+        local total = 0
         local rows, columns = {}, {}
 
-        for x = bounds.x, bounds.x + bounds.width - 1 do
-            for y = bounds.y, bounds.y + bounds.height - 1 do
-                if selection:contains(x, y) then
-                    count = count + 1
+        local contains = selection.contains
+        local xStart, xEnd, yStart, yEnd = bounds.x,
+                                           bounds.x + bounds.width - 1,
+                                           bounds.y,
+                                           bounds.y + bounds.height - 1
+
+        -- Rows need to be initialized beforehand
+        for y = yStart, yEnd do rows[y] = 0 end
+
+        for x = xStart, xEnd do
+            local xx = 0
+            for y = yStart, yEnd do
+                if contains(selection, x, y) then
+                    rows[y] = rows[y] + 1
+                    xx = xx + 1
                 end
             end
 
-            table.insert(columns, count)
+            columns[x] = xx
+            total = total + xx
         end
 
-        local centerValue = math.floor(count / 2)
-        centerX = FindFirstGreaterOrEqual(columns, centerValue)
-
-        count = 0
-
-        for y = bounds.y, bounds.y + bounds.height - 1 do
-            for x = bounds.x, bounds.x + bounds.width - 1 do
-                if selection:contains(x, y) then
-                    count = count + 1
-                end
-            end
-
-            table.insert(rows, count)
-        end
-
-        centerY = FindFirstGreaterOrEqual(rows, centerValue)
+        local centerValue = math.floor(total / 2)
+        centerX = FindFirstAccumulatedGreaterOrEqual(columns, xStart, xEnd,
+                                                     centerValue)
+        centerY = FindFirstAccumulatedGreaterOrEqual(rows, yStart, yEnd,
+                                                     centerValue)
     end
 
     return Point(bounds.x + centerX - 1, bounds.y + centerY - 1)
@@ -187,7 +178,8 @@ end
 
 local function CenterPart(cel, options, sprite)
     local selection = sprite.selection
-    local center, pixels, hasAlpha = GetContentCenter(cel, selection, options)
+    local center, pixels, hasAlpha = GetSelectedContentCenter(cel, selection,
+                                                              options)
 
     local selectionCenter = GetSelectionCenter(sprite, options)
     local shiftX, shiftY = 0, 0
@@ -517,3 +509,5 @@ function init(plugin)
 end
 
 function exit(plugin) end
+
+-- TODO: What if there's only background color within a selection and the option to ignore it is enabled?
