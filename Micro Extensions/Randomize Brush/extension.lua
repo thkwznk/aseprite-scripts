@@ -47,6 +47,7 @@ local OnChange = function(ev)
     -- From v1.3-rc1, skip changes from undo
     if app.apiVersion >= 21 and ev.fromUndo then return end
 
+    -- TODO: Refactor this so that the settings are saved in a global table
     local data = propertiesDialog.data
     local tool = GetToolPreferences()
 
@@ -181,7 +182,7 @@ local OnSiteChange = function()
     end
 end
 
-local OnColorChange = function()
+local function OnColorChange()
     if isDialogOpen and propertiesDialog.data.colorOption ~= Option.None and
         #app.range.colors > 1 then
         local palette = sprite.palettes[1]
