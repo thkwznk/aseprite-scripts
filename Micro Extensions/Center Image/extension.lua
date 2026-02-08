@@ -37,8 +37,8 @@ local function GetImageCenter(image, options)
         centerX = FindCenterMass(columns, 0, width - 1)
         centerY = FindCenterMass(rows, 0, height - 1)
     else
-        centerX = math.floor(width / 2)
-        centerY = math.floor(height / 2)
+        centerX = math.floor(width / 2) - 1
+        centerY = math.floor(height / 2) - 1
     end
 
     return Point(centerX, centerY)
@@ -60,7 +60,7 @@ end
 local function FindFirstAndLastIndex(table, start, stop)
     local min, max
     for i = start, stop do
-        if table[i] then
+        if table[i] and table[i] > 0 then
             if min == nil then
                 min = i
             else
@@ -114,10 +114,10 @@ local function GetContentCenter(image, options)
     else
         local minX, maxX = FindFirstAndLastIndex(columns, 0, width - 1)
         local minY, maxY = FindFirstAndLastIndex(rows, 0, height - 1)
-        local w = minX + maxX - 1
-        local h = minY + maxY - 1
-        centerX = minX + math.floor(w / 2)
-        centerY = minY + math.floor(h / 2)
+        local w = maxX - minX + 1
+        local h = maxY - minY + 1
+        centerX = minX + math.floor(w / 2) - 1
+        centerY = minY + math.floor(h / 2) - 1
     end
 
     return Point(centerX, centerY), pixels, hasAlpha
