@@ -197,6 +197,8 @@ local function CenterPart(cel, options, sprite)
     local center, pixels, hasAlpha = GetSelectedContentCenter(cel, selection,
                                                               options)
 
+    if #pixels == 0 then return end
+
     local selectionCenter = GetSelectionCenter(sprite, options)
     local shiftX, shiftY = 0, 0
 
@@ -328,6 +330,29 @@ local function CanCenterImage()
     return true
 end
 
+local function JoinStrings(strings, separator)
+    local result = ""
+    for i, s in ipairs(strings) do
+        result = result .. s
+        if i < #strings then result = result .. separator end
+    end
+    return result
+end
+
+local function GetOptionsTooltip(options)
+    local optionNames = {}
+
+    if options.weighted then table.insert(optionNames, "weighted") end
+
+    if options.ignoreBackgroundColor then
+        table.insert(optionNames, "ignored Background Color")
+    end
+
+    if #optionNames == 0 then return "" end
+
+    return "(" .. JoinStrings(optionNames, ", ") .. ")"
+end
+
 local function CenterImageInActiveSprite(options)
     if options == nil or (not options.xAxis and not options.yAxis) then
         return
@@ -343,9 +368,13 @@ local function CenterImageInActiveSprite(options)
                                         IsWhollyWithin(cel.bounds,
                                                        selection.bounds)
 
-                -- TODO: If there is a selection and the cel is fully outside of it > do nothing
+                local selectionOutsideOfImage =
+                    not selection.isEmpty and
+                        not cel.bounds:intersects(selection.bounds)
 
-                if centerWhole and not options.ignoreBackgroundColor then
+                if selectionOutsideOfImage then
+                    -- If the cel is fully outside of these selection, do nothing
+                elseif centerWhole and not options.ignoreBackgroundColor then
                     CenterCel(cel, options, sprite)
                 else
                     CenterPart(cel, options, sprite)
@@ -354,7 +383,13 @@ local function CenterImageInActiveSprite(options)
         end
     end)
 
-    if app.apiVersion >= 35 then app.tip("Image centered") end
+    if app.apiVersion >= 35 then
+        local tooltip = "Image centered"
+        local optionsTooltip = GetOptionsTooltip(options)
+        if optionsTooltip then tooltip = tooltip .. " " .. optionsTooltip end
+
+        app.tip(tooltip)
+    end
 
     app.refresh()
 end
@@ -527,5 +562,3 @@ function init(plugin)
 end
 
 function exit(plugin) end
-
--- TODO: What if there's only background color within a selection and the option to ignore it is enabled?
