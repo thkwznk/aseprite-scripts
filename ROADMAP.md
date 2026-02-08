@@ -161,3 +161,9 @@ Unreleased:
 
 - Added the "Modify Frame Rate" name to appear in the Undo History
 - Added a tooltip that appear after modifying the frame rate/duration
+
+## Select Content
+
+Unreleased:
+
+- Improved performance

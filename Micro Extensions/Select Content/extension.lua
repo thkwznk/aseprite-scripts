@@ -10,18 +10,27 @@ local function SpriteHasSelection()
     return app.activeSprite ~= nil and not app.activeSprite.selection.isEmpty
 end
 
+local function AddCelContentToSelection(cel, selection)
+    -- Keep references to improve performance
+    local add = selection.add
+    local cx, cy = cel.position.x, cel.position.y
+    local image = cel.image
+    local getPixel, width, height = image.getPixel, image.width, image.height
+
+    for x = 0, width - 1 do
+        for y = 0, height - 1 do
+            if getPixel(image, x, y) > 0 then
+                add(selection, Rectangle(x + cx, y + cy, 1, 1))
+            end
+        end
+    end
+end
+
 local function SelectContent(mode)
     local selection = Selection()
 
     for _, cel in ipairs(app.range.cels) do
-        for pixel in cel.image:pixels() do
-            if pixel() > 0 then
-                local rectangle = Rectangle(pixel.x + cel.position.x,
-                                            pixel.y + cel.position.y, 1, 1)
-
-                selection:add(rectangle)
-            end
-        end
+        AddCelContentToSelection(cel, selection)
     end
 
     if mode == SelectionMode.REPLACE then
@@ -42,14 +51,7 @@ local function SelectContentIntersection()
 
     for _, cel in ipairs(app.range.cels) do
         local currentSelection = Selection()
-        for pixel in cel.image:pixels() do
-            if pixel() > 0 then
-                local rectangle = Rectangle(pixel.x + cel.position.x,
-                                            pixel.y + cel.position.y, 1, 1)
-
-                currentSelection:add(rectangle)
-            end
-        end
+        AddCelContentToSelection(cel, currentSelection)
 
         if selection == nil then
             selection = currentSelection
@@ -66,14 +68,7 @@ local function SelectContentDifference()
     local selection = Selection()
 
     for _, cel in ipairs(app.range.cels) do
-        for pixel in cel.image:pixels() do
-            if pixel() > 0 then
-                local rectangle = Rectangle(pixel.x + cel.position.x,
-                                            pixel.y + cel.position.y, 1, 1)
-
-                selection:add(rectangle)
-            end
-        end
+        AddCelContentToSelection(cel, selection)
     end
 
     selection:subtract(app.activeSprite.selection)
@@ -85,14 +80,7 @@ local function SelectContentComplement()
     local selection = Selection()
 
     for _, cel in ipairs(app.range.cels) do
-        for pixel in cel.image:pixels() do
-            if pixel() > 0 then
-                local rectangle = Rectangle(pixel.x + cel.position.x,
-                                            pixel.y + cel.position.y, 1, 1)
-
-                selection:add(rectangle)
-            end
-        end
+        AddCelContentToSelection(cel, selection)
     end
 
     app.activeSprite.selection:selectAll()
