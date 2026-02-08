@@ -1,5 +1,5 @@
 function init(plugin)
-    function RestoreRange(prevFrames, prevLayers)
+    local function RestoreRange(prevFrames, prevLayers)
         local frames, layers = {}, {}
 
         for _, frame in ipairs(prevFrames) do
@@ -38,7 +38,9 @@ function init(plugin)
             return false
         end,
         onclick = function()
-            app.transaction(function()
+            local extendedCels = 0
+
+            app.transaction("Extend Cels", function()
                 local cels = app.range.cels
                 local prevFrames = app.range.frames
                 local prevLayers = app.range.layers
@@ -57,13 +59,24 @@ function init(plugin)
                         table.insert(frameNumbers, frameNumber)
                     end
 
-                    app.range.frames = frameNumbers
-                    app.range.layers = {cel.layer}
-                    app.command.LinkCels()
+                    -- Only link cels if there's more than one frame of length
+                    if #frameNumbers > 1 then
+                        app.range.frames = frameNumbers
+                        app.range.layers = {cel.layer}
+                        app.command.LinkCels()
+
+                        extendedCels = extendedCels + 1
+                    end
                 end
 
                 RestoreRange(prevFrames, prevLayers)
             end)
+
+            if extendedCels == 1 then
+                app.tip("Extended Cel")
+            elseif extendedCels > 1 then
+                app.tip("Extended " .. tostring(extendedCels) .. " Cels")
+            end
         end
     }
 end

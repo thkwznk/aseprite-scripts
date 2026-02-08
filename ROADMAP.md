@@ -148,7 +148,8 @@ Unreleased:
 
 Unreleased:
 
-- ...
+- Added the "Extend Cels" name to appear in the Undo History
+- Added a tooltip that appear after extending cels
 
 Future:
 
