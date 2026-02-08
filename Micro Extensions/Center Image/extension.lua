@@ -368,7 +368,9 @@ local function CenterImageInActiveSprite(options)
     if app.apiVersion >= 35 then
         local tooltip = "Image centered"
         local optionsTooltip = GetOptionsTooltip(options)
-        if optionsTooltip then tooltip = tooltip .. " " .. optionsTooltip end
+        if #optionsTooltip > 0 then
+            tooltip = tooltip .. " " .. optionsTooltip
+        end
 
         app.tip(tooltip)
     end
