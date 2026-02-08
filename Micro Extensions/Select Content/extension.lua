@@ -35,12 +35,16 @@ local function SelectContent(mode)
 
     if mode == SelectionMode.REPLACE then
         app.activeSprite.selection = selection
+        app.tip("Selected Cels Content")
     elseif mode == SelectionMode.ADD then
         app.activeSprite.selection:add(selection)
+        app.tip("Added Cels Content to selection")
     elseif mode == SelectionMode.SUBTRACT then
         app.activeSprite.selection:subtract(selection)
+        app.tip("Subtracted Cels Content from selection")
     elseif mode == SelectionMode.INTERSECT then
         app.activeSprite.selection:intersect(selection)
+        app.tip("Intersected Cels Content with selection")
     end
 
     app.refresh()
@@ -61,6 +65,7 @@ local function SelectContentIntersection()
     end
 
     app.activeSprite.selection = selection
+    app.tip("Selected an intersection of Cels Content")
     app.refresh()
 end
 
@@ -73,6 +78,7 @@ local function SelectContentDifference()
 
     selection:subtract(app.activeSprite.selection)
     app.activeSprite.selection = selection
+    app.tip("Selected a difference with Cels Content")
     app.refresh()
 end
 
@@ -85,6 +91,7 @@ local function SelectContentComplement()
 
     app.activeSprite.selection:selectAll()
     app.activeSprite.selection:subtract(selection)
+    app.tip("Selected an inverse of Cels Content")
     app.refresh()
 end
 

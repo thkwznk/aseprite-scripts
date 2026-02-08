@@ -167,3 +167,4 @@ Unreleased:
 Unreleased:
 
 - Improved performance
+- Added a tooltip that appear after selecting cels content
