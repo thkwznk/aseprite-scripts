@@ -1,17 +1,19 @@
-function CreateFrameNumberLabel(frames)
+local function CreateFrameNumberLabel(frames)
     local first = frames[1].frameNumber
     local last = frames[#frames].frameNumber
 
     return "[" .. tostring(first) .. "..." .. tostring(last) .. "]"
 end
 
-function RoundDuration(duration) return math.floor(((duration * 1000)) + 0.5) end
+local function RoundDuration(duration)
+    return math.floor(((duration * 1000)) + 0.5)
+end
 
-function FormatDuration(duration) return tostring(RoundDuration(duration)) end
+local function FormatDuration(duration) return tostring(RoundDuration(duration)) end
 
-function FormatSpeed(speed) return string.format("%.2f", speed) end
+local function FormatSpeed(speed) return string.format("%.2f", speed) end
 
-function GetFramesStatistics(frames)
+local function GetFramesStatistics(frames)
     local min = nil
     local max = nil
     local total = 0
@@ -27,8 +29,8 @@ function GetFramesStatistics(frames)
     return {min = min, max = max, avg = total / #frames, total = total}
 end
 
-function ModifyFrameRate(frames, modifier)
-    app.transaction(function()
+local function ModifyFrameRate(frames, modifier)
+    app.transaction("Modify Frame Rate", function()
         for _, frame in ipairs(frames) do
             local newDuration = RoundDuration(frame.duration * modifier) / 1000
 
@@ -36,9 +38,11 @@ function ModifyFrameRate(frames, modifier)
             frame.duration = math.max(newDuration, 0.02)
         end
     end)
+
+    app.tip("Frame Rate Modified (" .. FormatSpeed(1 / modifier) .. "x speed)")
 end
 
-function ModifyFrameRateDialog()
+local function ModifyFrameRateDialog()
     local frames = app.range.frames
 
     -- A frames range is never empty, it at least contains the active frame
@@ -49,7 +53,7 @@ function ModifyFrameRateDialog()
 
     local dialog = Dialog("Modify Frame Rate")
 
-    local UpdateDialog = function(modifier, updateTotal, updateSpeed)
+    local function UpdateDialog(modifier, updateTotal, updateSpeed)
         if not modifier then modifier = 1 end
 
         dialog --
@@ -118,10 +122,11 @@ function ModifyFrameRateDialog()
         id = "okButton",
         text = "&OK",
         onclick = function()
+            -- Closing the dialog after displaying a tooltip makes the tooltip disappear
+            dialog:close()
+
             local modifier = (dialog.data.total / 1000) / stats.total
             ModifyFrameRate(frames, modifier)
-
-            dialog:close()
         end
     } --
     :button{

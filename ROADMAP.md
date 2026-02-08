@@ -154,3 +154,10 @@ Unreleased:
 Future:
 
 - [Feature] Fill - add a new option in the context menu which extends the cel both directions (backwards and forwards)
+
+## Modify Frame Rate
+
+Unreleased:
+
+- Added the "Modify Frame Rate" name to appear in the Undo History
+- Added a tooltip that appear after modifying the frame rate/duration
