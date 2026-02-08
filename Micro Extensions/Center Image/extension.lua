@@ -209,11 +209,6 @@ local function CenterPart(cel, options, sprite)
         shiftY = (selectionCenter.y - cel.position.y) - center.y
     end
 
-    print("center", center)
-    print("selectionCenter", selectionCenter)
-    print("shiftX, shiftY", shiftX, shiftY)
-    print("---")
-
     -- Expand the image
     local cx, cy = cel.position.x, cel.position.y
     local iw, ih = cel.image.width, cel.image.height
@@ -240,9 +235,6 @@ local function CenterPart(cel, options, sprite)
             if y >= ih then down = math.max(y - ih + 1, down) end
         end
     end
-
-    print("left, right, up, down", left, right, up, down)
-    print("===")
 
     local newImage
     if left > 0 or right > 0 or up > 0 or down > 0 then
@@ -320,16 +312,6 @@ local function CenterCel(cel, options, sprite)
     end
 end
 
-local function CanCenterImage()
-    -- If there's no active sprite
-    if app.activeSprite == nil then return false end
-
-    -- If there's no cels in range
-    if #app.range.cels == 0 then return false end
-
-    return true
-end
-
 local function JoinStrings(strings, separator)
     local result = ""
     for i, s in ipairs(strings) do
@@ -392,6 +374,16 @@ local function CenterImageInActiveSprite(options)
     end
 
     app.refresh()
+end
+
+local function CanCenterImage()
+    -- If there's no active sprite
+    if app.activeSprite == nil then return false end
+
+    -- If there's no cels in range
+    if #app.range.cels == 0 then return false end
+
+    return true
 end
 
 function init(plugin)
