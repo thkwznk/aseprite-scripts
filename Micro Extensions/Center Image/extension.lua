@@ -185,8 +185,8 @@ local function GetSelectionCenter(sprite, options)
         centerX = FindCenterMass(columns, xStart, xEnd)
         centerY = FindCenterMass(rows, yStart, yEnd)
     else
-        centerX = bounds.x + math.floor(bounds.width / 2)
-        centerY = bounds.y + math.floor(bounds.height / 2)
+        centerX = bounds.x + math.floor(bounds.width / 2) - 1
+        centerY = bounds.y + math.floor(bounds.height / 2) - 1
     end
 
     return Point(centerX, centerY)
