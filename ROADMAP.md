@@ -174,3 +174,4 @@ Unreleased:
 Unreleased:
 
 - Added the "Track Cels" and "Snap Cels" names to appear in the Undo History
+- Added a tooltip that appears after tracking or snapping cels

@@ -248,6 +248,217 @@ local function SetupPositionGrid(dialog, onclick)
     })
 end
 
+local function TrackCelsDialog(options)
+    local sprite = options.sprite
+    local dialog = Dialog("Track Cel(s)")
+
+    local layerNames, layers = GetAvailableLayers(sprite.layers)
+    local anchorPosition = Position.TopLeft
+    local framesOptions = GetFramesOptions(sprite)
+
+    local getSelectedFramesRange = function()
+        local framesOption = dialog.data["framesOption"]
+        local framesRange = {fromFrame = 1, toFrame = #sprite.frames}
+
+        if framesOption == FramesOption.All then
+            -- Nothing specific
+        elseif framesOption == FramesOption.Specific then
+            framesRange = {
+                fromFrame = dialog.data["from-specific-frame"],
+                toFrame = dialog.data["to-specific-frame"]
+            }
+        else -- Tag
+            local tagName = string.sub(framesOption, #TagFramesPrefix + 1)
+
+            for _, tag in ipairs(sprite.tags) do
+                if tag.name == tagName then
+                    framesRange = {
+                        fromFrame = tag.fromFrame.frameNumber,
+                        toFrame = tag.toFrame.frameNumber
+                    }
+                    break
+                end
+            end
+        end
+
+        return framesRange
+    end
+
+    local updateSpecificFrames = function()
+        local visible = dialog.data["framesOption"] == FramesOption.Specific
+        dialog --
+        :modify{id = "from-specific-frame", visible = visible} --
+        :modify{id = "to-specific-frame", visible = visible}
+
+        local okButtonEnabled = true
+
+        if visible then
+            local from, to = dialog.data["from-specific-frame"],
+                             dialog.data["to-specific-frame"]
+
+            okButtonEnabled = from >= 1 and from <= to and to <= #sprite.frames
+        end
+
+        dialog:modify{id = "ok-button", enabled = okButtonEnabled}
+    end
+
+    local updateAnchorPosition = function(newPosition)
+        anchorPosition = newPosition
+
+        local trackedLayer = layers[dialog.data.trackedLayer]
+        local framesRange = getSelectedFramesRange()
+
+        local visible = false
+        local startBounds = nil
+
+        -- If cels change size, show anchor options
+        for frameNumber = framesRange.fromFrame, framesRange.toFrame do
+            local cel = trackedLayer:cel(frameNumber)
+
+            if cel then
+                if startBounds == nil then
+                    startBounds = cel.bounds
+                end
+
+                if startBounds.width ~= cel.bounds.width or startBounds.height ~=
+                    cel.bounds.height then
+                    visible = true
+                    break
+                end
+            end
+        end
+
+        dialog:modify{id = "anchor-separator", visible = visible}
+
+        for _, positionId in pairs(Position) do
+            dialog:modify{
+                id = positionId,
+                visible = visible,
+                text = newPosition == positionId and "X" or ""
+            }
+        end
+    end
+
+    local existingCelsOptions = {
+        ExistingCelOption.Replace, ExistingCelOption.Ignore
+    }
+
+    dialog --
+    :separator{text = "Tracked:"} --
+    :combobox{
+        id = "trackedLayer",
+        label = "Layer",
+        options = layerNames,
+        onchange = function() updateAnchorPosition(anchorPosition) end
+    } --
+    :combobox{
+        id = "framesOption",
+        label = "Frames:",
+        options = framesOptions,
+        onchange = function()
+            updateSpecificFrames()
+            updateAnchorPosition(anchorPosition)
+        end
+    } --
+    :number{
+        id = "from-specific-frame",
+        visible = false,
+        decimals = 0,
+        text = tostring(1),
+        onchange = updateSpecificFrames
+    } --
+    :number{
+        id = "to-specific-frame",
+        visible = false,
+        decimals = 0,
+        text = tostring(#sprite.frames),
+        onchange = updateSpecificFrames
+    } --
+    :separator{id = "anchor-separator", text = "Anchor:"} --
+
+    SetupPositionGrid(dialog, updateAnchorPosition)
+
+    dialog:separator{text = "Options"} --
+    :combobox{
+        id = "existing-cels-option",
+        label = "Existing cels:",
+        options = existingCelsOptions
+    } --
+    :separator() --
+    :button{
+        id = "ok-button",
+        text = "OK",
+        onclick = function()
+            local trackedLayer = layers[dialog.data.trackedLayer]
+            local framesRange = getSelectedFramesRange()
+            local existingCelsOption = dialog.data["existing-cels-option"]
+
+            app.transaction("Track Cels", function()
+                TrackCels(sprite, trackedLayer, framesRange, anchorPosition,
+                          existingCelsOption)
+            end)
+
+            dialog:close()
+            app.tip("Tracked " .. trackedLayer.name .. " with selected Cel(s)")
+        end
+    } --
+    :button{text = "Cancel"}
+
+    -- Initialize anchors
+    updateAnchorPosition(anchorPosition)
+
+    return dialog
+end
+
+local function SnapToCelsDialog(options)
+    local sprite = options.sprite
+    local dialog = Dialog("Snap to Cel(s)")
+
+    local layerNames, layers = GetAvailableLayers(sprite.layers)
+    local snapPosition = Position.MiddleCenter
+
+    local updateSnapPosition = function(newPosition)
+        snapPosition = newPosition
+
+        for _, positionId in pairs(Position) do
+            dialog:modify{
+                id = positionId,
+                text = newPosition == positionId and "X" or ""
+            }
+        end
+    end
+
+    dialog --
+    :separator{text = "Target:"} --
+    :combobox{id = "target-layer", label = "Layer:", options = layerNames} --
+    :separator{text = "Position:"} --
+
+    SetupPositionGrid(dialog, updateSnapPosition)
+
+    dialog:separator() --
+    :button{
+        text = "&OK",
+        onclick = function()
+            local targetLayer = layers[dialog.data["target-layer"]]
+
+            app.transaction("Snap Cels", function()
+                SnapToLayer(targetLayer, snapPosition)
+            end)
+
+            dialog:close()
+            app.refresh()
+
+            app.tip("Snapped Cel(s) to " .. targetLayer.name)
+        end
+    } --
+    :button{text = "Cancel"}
+
+    -- Initialize the position
+    updateSnapPosition(snapPosition)
+
+    return dialog
+end
+
 function init(plugin)
     plugin:newCommand{
         id = "TrackCels",
@@ -255,170 +466,7 @@ function init(plugin)
         group = "cel_popup_new",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
-            local sprite = app.activeSprite
-            local dialog = Dialog("Track Cel(s)")
-
-            local layerNames, layers = GetAvailableLayers(sprite.layers)
-            local anchorPosition = Position.TopLeft
-            local framesOptions = GetFramesOptions(sprite)
-
-            local getSelectedFramesRange = function()
-                local framesOption = dialog.data["framesOption"]
-                local framesRange = {fromFrame = 1, toFrame = #sprite.frames}
-
-                if framesOption == FramesOption.All then
-                    -- Nothing specific
-                elseif framesOption == FramesOption.Specific then
-                    framesRange = {
-                        fromFrame = dialog.data["from-specific-frame"],
-                        toFrame = dialog.data["to-specific-frame"]
-                    }
-                else -- Tag
-                    local tagName = string.sub(framesOption,
-                                               #TagFramesPrefix + 1)
-
-                    for _, tag in ipairs(sprite.tags) do
-                        if tag.name == tagName then
-                            framesRange = {
-                                fromFrame = tag.fromFrame.frameNumber,
-                                toFrame = tag.toFrame.frameNumber
-                            }
-                            break
-                        end
-                    end
-                end
-
-                return framesRange
-            end
-
-            local updateSpecificFrames = function()
-                local visible = dialog.data["framesOption"] ==
-                                    FramesOption.Specific
-                dialog --
-                :modify{id = "from-specific-frame", visible = visible} --
-                :modify{id = "to-specific-frame", visible = visible}
-
-                local okButtonEnabled = true
-
-                if visible then
-                    local from, to = dialog.data["from-specific-frame"],
-                                     dialog.data["to-specific-frame"]
-
-                    okButtonEnabled = from >= 1 and from <= to and to <=
-                                          #sprite.frames
-                end
-
-                dialog:modify{id = "ok-button", enabled = okButtonEnabled}
-            end
-
-            local updateAnchorPosition =
-                function(newPosition)
-                    anchorPosition = newPosition
-
-                    local trackedLayer = layers[dialog.data.trackedLayer]
-                    local framesRange = getSelectedFramesRange()
-
-                    local visible = false
-                    local startBounds = nil
-
-                    -- If cels change size, show anchor options
-                    for frameNumber = framesRange.fromFrame, framesRange.toFrame do
-                        local cel = trackedLayer:cel(frameNumber)
-
-                        if cel then
-                            if startBounds == nil then
-                                startBounds = cel.bounds
-                            end
-
-                            if startBounds.width ~= cel.bounds.width or
-                                startBounds.height ~= cel.bounds.height then
-                                visible = true
-                                break
-                            end
-                        end
-                    end
-
-                    dialog:modify{id = "anchor-separator", visible = visible}
-
-                    for _, positionId in pairs(Position) do
-                        dialog:modify{
-                            id = positionId,
-                            visible = visible,
-                            text = newPosition == positionId and "X" or ""
-                        }
-                    end
-                end
-
-            local existingCelsOptions = {
-                ExistingCelOption.Replace, ExistingCelOption.Ignore
-            }
-
-            dialog --
-            :separator{text = "Tracked:"} --
-            :combobox{
-                id = "trackedLayer",
-                label = "Layer",
-                options = layerNames,
-                onchange = function()
-                    updateAnchorPosition(anchorPosition)
-                end
-            } --
-            :combobox{
-                id = "framesOption",
-                label = "Frames:",
-                options = framesOptions,
-                onchange = function()
-                    updateSpecificFrames()
-                    updateAnchorPosition(anchorPosition)
-                end
-            } --
-            :number{
-                id = "from-specific-frame",
-                visible = false,
-                decimals = 0,
-                text = tostring(1),
-                onchange = updateSpecificFrames
-            } --
-            :number{
-                id = "to-specific-frame",
-                visible = false,
-                decimals = 0,
-                text = tostring(#sprite.frames),
-                onchange = updateSpecificFrames
-            } --
-            :separator{id = "anchor-separator", text = "Anchor:"} --
-
-            SetupPositionGrid(dialog, updateAnchorPosition)
-
-            dialog:separator{text = "Options"} --
-            :combobox{
-                id = "existing-cels-option",
-                label = "Existing cels:",
-                options = existingCelsOptions
-            } --
-            :separator() --
-            :button{
-                id = "ok-button",
-                text = "OK",
-                onclick = function()
-                    local trackedLayer = layers[dialog.data.trackedLayer]
-                    local framesRange = getSelectedFramesRange()
-                    local existingCelsOption =
-                        dialog.data["existing-cels-option"]
-
-                    app.transaction("Track Cels", function()
-                        TrackCels(sprite, trackedLayer, framesRange,
-                                  anchorPosition, existingCelsOption)
-                    end)
-
-                    dialog:close()
-                end
-            } --
-            :button{text = "Cancel"}
-
-            -- Initialize anchors
-            updateAnchorPosition(anchorPosition)
-
+            local dialog = TrackCelsDialog {sprite = app.activeSprite}
             dialog:show()
         end
     }
@@ -429,53 +477,7 @@ function init(plugin)
         group = "cel_popup_new",
         onenabled = function() return app.activeSprite ~= nil end,
         onclick = function()
-            local sprite = app.activeSprite
-            local dialog = Dialog("Snap to Cel(s)")
-
-            local layerNames, layers = GetAvailableLayers(sprite.layers)
-            local snapPosition = Position.MiddleCenter
-
-            local updateSnapPosition = function(newPosition)
-                snapPosition = newPosition
-
-                for _, positionId in pairs(Position) do
-                    dialog:modify{
-                        id = positionId,
-                        text = newPosition == positionId and "X" or ""
-                    }
-                end
-            end
-
-            dialog --
-            :separator{text = "Target:"} --
-            :combobox{
-                id = "target-layer",
-                label = "Layer:",
-                options = layerNames
-            } --
-            :separator{text = "Position:"} --
-
-            SetupPositionGrid(dialog, updateSnapPosition)
-
-            dialog:separator() --
-            :button{
-                text = "&OK",
-                onclick = function()
-                    local targetLayer = layers[dialog.data["target-layer"]]
-
-                    app.transaction("Snap Cels", function()
-                        SnapToLayer(targetLayer, snapPosition)
-                    end)
-
-                    dialog:close()
-                    app.refresh()
-                end
-            } --
-            :button{text = "Cancel"}
-
-            -- Initialize the position
-            updateSnapPosition(snapPosition)
-
+            local dialog = SnapToCelsDialog {sprite = app.activeSprite}
             dialog:show()
         end
     }
@@ -483,4 +485,4 @@ end
 
 function exit(plugin) end
 
--- TODO: More snapping options?
+-- FUTURE: More snapping options?
