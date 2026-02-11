@@ -16,15 +16,12 @@ local Position = {
     BottomRight = "bottom-right-position"
 }
 
-local CalculateAnchorPosition = function(cel, anchorPosition)
-    local top = cel.position.y
-    local bottom = cel.position.y + cel.bounds.height
-
-    local left = cel.position.x
-    local right = cel.position.x + cel.bounds.width
-
-    local middle = cel.position.y + cel.bounds.height / 2
-    local center = cel.position.x + cel.bounds.width / 2
+local function CalculateAnchorPosition(cel, anchorPosition)
+    local x, y, w, h = cel.position.x, cel.position.y, cel.bounds.width,
+                       cel.bounds.height
+    local top, bottom = y, y + h
+    local left, right = x, x + w
+    local middle, center = y + h / 2, x + w / 2
 
     if anchorPosition == Position.TopLeft then
         return Point(left, top)
@@ -47,7 +44,7 @@ local CalculateAnchorPosition = function(cel, anchorPosition)
     end
 end
 
-local CalculateRelativePosition = function(cel, placeholderCel, anchorPosition)
+local function CalculateRelativePosition(cel, placeholderCel, anchorPosition)
     local placeholderPosition = CalculateAnchorPosition(placeholderCel,
                                                         anchorPosition)
 
@@ -55,7 +52,7 @@ local CalculateRelativePosition = function(cel, placeholderCel, anchorPosition)
                  cel.position.y - placeholderPosition.y)
 end
 
-local GetRelativePositions = function(sourceCels, trackedLayer, anchorPosition)
+local function GetRelativePositions(sourceCels, trackedLayer, anchorPosition)
     local positions = {}
 
     for _, cel in ipairs(sourceCels) do
@@ -79,8 +76,8 @@ local MoveTrackingCel = function(trackedCel, relativePosition, anchorPosition)
     return Point(anchor.x + relativePosition.x, anchor.y + relativePosition.y)
 end
 
-local TrackCels = function(sprite, trackedLayer, framesRange, anchorPosition,
-                           existingCelsOption)
+local function TrackCels(sprite, trackedLayer, framesRange, anchorPosition,
+                         existingCelsOption)
     local selectedLayers = app.range.layers
 
     for _, layer in ipairs(selectedLayers) do
@@ -108,42 +105,39 @@ local TrackCels = function(sprite, trackedLayer, framesRange, anchorPosition,
         local offset = (firstSourceFrame - 1) % #sourceImages
 
         for i = framesRange.fromFrame, framesRange.toFrame do
-            local hasExistingCel = layer:cel(i) ~= nil
+            local skipCel = layer:cel(i) ~= nil and existingCelsOption ==
+                                ExistingCelOption.Ignore
 
-            if hasExistingCel and existingCelsOption == ExistingCelOption.Ignore then
-                goto skip_tracked_cel
-            end
+            if not skipCel then
+                local trackedCel = trackedLayer:cel(i)
 
-            local trackedCel = trackedLayer:cel(i)
+                if trackedCel then
+                    local originalIndex = (i - offset) % #sourceImages
 
-            if trackedCel then
-                local originalIndex = (i - offset) % #sourceImages
+                    if originalIndex == 0 then
+                        originalIndex = #sourceImages
+                    end
 
-                if originalIndex == 0 then
-                    originalIndex = #sourceImages
+                    local relativePosition = relativePositions[originalIndex]
+
+                    if relativePosition ~= Empty then
+                        local newPosition =
+                            MoveTrackingCel(trackedCel, relativePosition,
+                                            anchorPosition)
+
+                        sprite:newCel(layer, trackedCel.frameNumber,
+                                      sourceImages[originalIndex], newPosition)
+                    elseif existingCelsOption == ExistingCelOption.Replace and
+                        layer:cel(i) then
+                        sprite:deleteCel(layer, i)
+                    end
                 end
-
-                local relativePosition = relativePositions[originalIndex]
-
-                if relativePosition ~= Empty then
-                    local newPosition = MoveTrackingCel(trackedCel,
-                                                        relativePosition,
-                                                        anchorPosition)
-
-                    sprite:newCel(layer, trackedCel.frameNumber,
-                                  sourceImages[originalIndex], newPosition)
-                elseif existingCelsOption == ExistingCelOption.Replace and
-                    layer:cel(i) then
-                    sprite:deleteCel(layer, i)
-                end
             end
-
-            ::skip_tracked_cel::
         end
     end
 end
 
-local GetFramesOptions = function(sprite)
+local function GetFramesOptions(sprite)
     local framesOptions = {FramesOption.All}
 
     for _, tag in ipairs(sprite.tags) do
@@ -155,7 +149,7 @@ local GetFramesOptions = function(sprite)
     return framesOptions
 end
 
-local SnapToCel = function(cel, targetCel, position)
+local function SnapToCel(cel, targetCel, position)
     local left = targetCel.position.x
     local right = targetCel.position.x + targetCel.bounds.width -
                       cel.bounds.width
@@ -190,7 +184,7 @@ local SnapToCel = function(cel, targetCel, position)
     end
 end
 
-local SnapToLayer = function(targetLayer, position)
+local function SnapToLayer(targetLayer, position)
     local cels = app.range.cels
 
     for _, cel in ipairs(cels) do
@@ -235,7 +229,7 @@ GetAvailableLayers = function(layers)
     return resultNames, result
 end
 
-local SetupPositionRow = function(dialog, onclick, positionIds)
+local function SetupPositionRow(dialog, onclick, positionIds)
     for _, id in ipairs(positionIds) do
         dialog:button{id = id, onclick = function() onclick(id) end}
     end
@@ -243,7 +237,7 @@ local SetupPositionRow = function(dialog, onclick, positionIds)
     dialog:newrow()
 end
 
-local SetupPositionGrid = function(dialog, onclick)
+local function SetupPositionGrid(dialog, onclick)
     SetupPositionRow(dialog, onclick,
                      {Position.TopLeft, Position.TopCenter, Position.TopRight})
     SetupPositionRow(dialog, onclick, {
@@ -488,3 +482,5 @@ function init(plugin)
 end
 
 function exit(plugin) end
+
+-- TODO: More snapping options?
