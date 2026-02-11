@@ -149,7 +149,7 @@ Unreleased:
 Unreleased:
 
 - Added the "Extend Cels" name to appear in the Undo History
-- Added a tooltip that appear after extending cels
+- Added a tooltip that appears after extending cels
 
 Future:
 
@@ -160,11 +160,17 @@ Future:
 Unreleased:
 
 - Added the "Modify Frame Rate" name to appear in the Undo History
-- Added a tooltip that appear after modifying the frame rate/duration
+- Added a tooltip that appears after modifying the frame rate/duration
 
 ## Select Content
 
 Unreleased:
 
 - Improved performance
-- Added a tooltip that appear after selecting cels content
+- Added a tooltip that appears after selecting cels content
+
+## Cel Tracking 
+
+Unreleased:
+
+- Added the "Track Cels" and "Snap Cels" names to appear in the Undo History

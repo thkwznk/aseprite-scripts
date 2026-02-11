@@ -406,7 +406,7 @@ function init(plugin)
                     local existingCelsOption =
                         dialog.data["existing-cels-option"]
 
-                    app.transaction(function()
+                    app.transaction("Track Cels", function()
                         TrackCels(sprite, trackedLayer, framesRange,
                                   anchorPosition, existingCelsOption)
                     end)
@@ -463,7 +463,7 @@ function init(plugin)
                 onclick = function()
                     local targetLayer = layers[dialog.data["target-layer"]]
 
-                    app.transaction(function()
+                    app.transaction("Snap Cels", function()
                         SnapToLayer(targetLayer, snapPosition)
                     end)
 
