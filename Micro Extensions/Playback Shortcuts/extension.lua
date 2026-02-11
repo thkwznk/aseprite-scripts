@@ -248,9 +248,7 @@ local function PlaySequence(tagSequence)
     end
 end
 
-local function PlayCustomTagByIndex(sprite, tagIndex)
-    local customTagIndex = GetCustomTagIndex(sprite, tagIndex)
-
+local function PlayCustomTagByIndex(sprite, customTagIndex)
     if customTagIndex == SequenceIndex or customTagIndex == RandomSequenceIndex then
         local sequenceIds = sprite.properties(pluginKey).sequence
         local tagSequence = {}
@@ -512,7 +510,9 @@ function init(plugin)
             title = "Play Tag #" .. tostring(options.index),
             onenabled = function() return app.activeSprite ~= nil end,
             onclick = function()
-                PlayCustomTagByIndex(app.activeSprite, options.index)
+                local sprite = app.activeSprite
+                local customTagIndex = GetCustomTagIndex(sprite, options.index)
+                PlayCustomTagByIndex(sprite, customTagIndex)
             end
         }
     end
@@ -558,6 +558,24 @@ function init(plugin)
             local previouTagIndex = FindPreviousTagIndex(sprite,
                                                          currentFrameNumber)
             PlayTagByIndex(sprite, previouTagIndex)
+        end
+    }
+
+    plugin:newCommand{
+        id = "PlaySequence",
+        title = "Play Sequence",
+        onenabled = function() return app.activeSprite ~= nil end,
+        onclick = function()
+            PlayCustomTagByIndex(app.activeSprite, SequenceIndex)
+        end
+    }
+
+    plugin:newCommand{
+        id = "PlaySequenceRandomized",
+        title = "Play Sequence Randomized",
+        onenabled = function() return app.activeSprite ~= nil end,
+        onclick = function()
+            PlayCustomTagByIndex(app.activeSprite, RandomSequenceIndex)
         end
     }
 end

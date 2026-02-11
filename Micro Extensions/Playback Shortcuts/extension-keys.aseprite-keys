@@ -13,5 +13,7 @@
         <key command="PlayAllFrames" shortcut="Ctrl+0" />
         <key command="PlayNextTag" shortcut="Ctrl+." />
         <key command="PlayPreviousTag" shortcut="Ctrl+," />
+        <key command="PlaySequence" shortcut="Alt+Enter" />
+        <key command="PlaySequenceRandomized" shortcut="Alt+Shift+Enter" />
     </commands>
 </keyboard>

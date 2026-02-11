@@ -181,3 +181,4 @@ Unreleased:
 Unreleased:
 
 - Add an option to playback a Tag Sequence in a randomized order
+- Add separate commands for sequence and randomized sequence playbacks with default keyboard shortcuts (Alt+Enter and Alt+Shift+Enter respectively)
