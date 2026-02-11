@@ -1,16 +1,20 @@
 local pluginKey = "thkwznk/play-tag"
-local DefaultPlaybackOption = "<Default>"
-local SequencePlaybackOption = "<Sequence>"
+local PlaybackOption = {
+    Default = "<Default>",
+    Sequence = "<Sequence>",
+    SequenceRandom = "<Sequence Randomized>"
+}
 local SequenceIndex = -1
+local RandomSequenceIndex = -2
 
 local CustomTagIndicesFallback = {}
 
-function GetUniqueId()
+local function GetUniqueId()
     local randomNumber = math.random(1, 16 ^ 8)
     return string.format("%08x", randomNumber)
 end
 
-function GetTagUniqueId(tag)
+local function GetTagUniqueId(tag)
     if not tag then return nil end
 
     local uniqueId = tag.properties(pluginKey).uniqueId
@@ -23,7 +27,7 @@ function GetTagUniqueId(tag)
     return uniqueId
 end
 
-function GetTagOptions(sprite)
+local function GetTagOptions(sprite)
     local names = {}
     local tagDictionary = {}
 
@@ -38,13 +42,13 @@ function GetTagOptions(sprite)
     return names, tagDictionary
 end
 
-function GetTagByUniqueId(sprite, uniqueId)
+local function GetTagByUniqueId(sprite, uniqueId)
     for _, tag in ipairs(sprite.tags) do
         if tag.properties(pluginKey).uniqueId == uniqueId then return tag end
     end
 end
 
-function PlayAllFrames()
+local function PlayAllFrames()
     local playAll = app.preferences.editor.play_all
     app.preferences.editor.play_all = true
 
@@ -54,7 +58,7 @@ function PlayAllFrames()
     app.preferences.editor.play_all = playAll
 end
 
-function GetCustomTagIndex(sprite, tagIndex)
+local function GetCustomTagIndex(sprite, tagIndex)
     -- Custom tags are only available from v1.3-rc1
     if app.apiVersion < 21 then
         return (CustomTagIndicesFallback[sprite.filename] and
@@ -65,7 +69,10 @@ function GetCustomTagIndex(sprite, tagIndex)
     local tagKey = "tag-" .. tostring(tagIndex)
     local tagUniqueId = sprite.properties(pluginKey)[tagKey]
 
-    if tagUniqueId == SequencePlaybackOption then return SequenceIndex end
+    if tagUniqueId == PlaybackOption.Sequence then return SequenceIndex end
+    if tagUniqueId == PlaybackOption.SequenceRandom then
+        return RandomSequenceIndex
+    end
 
     if tagUniqueId then
         for i, tag in ipairs(sprite.tags) do
@@ -78,7 +85,7 @@ function GetCustomTagIndex(sprite, tagIndex)
     return tagIndex
 end
 
-function SetCustomTagIndex(sprite, tagIndex, customTag)
+local function SetCustomTagIndex(sprite, tagIndex, customTag)
     -- Custom tags are only available from v1.3-rc1
     if app.apiVersion < 21 then
         for i, tag in ipairs(sprite.tags) do
@@ -100,25 +107,7 @@ function SetCustomTagIndex(sprite, tagIndex, customTag)
     sprite.properties(pluginKey)["tag-" .. tagIndex] = GetTagUniqueId(customTag)
 end
 
-function PlayCustomTagByIndex(sprite, tagIndex)
-    local customTagIndex = GetCustomTagIndex(sprite, tagIndex)
-
-    if customTagIndex == SequenceIndex then
-        local sequenceIds = sprite.properties(pluginKey).sequence
-        local tagSequence = {}
-
-        for _, tagId in ipairs(sequenceIds) do
-            table.insert(tagSequence, GetTagByUniqueId(sprite, tagId))
-        end
-
-        PlaySequence(tagSequence)
-        return
-    end
-
-    PlayTagByIndex(sprite, customTagIndex)
-end
-
-function PlayTagByIndex(sprite, tagIndex)
+local function PlayTagByIndex(sprite, tagIndex)
     -- Return if the tag index is not valid
     if tagIndex > #sprite.tags or tagIndex < 1 then return end
 
@@ -133,14 +122,14 @@ function PlayTagByIndex(sprite, tagIndex)
     app.preferences.editor.play_all = playAll
 end
 
-function FindTagIndex(sprite, frameNumber)
+local function FindTagIndex(sprite, frameNumber)
     for i, tag in ipairs(sprite.tags) do
         if tag.fromFrame.frameNumber <= frameNumber and tag.toFrame.frameNumber >=
             frameNumber then return i end
     end
 end
 
-function FindNextTagIndex(sprite, frameNumber)
+local function FindNextTagIndex(sprite, frameNumber)
     local tagIndex = FindTagIndex(sprite, frameNumber)
 
     -- If the frame is within a tag, return decremented index or last tag index
@@ -162,7 +151,7 @@ function FindNextTagIndex(sprite, frameNumber)
     return closestTagStartIndex
 end
 
-function FindPreviousTagIndex(sprite, frameNumber)
+local function FindPreviousTagIndex(sprite, frameNumber)
     local tagIndex = FindTagIndex(sprite, frameNumber)
 
     -- If the frame is within a tag, return decremented index or last tag index
@@ -184,7 +173,7 @@ function FindPreviousTagIndex(sprite, frameNumber)
     return closestTagEndIndex
 end
 
-function RecursiveTimer(sequence, sequenceIndex, cancellationToken)
+local function RecursiveTimer(sequence, sequenceIndex, cancellationToken)
     if app.activeFrame == nil then cancellationToken.onCancel() end
     app.activeFrame = sequence[sequenceIndex].frameNumber
 
@@ -209,7 +198,16 @@ function RecursiveTimer(sequence, sequenceIndex, cancellationToken)
     timer:start()
 end
 
-function PlaySequence(tagSequence)
+-- Source: https://gist.github.com/Uradamus/10323382
+local function shuffle(tbl)
+    for i = #tbl, 2, -1 do
+        local j = math.random(i)
+        tbl[i], tbl[j] = tbl[j], tbl[i]
+    end
+    return tbl
+end
+
+local function PlaySequence(tagSequence)
     local sprite = app.activeSprite
     local layer = app.activeLayer
 
@@ -250,7 +248,46 @@ function PlaySequence(tagSequence)
     end
 end
 
-function PlaybackShortcutsDialog(options)
+local function PlayCustomTagByIndex(sprite, tagIndex)
+    local customTagIndex = GetCustomTagIndex(sprite, tagIndex)
+
+    if customTagIndex == SequenceIndex or customTagIndex == RandomSequenceIndex then
+        local sequenceIds = sprite.properties(pluginKey).sequence
+        local tagSequence = {}
+
+        for _, tagId in ipairs(sequenceIds) do
+            table.insert(tagSequence, GetTagByUniqueId(sprite, tagId))
+        end
+
+        if customTagIndex == RandomSequenceIndex then
+            shuffle(tagSequence)
+        end
+
+        PlaySequence(tagSequence)
+        return
+    end
+
+    PlayTagByIndex(sprite, customTagIndex)
+end
+
+local function GetPlaybackOptions(sprite)
+    local playbackOptions = {PlaybackOption.Default}
+    local tagNames, tagDictionary = GetTagOptions(sprite)
+
+    for _, tagName in ipairs(tagNames) do
+        table.insert(playbackOptions, tagName)
+    end
+
+    -- Only add option to play the sequence from v1.3-rc1
+    if app.apiVersion >= 21 then
+        table.insert(playbackOptions, PlaybackOption.Sequence)
+        table.insert(playbackOptions, PlaybackOption.SequenceRandom)
+    end
+
+    return playbackOptions, tagDictionary
+end
+
+local function PlaybackShortcutsDialog(options)
     local dialog = Dialog(options.title)
 
     dialog --
@@ -263,7 +300,9 @@ function PlaybackShortcutsDialog(options)
         local customTagIndex = GetCustomTagIndex(options.sprite, i)
 
         if customTagIndex == SequenceIndex then
-            option = SequencePlaybackOption
+            option = PlaybackOption.Sequence
+        elseif customTagIndex == RandomSequenceIndex then
+            option = PlaybackOption.SequenceRandom
         elseif customTagIndex ~= i then
             option = playbackOptions[customTagIndex + 1]
         end
@@ -283,7 +322,7 @@ function PlaybackShortcutsDialog(options)
             for i = 1, 9 do
                 dialog:modify{
                     id = "tag-" .. tostring(i),
-                    option = DefaultPlaybackOption
+                    option = PlaybackOption.Default
                 }
             end
         end
@@ -296,9 +335,12 @@ function PlaybackShortcutsDialog(options)
                 local tagId = "tag-" .. tostring(shortcutIndex)
                 local tagName = dialog.data[tagId]
 
-                if tagName == SequencePlaybackOption then
+                if tagName == PlaybackOption.Sequence then
                     options.sprite.properties(pluginKey)[tagId] =
-                        SequencePlaybackOption
+                        PlaybackOption.Sequence
+                elseif tagName == PlaybackOption.SequenceRandom then
+                    options.sprite.properties(pluginKey)[tagId] =
+                        PlaybackOption.SequenceRandom
                 else
                     local tag = tagDictionary[tagName]
                     SetCustomTagIndex(options.sprite, shortcutIndex, tag)
@@ -313,7 +355,7 @@ function PlaybackShortcutsDialog(options)
     return dialog
 end
 
-function PlaybackSequenceDialog(options)
+local function PlaybackSequenceDialog(options)
     local tagNames, tagDictionary = GetTagOptions(options.sprite)
     local spriteProperties = options.sprite.properties(pluginKey)
 
@@ -403,22 +445,6 @@ function PlaybackSequenceDialog(options)
     return dialog
 end
 
-function GetPlaybackOptions(sprite)
-    local playbackOptions = {DefaultPlaybackOption}
-    local tagNames, tagDictionary = GetTagOptions(sprite)
-
-    for _, tagName in ipairs(tagNames) do
-        table.insert(playbackOptions, tagName)
-    end
-
-    -- Only add option to play the sequence from v1.3-rc1
-    if app.apiVersion >= 21 then
-        table.insert(playbackOptions, SequencePlaybackOption)
-    end
-
-    return playbackOptions, tagDictionary
-end
-
 function init(plugin)
     -- Custom tags are only available from v1.3-rc1
     if app.apiVersion >= 21 then
@@ -480,68 +506,26 @@ function init(plugin)
         }
     end
 
-    plugin:newCommand{
-        id = "PlayFirstTag",
-        title = "Play Tag #1",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function() PlayCustomTagByIndex(app.activeSprite, 1) end
-    }
+    local function PlayCustomTagByIndexCommand(options)
+        plugin:newCommand{
+            id = options.id,
+            title = "Play Tag #" .. tostring(options.index),
+            onenabled = function() return app.activeSprite ~= nil end,
+            onclick = function()
+                PlayCustomTagByIndex(app.activeSprite, options.index)
+            end
+        }
+    end
 
-    plugin:newCommand{
-        id = "PlaySecondTag",
-        title = "Play Tag #2",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function() PlayCustomTagByIndex(app.activeSprite, 2) end
-    }
-
-    plugin:newCommand{
-        id = "PlayThirdTag",
-        title = "Play Tag #3",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function() PlayCustomTagByIndex(app.activeSprite, 3) end
-    }
-
-    plugin:newCommand{
-        id = "PlayFourthTag",
-        title = "Play Tag #4",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function() PlayCustomTagByIndex(app.activeSprite, 4) end
-    }
-
-    plugin:newCommand{
-        id = "PlayFifthTag",
-        title = "Play Tag #5",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function() PlayCustomTagByIndex(app.activeSprite, 5) end
-    }
-
-    plugin:newCommand{
-        id = "PlaySixthTag",
-        title = "Play Tag #6",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function() PlayCustomTagByIndex(app.activeSprite, 6) end
-    }
-
-    plugin:newCommand{
-        id = "PlaySeventhTag",
-        title = "Play Tag #7",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function() PlayCustomTagByIndex(app.activeSprite, 7) end
-    }
-
-    plugin:newCommand{
-        id = "PlayEightTag",
-        title = "Play Tag #8",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function() PlayCustomTagByIndex(app.activeSprite, 8) end
-    }
-
-    plugin:newCommand{
-        id = "PlayNinthTag",
-        title = "Play Tag #9",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function() PlayCustomTagByIndex(app.activeSprite, 9) end
-    }
+    PlayCustomTagByIndexCommand {id = "PlayFirstTag", index = 1}
+    PlayCustomTagByIndexCommand {id = "PlaySecondTag", index = 2}
+    PlayCustomTagByIndexCommand {id = "PlayThirdTag", index = 3}
+    PlayCustomTagByIndexCommand {id = "PlayFourthTag", index = 4}
+    PlayCustomTagByIndexCommand {id = "PlayFifthTag", index = 5}
+    PlayCustomTagByIndexCommand {id = "PlaySixthTag", index = 6}
+    PlayCustomTagByIndexCommand {id = "PlaySeventhTag", index = 7}
+    PlayCustomTagByIndexCommand {id = "PlayEightTag", index = 8}
+    PlayCustomTagByIndexCommand {id = "PlayNinthTag", index = 9}
 
     plugin:newCommand{
         id = "PlayAllFrames",

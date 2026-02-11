@@ -175,3 +175,9 @@ Unreleased:
 
 - Added the "Track Cels" and "Snap Cels" names to appear in the Undo History
 - Added a tooltip that appears after tracking or snapping cels
+
+## Playback Shortcuts
+
+Unreleased:
+
+- Add an option to playback a Tag Sequence in a randomized order
