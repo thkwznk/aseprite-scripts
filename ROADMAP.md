@@ -156,14 +156,6 @@ Unreleased:
 - Improved performance
 - Added a tooltip that appears after selecting cels content
 
-## Cel Tracking 
-
-Unreleased:
-
-- Added the "Track Cels" and "Snap Cels" names to appear in the Undo History
-- Added a tooltip that appears after tracking or snapping cels
-- Fix extension to no longer throw when extensions commands are searched using the "Run Command" dialog
-
 ## Playback Shortcuts
 
 Unreleased:
