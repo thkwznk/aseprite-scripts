@@ -16,14 +16,14 @@ local ThemeXmlTemplatePath = app.fs.joinPath(ThemePreferencesDirectory,
                                              "theme-template.xml")
 local ThemeXmlPath = app.fs.joinPath(ThemePreferencesDirectory, "theme.xml")
 
-function ReadAll(filePath)
+local function ReadAll(filePath)
     local file = assert(io.open(filePath, "rb"))
     local content = file:read("*all")
     file:close()
     return content
 end
 
-function WriteAll(filePath, content)
+local function WriteAll(filePath, content)
     local file = io.open(filePath, "w")
     if file then
         file:write(content)
@@ -31,11 +31,11 @@ function WriteAll(filePath, content)
     end
 end
 
-function ColorToHex(color)
+local function ColorToHex(color)
     return string.format("#%02x%02x%02x", color.red, color.green, color.blue)
 end
 
-function RgbaPixelToColor(rgbaPixel)
+local function RgbaPixelToColor(rgbaPixel)
     return Color {
         red = app.pixelColor.rgbaR(rgbaPixel),
         green = app.pixelColor.rgbaG(rgbaPixel),
@@ -44,12 +44,25 @@ function RgbaPixelToColor(rgbaPixel)
     }
 end
 
-function CopyColor(originalColor)
+local function CopyColor(originalColor)
     return Color {
         red = originalColor.red,
         green = originalColor.green,
         blue = originalColor.blue,
         alpha = originalColor.alpha
+    }
+end
+
+local function ShiftRGB(value, modifier)
+    return math.max(math.min(value + modifier, 255), 0)
+end
+
+local function ShiftColor(color, redModifier, greenModifer, blueModifier)
+    return Color {
+        red = ShiftRGB(color.red, redModifier),
+        green = ShiftRGB(color.green, greenModifer),
+        blue = ShiftRGB(color.blue, blueModifier),
+        alpha = color.alpha
     }
 end
 
@@ -186,19 +199,6 @@ function ThemePreferencesDialog:Refresh()
     if app.preferences.theme.selected ~= THEME_ID then
         app.preferences.theme.selected = THEME_ID
     end
-end
-
-function ShiftRGB(value, modifier)
-    return math.max(math.min(value + modifier, 255), 0)
-end
-
-function ShiftColor(color, redModifier, greenModifer, blueModifier)
-    return Color {
-        red = ShiftRGB(color.red, redModifier),
-        green = ShiftRGB(color.green, greenModifer),
-        blue = ShiftRGB(color.blue, blueModifier),
-        alpha = color.alpha
-    }
 end
 
 function ThemePreferencesDialog:MarkThemeAsModified()
