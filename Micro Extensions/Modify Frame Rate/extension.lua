@@ -138,7 +138,26 @@ local function ModifyFrameRateDialog()
     return dialog
 end
 
+local function AnyFramesSelected()
+    -- Check first if there's an active sprite
+    -- This helps with extensions commands showing up in the "Run Command" search as enabled
+    if not app.activeSprite then return false end
+
+    return #app.range.frames > 1
+end
+
 function init(plugin)
+    plugin:newCommand{
+        id = "ModifyFrameRate",
+        title = "Modify Frame Rate",
+        group = "cel_frames",
+        onenabled = function() return app.activeSprite ~= nil end,
+        onclick = function()
+            local dialog = ModifyFrameRateDialog()
+            dialog:show()
+        end
+    }
+
     local group = "frame_popup_properties"
 
     if app.apiVersion >= 22 then
@@ -170,7 +189,8 @@ function init(plugin)
                 onclick = function()
                     local frames = app.range.frames
                     ModifyFrameRate(frames, rate.modifier)
-                end
+                end,
+                onenabled = AnyFramesSelected
             }
         end
 
@@ -185,18 +205,7 @@ function init(plugin)
             local dialog = ModifyFrameRateDialog()
             dialog:show()
         end,
-        onenabled = function() return #app.range.frames > 1 end
-    }
-
-    plugin:newCommand{
-        id = "ModifyFrameRate",
-        title = "Modify Frame Rate",
-        group = "cel_frames",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            local dialog = ModifyFrameRateDialog()
-            dialog:show()
-        end
+        onenabled = AnyFramesSelected
     }
 end
 

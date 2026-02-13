@@ -138,12 +138,6 @@ Unreleased:
 - [Feature] Add a new option under _File > Run..._ that allows for searching and running scripts and commands 
 - [Feature] Add a keyboard shortcut for running the last searched script or command
 
-## Brush Transformations
-
-Unreleased:
-
-- ...
-
 ## Extend Cel
 
 Unreleased:
@@ -161,6 +155,7 @@ Unreleased:
 
 - Added the "Modify Frame Rate" name to appear in the Undo History
 - Added a tooltip that appears after modifying the frame rate/duration
+- Fix extension to no longer throw when extensions commands are searched using the "Run Command" dialog
 
 ## Select Content
 
