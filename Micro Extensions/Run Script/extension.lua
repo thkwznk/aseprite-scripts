@@ -103,8 +103,8 @@ local function RunScriptDialog(options)
         onclose = function()
             if options.onclose then options.onclose(dialog.data) end
         end,
-        -- resizeable = false,
-        -- autofit = Align.TOP
+        resizeable = false,
+        autofit = Align.TOP
     }
     local results = {}
     local currentPage = 1
@@ -173,7 +173,6 @@ local function RunScriptDialog(options)
     end
 
     dialog --
-    :label{text = "Search a script by name:"} --
     :entry{id = "search", text = search, onchange = function() SearchAll() end} --
     :separator{id = "resultsSeparator", text = "Results:", visible = false} --
     :label{id = "noResults", text = "No results", visible = false} --
@@ -257,7 +256,7 @@ function init(plugin)
         group = "file_scripts",
         onclick = function()
             local dialog = RunScriptDialog {
-                title = "Run",
+                title = "Run Script",
                 showPaths = preferences.showPaths,
                 onrun = function(option, data)
                     CopyPreferences(data)
@@ -265,7 +264,10 @@ function init(plugin)
                 end,
                 onclose = function(data) CopyPreferences(data) end
             }
-            dialog:show()
+            dialog:show{
+                bounds = Rectangle(app.window.width / 2 - 140, 28, 280,
+                                   dialog.sizeHint.height)
+            }
         end
     }
 
