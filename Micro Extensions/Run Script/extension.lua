@@ -286,4 +286,3 @@ end
 function exit(plugin) end
 
 -- TODO: Add a profiler and options for repeating a script
--- TODD: Test other keyboard shortcuts (Ctrl+Alt+Space?)
