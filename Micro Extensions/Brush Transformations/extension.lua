@@ -70,6 +70,8 @@ local function TransformBrush(options)
     app.refresh()
 end
 
+local function HasActiveSprite() return app.activeSprite ~= nil end
+
 function init(plugin)
     local parentGroup = "edit_transform"
 
@@ -87,7 +89,8 @@ function init(plugin)
         id = "BrushRotateCW",
         title = app.apiVersion >= 22 and "Rotate 90 CW" or "Brush Rotate 90 CW",
         group = parentGroup,
-        onclick = function() TransformBrush {rotateCw = true} end
+        onclick = function() TransformBrush {rotateCw = true} end,
+        onenabled = HasActiveSprite
     }
 
     plugin:newCommand{
@@ -95,7 +98,8 @@ function init(plugin)
         title = app.apiVersion >= 22 and "Rotate 90 CCW" or
             "Brush Rotate 90 CCW",
         group = parentGroup,
-        onclick = function() TransformBrush {rotateCcw = true} end
+        onclick = function() TransformBrush {rotateCcw = true} end,
+        onenabled = HasActiveSprite
     }
 
     if app.apiVersion >= 22 then plugin:newMenuSeparator{group = parentGroup} end
@@ -105,7 +109,8 @@ function init(plugin)
         title = app.apiVersion >= 22 and "Flip Horizontal" or
             "Brush Flip Horizontal",
         group = parentGroup,
-        onclick = function() TransformBrush {flipHorizontal = true} end
+        onclick = function() TransformBrush {flipHorizontal = true} end,
+        onenabled = HasActiveSprite
     }
 
     plugin:newCommand{
@@ -113,7 +118,8 @@ function init(plugin)
         title = app.apiVersion >= 22 and "Flip Vertical" or
             "Brush Flip Vertical",
         group = parentGroup,
-        onclick = function() TransformBrush {flipVertical = true} end
+        onclick = function() TransformBrush {flipVertical = true} end,
+        onenabled = HasActiveSprite
     }
 end
 
