@@ -2,7 +2,7 @@
   "name": "modify-frame-rate",
   "displayName": "Modify Frame Rate",
   "description": "Provides an option to speed up or slow down multiple frames at the same time to a percentage of their current frame rate.",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "author": {
     "name": "Kacper Woźniak",
     "email": "kac.wozniak@gmail.com",

@@ -149,14 +149,6 @@ Future:
 
 - [Feature] Fill - add a new option in the context menu which extends the cel both directions (backwards and forwards)
 
-## Modify Frame Rate
-
-Unreleased:
-
-- Added the "Modify Frame Rate" name to appear in the Undo History
-- Added a tooltip that appears after modifying the frame rate/duration
-- Fix extension to no longer throw when extensions commands are searched using the "Run Command" dialog
-
 ## Select Content
 
 Unreleased:
