@@ -459,12 +459,20 @@ local function SnapToCelsDialog(options)
     return dialog
 end
 
+local function AnyCelsSelected()
+    -- Check first if there's an active sprite
+    -- This helps with extensions commands showing up in the "Run Command" search as enabled
+    if not app.activeSprite then return false end
+
+    return #app.range.cels > 0
+end
+
 function init(plugin)
     plugin:newCommand{
         id = "TrackCels",
         title = "Track Cel(s)",
         group = "cel_popup_new",
-        onenabled = function() return app.activeSprite ~= nil end,
+        onenabled = AnyCelsSelected,
         onclick = function()
             local dialog = TrackCelsDialog {sprite = app.activeSprite}
             dialog:show()
@@ -475,7 +483,7 @@ function init(plugin)
         id = "SnapToCels",
         title = "Snap to Cel(s)",
         group = "cel_popup_new",
-        onenabled = function() return app.activeSprite ~= nil end,
+        onenabled = AnyCelsSelected,
         onclick = function()
             local dialog = SnapToCelsDialog {sprite = app.activeSprite}
             dialog:show()
