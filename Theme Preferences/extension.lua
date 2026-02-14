@@ -78,34 +78,33 @@ for id, parameter in pairs(Template.parameters) do
     Theme.parameters[id] = parameter
 end
 
--- Dialog
-local ThemePreferencesDialog = {
-    isModified = false,
-    lastRefreshState = false,
-    isDialogOpen = false,
-    onClose = nil,
-    dialog = nil
-}
+local function UpdateThemeXml(theme)
+    -- Prepare theme.xml
+    local xmlContent = ReadAll(ThemeXmlTemplatePath)
 
-ThemePreferencesDialog.dialog = Dialog {
-    title = DIALOG_TITLE,
-    onclose = function() ThemePreferencesDialog:onClose() end
-}
+    for id, color in pairs(theme.colors) do
+        xmlContent = xmlContent:gsub("<" .. id .. ">", ColorToHex(color))
+    end
 
-function ThemePreferencesDialog:SetInitialWidth()
-    self.dialog:show{wait = false}
-    self.dialog:close()
+    local font = FontsProvider:GetCurrentFont()
 
-    local uiScale = app.preferences.general["ui_scale"]
+    -- Setting fonts for these just in case it's a system font
+    xmlContent = xmlContent:gsub("<system_font_default>",
+                                 FontsProvider:GetFontDeclaration(font.default))
+    xmlContent = xmlContent:gsub("<default_font>", font.default.name)
+    xmlContent = xmlContent:gsub("<default_font_size>", font.default.size)
 
-    local bounds = self.dialog.bounds
-    bounds.x = bounds.x - (DIALOG_WIDTH - bounds.width) / 2
-    bounds.width = DIALOG_WIDTH * uiScale
+    xmlContent = xmlContent:gsub("<system_font_mini>",
+                                 FontsProvider:GetFontDeclaration(font.mini))
+    xmlContent = xmlContent:gsub("<mini_font>", font.mini.name)
+    xmlContent = xmlContent:gsub("<mini_font_size>", font.mini.size)
 
-    self.dialog.bounds = bounds
+    -- TODO: If using system fonts - ask user if they want to switch default scaling percentages
+
+    WriteAll(ThemeXmlPath, xmlContent)
 end
 
-function ThemePreferencesDialog:RefreshTheme(template, theme)
+local function RefreshTheme(template, theme)
     -- Prepare color lookup
     local Map = {}
 
@@ -158,41 +157,42 @@ function ThemePreferencesDialog:RefreshTheme(template, theme)
     image:saveAs(SheetPath)
 
     -- Update the XML theme file
-    ThemePreferencesDialog:UpdateThemeXml(theme)
+    UpdateThemeXml(theme)
 
     app.command.Refresh()
 end
 
-function ThemePreferencesDialog:UpdateThemeXml(theme)
-    -- Prepare theme.xml
-    local xmlContent = ReadAll(ThemeXmlTemplatePath)
+-- Dialog
+local ThemePreferencesDialog = {
+    isModified = false,
+    lastRefreshState = false,
+    isDialogOpen = false,
+    onClose = nil,
+    dialog = nil
+}
 
-    for id, color in pairs(theme.colors) do
-        xmlContent = xmlContent:gsub("<" .. id .. ">", ColorToHex(color))
-    end
+ThemePreferencesDialog.dialog = Dialog {
+    title = DIALOG_TITLE,
+    onclose = function() ThemePreferencesDialog:onClose() end
+}
 
-    local font = FontsProvider:GetCurrentFont()
+function ThemePreferencesDialog:SetInitialWidth()
+    self.dialog:show{wait = false}
+    self.dialog:close()
 
-    -- Setting fonts for these just in case it's a system font
-    xmlContent = xmlContent:gsub("<system_font_default>",
-                                 FontsProvider:GetFontDeclaration(font.default))
-    xmlContent = xmlContent:gsub("<default_font>", font.default.name)
-    xmlContent = xmlContent:gsub("<default_font_size>", font.default.size)
+    local uiScale = app.preferences.general["ui_scale"]
 
-    xmlContent = xmlContent:gsub("<system_font_mini>",
-                                 FontsProvider:GetFontDeclaration(font.mini))
-    xmlContent = xmlContent:gsub("<mini_font>", font.mini.name)
-    xmlContent = xmlContent:gsub("<mini_font_size>", font.mini.size)
+    local bounds = self.dialog.bounds
+    bounds.x = bounds.x - (DIALOG_WIDTH - bounds.width) / 2
+    bounds.width = DIALOG_WIDTH * uiScale
 
-    -- TODO: If using system fonts - ask user if they want to switch default scaling percentages
-
-    WriteAll(ThemeXmlPath, xmlContent)
+    self.dialog.bounds = bounds
 end
 
 function ThemePreferencesDialog:Refresh()
     self.lastRefreshState = self.isModified
 
-    self:RefreshTheme(Template, Theme)
+    RefreshTheme(Template, Theme)
     ThemeManager:SetCurrentTheme(Theme)
 
     -- Switch Aseprite to the custom theme
