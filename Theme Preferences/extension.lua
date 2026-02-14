@@ -149,7 +149,6 @@ end
 -- Dialog
 local isModified = false
 local lastRefreshState = false
-local isDialogOpen = false
 
 local function Refresh()
     lastRefreshState = isModified
@@ -322,8 +321,7 @@ local function ThemePreferencesDialog(options)
 
             isModified = lastRefreshState
             if isModified then MarkThemeAsModified() end
-
-            isDialogOpen = false
+            if options.onclose then options.onclose() end
         end
     }
 
@@ -642,13 +640,17 @@ function init(plugin)
     -- Initialize data from plugin preferences
     isModified = plugin.preferences.themePreferences.isThemeModified
 
+    local isDialogOpen = false
+
     plugin:newCommand{
         id = "ThemePreferences",
         title = DIALOG_TITLE .. "...",
         group = "view_screen",
         onenabled = function() return not isDialogOpen end,
         onclick = function()
-            local dialog = ThemePreferencesDialog()
+            local dialog = ThemePreferencesDialog {
+                onclose = function() isDialogOpen = false end
+            }
 
             -- Refreshing the UI on open to fix the issue where the dialog would keep parts of the old theme
             app.command.Refresh()
