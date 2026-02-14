@@ -146,13 +146,7 @@ local function RefreshTheme(template, theme)
     app.command.Refresh()
 end
 
--- Dialog
-local isModified = false
-local lastRefreshState = false
-
-local function Refresh()
-    lastRefreshState = isModified
-
+local function ApplyTheme()
     RefreshTheme(Template, Theme)
     ThemeManager:SetCurrentTheme(Theme)
 
@@ -171,13 +165,23 @@ local AdvancedWidgetIds = {
 
 local function ThemePreferencesDialog(options)
     local dialog
+    local isModified = options.isModified
+    local hasAppliedModifications = false
 
-    local function MarkThemeAsModified()
-        isModified = true
+    local function GetDialogTitle()
+        if isModified then
+            return DIALOG_TITLE .. ": " .. Theme.name .. " (modified)"
+        end
+
+        return DIALOG_TITLE .. ": " .. Theme.name
+    end
+
+    local function MarkThemeAsModified(value)
+        isModified = value
 
         dialog --
-        :modify{id = "save-configuration", enabled = true} --
-        :modify{title = DIALOG_TITLE .. ": " .. Theme.name .. " (modified)"}
+        :modify{id = "save-configuration", enabled = value} --
+        :modify{title = GetDialogTitle()}
     end
 
     local function ChangeMode(options)
@@ -228,7 +232,6 @@ local function ThemePreferencesDialog(options)
         end
 
         Theme.parameters.isAdvanced = dialog.data["mode-advanced"]
-        MarkThemeAsModified()
     end
 
     local function SetThemeColor(id, color)
@@ -267,10 +270,8 @@ local function ThemePreferencesDialog(options)
             SetThemeColor(id, CopyColor(color))
         end
 
-        dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name} --
-        dialog:modify{id = "save-configuration", enabled = false}
-
-        isModified = false
+        dialog:modify{title = GetDialogTitle()} --
+        dialog:modify{id = "save-configuration", enabled = isModified}
     end
 
     local function ThemeColor(options)
@@ -285,7 +286,7 @@ local function ThemePreferencesDialog(options)
 
                 if options.onchange then options.onchange(color) end
 
-                MarkThemeAsModified()
+                MarkThemeAsModified(true)
             end
         }
     end
@@ -305,7 +306,7 @@ local function ThemePreferencesDialog(options)
         Theme.colors["editor_cursor_shadow"] = shadowColor
         Theme.colors["editor_cursor_outline"] = outlinecolor
 
-        MarkThemeAsModified()
+        MarkThemeAsModified(true)
     end
 
     local function LoadCurrentTheme()
@@ -315,13 +316,13 @@ local function ThemePreferencesDialog(options)
 
     -- Setup the dialog
     dialog = Dialog {
-        title = DIALOG_TITLE,
+        title = GetDialogTitle(),
         onclose = function()
-            LoadCurrentTheme()
+            if options.onclose then
+                options.onclose({isModified = hasAppliedModifications})
+            end
 
-            isModified = lastRefreshState
-            if isModified then MarkThemeAsModified() end
-            if options.onclose then options.onclose() end
+            LoadCurrentTheme()
         end
     }
 
@@ -331,13 +332,19 @@ local function ThemePreferencesDialog(options)
         label = "Mode",
         text = "Simple",
         selected = true,
-        onclick = function() ChangeMode() end
+        onclick = function()
+            ChangeMode()
+            MarkThemeAsModified(true)
+        end
     } --
     :radio{
         id = "mode-advanced",
         text = "Advanced",
         selected = false,
-        onclick = function() ChangeMode() end
+        onclick = function()
+            ChangeMode()
+            MarkThemeAsModified(true)
+        end
     }
 
     dialog:separator{text = "Text"}
@@ -365,7 +372,7 @@ local function ThemePreferencesDialog(options)
             SetThemeColor("text_link", color)
             SetThemeColor("text_separator", color)
 
-            MarkThemeAsModified()
+            MarkThemeAsModified(true)
         end
     }
 
@@ -457,7 +464,7 @@ local function ThemePreferencesDialog(options)
             SetThemeColor("button_background", color)
             SetThemeColor("button_shadow", shadowColor)
 
-            MarkThemeAsModified()
+            MarkThemeAsModified(true)
         end
     }
 
@@ -484,7 +491,7 @@ local function ThemePreferencesDialog(options)
             SetThemeColor("tab_background", color)
             SetThemeColor("tab_shadow", shadowColor)
 
-            MarkThemeAsModified()
+            MarkThemeAsModified(true)
         end
     }
 
@@ -542,7 +549,7 @@ local function ThemePreferencesDialog(options)
             Theme.colors["field_shadow"] = fieldShadowColor
             Theme.colors["field_corner_shadow"] = filedCornerShadowColor
 
-            MarkThemeAsModified()
+            MarkThemeAsModified(true)
         end
     } --
 
@@ -557,11 +564,10 @@ local function ThemePreferencesDialog(options)
         enabled = false,
         onclick = function()
             local onsave = function(theme)
-                dialog:modify{title = DIALOG_TITLE .. ": " .. theme.name}
+                dialog:modify{title = GetDialogTitle()}
                 dialog:modify{id = "save-configuration", enabled = false}
 
-                isModified = false
-                lastRefreshState = false
+                MarkThemeAsModified(false)
             end
 
             ThemeManager:Save(Theme, onsave)
@@ -572,12 +578,16 @@ local function ThemePreferencesDialog(options)
         onclick = function()
             local onload = function(theme)
                 LoadTheme(theme)
-                Refresh()
+                ApplyTheme()
+                MarkThemeAsModified(false)
+                hasAppliedModifications = isModified
             end
 
             local onreset = function()
                 LoadTheme(Template)
-                Refresh()
+                ApplyTheme()
+                MarkThemeAsModified(false)
+                hasAppliedModifications = isModified
             end
 
             -- Hide the Theme Preferences dialog
@@ -595,33 +605,22 @@ local function ThemePreferencesDialog(options)
     :button{
         text = "OK",
         onclick = function()
-            Refresh()
+            ApplyTheme()
+            hasAppliedModifications = isModified
             dialog:close()
         end
     } --
-    :button{text = "Apply", onclick = function() Refresh() end} -- 
+    :button{
+        text = "Apply",
+        onclick = function()
+            ApplyTheme()
+            hasAppliedModifications = isModified
+        end
+    } -- 
     :button{text = "Cancel", onclick = function() dialog:close() end} --
-
-    -- Treat the "Modified" state as the last known refresh state 
-    lastRefreshState = isModified
-
-    -- Update the dialog if the theme is modified
-    if isModified then MarkThemeAsModified() end
 
     -- Init
     LoadCurrentTheme()
-
-    -- Set the initial width of the dialog
-    dialog:show{wait = false}
-    dialog:close()
-
-    local uiScale = app.preferences.general["ui_scale"]
-
-    local bounds = dialog.bounds
-    bounds.x = bounds.x - (DIALOG_WIDTH - bounds.width) / 2
-    bounds.width = DIALOG_WIDTH * uiScale
-
-    dialog.bounds = bounds
 
     return dialog
 end
@@ -637,9 +636,6 @@ function init(plugin)
 
     ThemeManager:Init{storage = storage}
 
-    -- Initialize data from plugin preferences
-    isModified = plugin.preferences.themePreferences.isThemeModified
-
     local isDialogOpen = false
 
     plugin:newCommand{
@@ -649,19 +645,32 @@ function init(plugin)
         onenabled = function() return not isDialogOpen end,
         onclick = function()
             local dialog = ThemePreferencesDialog {
-                onclose = function() isDialogOpen = false end
+                isModified = storage.isThemeModified,
+                onclose = function(options)
+                    isDialogOpen = false
+                    storage.isThemeModified = options.isModified
+                end
             }
 
             -- Refreshing the UI on open to fix the issue where the dialog would keep parts of the old theme
             app.command.Refresh()
 
             -- Show Theme Preferences dialog
-            dialog:show{wait = false}
+            local uiScale = app.preferences.general["ui_scale"]
+
+            dialog:show{
+                wait = false,
+                bounds = Rectangle(app.window.width / 2 - DIALOG_WIDTH / 2,
+                                   app.window.height / 2 -
+                                       dialog.sizeHint.height / 2,
+                                   DIALOG_WIDTH * uiScale,
+                                   dialog.sizeHint.height * uiScale)
+            }
             isDialogOpen = true
         end
     }
 end
 
 function exit(plugin)
-    plugin.preferences.themePreferences.isThemeModified = isModified
+    -- 
 end
