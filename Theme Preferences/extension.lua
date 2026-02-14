@@ -1,6 +1,5 @@
 local Template = dofile("./Template.lua")
 local ThemeManager = dofile("./ThemeManager.lua")
-local FontsProvider = dofile("./FontsProvider.lua")
 
 local THEME_ID = "custom"
 local DIALOG_WIDTH = 240
@@ -85,21 +84,6 @@ local function UpdateThemeXml(theme)
     for id, color in pairs(theme.colors) do
         xmlContent = xmlContent:gsub("<" .. id .. ">", ColorToHex(color))
     end
-
-    local font = FontsProvider:GetCurrentFont()
-
-    -- Setting fonts for these just in case it's a system font
-    xmlContent = xmlContent:gsub("<system_font_default>",
-                                 FontsProvider:GetFontDeclaration(font.default))
-    xmlContent = xmlContent:gsub("<default_font>", font.default.name)
-    xmlContent = xmlContent:gsub("<default_font_size>", font.default.size)
-
-    xmlContent = xmlContent:gsub("<system_font_mini>",
-                                 FontsProvider:GetFontDeclaration(font.mini))
-    xmlContent = xmlContent:gsub("<mini_font>", font.mini.name)
-    xmlContent = xmlContent:gsub("<mini_font_size>", font.mini.size)
-
-    -- TODO: If using system fonts - ask user if they want to switch default scaling percentages
 
     WriteAll(ThemeXmlPath, xmlContent)
 end
@@ -607,20 +591,6 @@ local function ThemePreferencesDialog(options)
             dialog:show{wait = false}
         end
     } --
-    :button{
-        text = "Font",
-        onclick = function()
-            local onconfirm = function() Refresh() end
-
-            -- Hide the Theme Preferences dialog
-            dialog:close()
-
-            FontsProvider:OpenDialog(onconfirm)
-
-            -- Reopen the dialog
-            dialog:show{wait = false}
-        end
-    }
 
     dialog --
     :separator() --
@@ -668,7 +638,6 @@ function init(plugin)
     local storage = plugin.preferences.themePreferences
 
     ThemeManager:Init{storage = storage}
-    FontsProvider:Init{storage = storage}
 
     -- Initialize data from plugin preferences
     isModified = plugin.preferences.themePreferences.isThemeModified
