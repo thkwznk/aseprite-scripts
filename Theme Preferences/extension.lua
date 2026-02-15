@@ -541,7 +541,7 @@ function init(plugin)
                                    app.window.height / 2 -
                                        dialog.sizeHint.height / 2,
                                    DIALOG_WIDTH * uiScale,
-                                   dialog.sizeHint.height * uiScale)
+                                   dialog.sizeHint.height)
             }
             isDialogOpen = true
         end
