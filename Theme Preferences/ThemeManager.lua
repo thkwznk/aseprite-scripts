@@ -1,6 +1,6 @@
-local EXPORT_DIALOG_WIDTH = 540
+local Base64 = dofile("./Base64.lua")
 
-local ThemeEncoder = dofile("./Base64Encoder.lua")
+local EXPORT_DIALOG_WIDTH = 540
 
 local ThemeManager = {storage = nil}
 
@@ -28,21 +28,20 @@ function ThemeManager:Init(options)
 end
 
 function ThemeManager:SetCurrentTheme(theme)
-    local code = ThemeEncoder:EncodeSigned(theme.name, theme.parameters,
-                                           theme.colors)
+    local code = Base64.EncodeSigned(theme.name, theme.parameters, theme.colors)
 
     if code then self.storage.currentTheme = code end
 end
 
 function ThemeManager:GetCurrentTheme()
     if self.storage.currentTheme then
-        return ThemeEncoder:DecodeSigned(self.storage.currentTheme)
+        return Base64.DecodeSigned(self.storage.currentTheme)
     end
 end
 
 function ThemeManager:Find(name)
     for i, savedthemeCode in ipairs(self.storage.savedThemes) do
-        if ThemeEncoder:DecodeName(savedthemeCode) == name then return i end
+        if Base64.DecodeName(savedthemeCode) == name then return i end
     end
 end
 
@@ -78,8 +77,8 @@ function ThemeManager:Save(theme, onsave, isImport)
             onsave(theme)
         end
 
-        local code = ThemeEncoder:EncodeSigned(theme.name, theme.parameters,
-                                               theme.colors)
+        local code = Base64.EncodeSigned(theme.name, theme.parameters,
+                                         theme.colors)
 
         if isNameUsed then
             self.storage.savedThemes[isNameUsed] = code
@@ -177,7 +176,7 @@ function ThemeManager:Load(onload)
             local deleteButtonId = DeleteButtonIdPrefix .. tostring(index)
 
             if savedthemeCode then
-                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
+                local theme = Base64.DecodeSigned(savedthemeCode)
 
                 browseDialog --
                 :modify{id = loadButtonId, visible = true, label = theme.name} --
@@ -222,7 +221,7 @@ function ThemeManager:Load(onload)
             text = "Load",
             onclick = function()
                 local savedthemeCode = self.storage.savedThemes[skip + index]
-                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
+                local theme = Base64.DecodeSigned(savedthemeCode)
 
                 local confirmation = app.alert {
                     title = "Loading theme " .. theme.name,
@@ -241,7 +240,7 @@ function ThemeManager:Load(onload)
             text = "Export",
             onclick = function()
                 local savedthemeCode = self.storage.savedThemes[skip + index]
-                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
+                local theme = Base64.DecodeSigned(savedthemeCode)
 
                 browseDialog:close()
                 local onExportDialogClose = function()
@@ -257,7 +256,7 @@ function ThemeManager:Load(onload)
             text = "Delete",
             onclick = function()
                 local savedthemeCode = self.storage.savedThemes[skip + index]
-                local theme = ThemeEncoder:DecodeSigned(savedthemeCode)
+                local theme = Base64.DecodeSigned(savedthemeCode)
 
                 local confirmation = app.alert {
                     title = "Delete " .. theme.name,
@@ -296,7 +295,7 @@ function ThemeManager:Load(onload)
                 text = "Import",
                 onclick = function()
                     local code = importDialog.data.code
-                    local theme = ThemeEncoder:DecodeSigned(code)
+                    local theme = Base64.DecodeSigned(code)
 
                     if not theme then
                         importDialog:modify{
