@@ -35,7 +35,7 @@ local function ThemePreferencesDialog(options)
     local hasAppliedModifications = false
     local currentTheme = ThemeManager:GetCurrentTheme()
 
-    local function ApplyTheme()
+    local function ApplyCurrentTheme()
         UpdateThemeFiles(currentTheme)
         ThemeManager:SetCurrentTheme(currentTheme)
 
@@ -120,12 +120,12 @@ local function ThemePreferencesDialog(options)
         currentTheme.parameters.isAdvanced = dialog.data["mode-advanced"]
     end
 
-    local function SetThemeColor(id, color)
+    local function SetCurrentThemeColor(id, color)
         currentTheme.colors[id] = color
         if dialog.data[id] then dialog:modify{id = id, color = color} end
     end
 
-    local function LoadTheme(theme)
+    local function LoadThemeAsCurrent(theme)
         -- Copy theme to the current theme
         currentTheme.name = theme.name
         currentTheme.parameters = theme.parameters
@@ -153,7 +153,7 @@ local function ThemePreferencesDialog(options)
         -- Finally, copy colors
         for id, color in pairs(theme.colors) do
             -- Copy color just in case
-            SetThemeColor(id, CopyColor(color))
+            SetCurrentThemeColor(id, CopyColor(color))
         end
 
         dialog:modify{title = GetDialogTitle()} --
@@ -203,7 +203,7 @@ local function ThemePreferencesDialog(options)
                 options.onclose({isModified = hasAppliedModifications})
             end
 
-            LoadTheme(ThemeManager:GetCurrentTheme())
+            LoadThemeAsCurrent(ThemeManager:GetCurrentTheme())
         end
     }
 
@@ -236,7 +236,7 @@ local function ThemePreferencesDialog(options)
         visible = true,
         onchange = function(color)
             if dialog.data["mode-simple"] then
-                SetThemeColor("editor_icons", color)
+                SetCurrentThemeColor("editor_icons", color)
             end
         end
     }
@@ -250,8 +250,8 @@ local function ThemePreferencesDialog(options)
         onchange = function()
             local color = dialog.data["simple-link"]
 
-            SetThemeColor("text_link", color)
-            SetThemeColor("text_separator", color)
+            SetCurrentThemeColor("text_link", color)
+            SetCurrentThemeColor("text_separator", color)
 
             MarkThemeAsModified(true)
         end
@@ -342,9 +342,9 @@ local function ThemePreferencesDialog(options)
             local highlightColor = ShiftColor(color, 57, 57, 57)
             local shadowColor = ShiftColor(color, -74, -74, -74)
 
-            SetThemeColor("button_highlight", highlightColor)
-            SetThemeColor("button_background", color)
-            SetThemeColor("button_shadow", shadowColor)
+            SetCurrentThemeColor("button_highlight", highlightColor)
+            SetCurrentThemeColor("button_background", color)
+            SetCurrentThemeColor("button_shadow", shadowColor)
 
             MarkThemeAsModified(true)
         end
@@ -368,10 +368,10 @@ local function ThemePreferencesDialog(options)
             local highlightColor = ShiftColor(color, 49, 57, 65)
             local shadowColor = ShiftColor(color, -24, -61, -61)
 
-            SetThemeColor("tab_corner_highlight", cornerHighlightColor)
-            SetThemeColor("tab_highlight", highlightColor)
-            SetThemeColor("tab_background", color)
-            SetThemeColor("tab_shadow", shadowColor)
+            SetCurrentThemeColor("tab_corner_highlight", cornerHighlightColor)
+            SetCurrentThemeColor("tab_highlight", highlightColor)
+            SetCurrentThemeColor("tab_background", color)
+            SetCurrentThemeColor("tab_shadow", shadowColor)
 
             MarkThemeAsModified(true)
         end
@@ -403,7 +403,7 @@ local function ThemePreferencesDialog(options)
         visible = false,
         onchange = function(color)
             local cornerShadowColor = ShiftColor(color, -49, -44, -20)
-            SetThemeColor("window_corner_shadow", cornerShadowColor)
+            SetCurrentThemeColor("window_corner_shadow", cornerShadowColor)
         end
     }
 
@@ -416,10 +416,10 @@ local function ThemePreferencesDialog(options)
             local shadowColor = ShiftColor(color, -61, -73, -73)
             local cornerShadowColor = ShiftColor(color, -110, -117, -93)
 
-            SetThemeColor("window_highlight", highlightColor)
-            SetThemeColor("window_background", color)
-            SetThemeColor("window_shadow", shadowColor)
-            SetThemeColor("window_corner_shadow", cornerShadowColor)
+            SetCurrentThemeColor("window_highlight", highlightColor)
+            SetCurrentThemeColor("window_background", color)
+            SetCurrentThemeColor("window_shadow", shadowColor)
+            SetCurrentThemeColor("window_corner_shadow", cornerShadowColor)
 
             -- FUTURE: Remove this when setting a separate value for the "field_background" is possible
 
@@ -460,16 +460,16 @@ local function ThemePreferencesDialog(options)
         onclick = function()
             -- TODO: Merge this into one function
             local onload = function(theme)
-                LoadTheme(theme)
-                ApplyTheme()
+                LoadThemeAsCurrent(theme)
+                ApplyCurrentTheme()
                 MarkThemeAsModified(false)
                 hasAppliedModifications = isModified
             end
 
             local onreset = function()
                 local defaultTheme = Theme()
-                LoadTheme(defaultTheme)
-                ApplyTheme()
+                LoadThemeAsCurrent(defaultTheme)
+                ApplyCurrentTheme()
                 MarkThemeAsModified(false)
                 hasAppliedModifications = isModified
             end
@@ -489,7 +489,7 @@ local function ThemePreferencesDialog(options)
     :button{
         text = "OK",
         onclick = function()
-            ApplyTheme()
+            ApplyCurrentTheme()
             hasAppliedModifications = isModified
             dialog:close()
         end
@@ -497,7 +497,7 @@ local function ThemePreferencesDialog(options)
     :button{
         text = "Apply",
         onclick = function()
-            ApplyTheme()
+            ApplyCurrentTheme()
             hasAppliedModifications = isModified
         end
     } -- 
