@@ -3,14 +3,11 @@ local ThemeManager = dofile("./ThemeManager.lua")
 local CopyColor = dofile("./CopyColor.lua")
 local UpdateThemeFiles = dofile("./UpdateThemeFiles.lua")
 
-local THEME_ID = "custom"
+local CUSTOM_THEME_ID = "custom"
 local DIALOG_WIDTH = 240
-local DIALOG_TITLE = "Theme Preferences"
-
-local max, min = math.max, math.min
 
 local function ShiftRGB(value, modifier)
-    return max(min(value + modifier, 255), 0)
+    return math.max(math.min(value + modifier, 255), 0)
 end
 
 local function ShiftColor(color, redModifier, greenModifer, blueModifier)
@@ -40,17 +37,16 @@ local function ThemePreferencesDialog(options)
         ThemeManager:SetCurrentTheme(currentTheme)
 
         -- Switch Aseprite to the custom theme
-        if app.preferences.theme.selected ~= THEME_ID then
-            app.preferences.theme.selected = THEME_ID
+        if app.preferences.theme.selected ~= CUSTOM_THEME_ID then
+            app.preferences.theme.selected = CUSTOM_THEME_ID
         end
     end
 
     local function GetDialogTitle()
-        if isModified then
-            return DIALOG_TITLE .. ": " .. currentTheme.name .. " (modified)"
-        end
+        local title = "Theme Preferences: " .. currentTheme.name
+        if isModified then title = title .. " (modified)" end
 
-        return DIALOG_TITLE .. ": " .. currentTheme.name
+        return title
     end
 
     local function MarkThemeAsModified(value)
@@ -517,7 +513,7 @@ function init(plugin)
 
     plugin:newCommand{
         id = "ThemePreferences",
-        title = DIALOG_TITLE .. "...",
+        title = "Theme Preferences...",
         group = "view_screen",
         onenabled = function() return not isDialogOpen end,
         onclick = function()

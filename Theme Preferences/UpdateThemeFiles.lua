@@ -3,10 +3,8 @@ local Theme = dofile("./Theme.lua")
 
 local ThemeTemplate = Theme()
 
-local joinPath = app.fs.joinPath
-
-local ExtensionsDirectory = joinPath(app.fs.userConfigPath, "extensions")
-local BaseDirectory = joinPath(ExtensionsDirectory, "theme-preferences")
+local ExtensionsDirectory = app.fs.joinPath(app.fs.userConfigPath, "extensions")
+local BaseDirectory = app.fs.joinPath(ExtensionsDirectory, "theme-preferences")
 
 local Path = {
     SheetTemplate = app.fs.joinPath(BaseDirectory, "sheet-template.png"),
