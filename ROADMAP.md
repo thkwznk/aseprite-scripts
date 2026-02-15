@@ -30,6 +30,7 @@ Update v2.3.0:
 Unreleased:
 
 - Removed the option to change fonts, this feature is already implemented natively in Aseprite (TODO: add the version number to designate when it was added)
+- Fix dialog reopening in the same location after loading a theme?
 
 Update v2.0.0:
 

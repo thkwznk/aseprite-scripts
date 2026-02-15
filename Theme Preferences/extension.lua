@@ -204,7 +204,8 @@ local function ThemePreferencesDialog(options)
             end
 
             LoadThemeAsCurrent(ThemeManager:GetCurrentTheme())
-        end
+        end,
+        autofit = Align.TOP
     }
 
     dialog --
@@ -475,12 +476,15 @@ local function ThemePreferencesDialog(options)
             end
 
             -- Hide the Theme Preferences dialog
+            local bounds = dialog.bounds
             dialog:close()
 
             ThemeManager:Load(onload, onreset)
 
+
             -- Reopen the dialog
-            dialog:show{wait = false}
+            bounds.height = dialog.sizeHint.height
+            dialog:show{wait = false, bounds = bounds}
         end
     } --
 
