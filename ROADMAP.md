@@ -138,17 +138,6 @@ Unreleased:
 - [Feature] Add a new option under _File > Run..._ that allows for searching and running scripts and commands 
 - [Feature] Add a keyboard shortcut for running the last searched script or command
 
-## Extend Cel
-
-Unreleased:
-
-- Added the "Extend Cels" name to appear in the Undo History
-- Added a tooltip that appears after extending cels
-
-Future:
-
-- [Feature] Fill - add a new option in the context menu which extends the cel both directions (backwards and forwards)
-
 ## Select Content
 
 Unreleased:
