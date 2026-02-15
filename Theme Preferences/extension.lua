@@ -459,17 +459,10 @@ local function ThemePreferencesDialog(options)
     :button{
         text = "Load",
         onclick = function()
-            -- TODO: Merge this into one function
             local onload = function(theme)
-                LoadThemeAsCurrent(theme)
-                ApplyCurrentTheme()
-                MarkThemeAsModified(false)
-                hasAppliedModifications = isModified
-            end
+                theme = theme or Theme()
 
-            local onreset = function()
-                local defaultTheme = Theme()
-                LoadThemeAsCurrent(defaultTheme)
+                LoadThemeAsCurrent(theme)
                 ApplyCurrentTheme()
                 MarkThemeAsModified(false)
                 hasAppliedModifications = isModified
@@ -479,8 +472,7 @@ local function ThemePreferencesDialog(options)
             local bounds = dialog.bounds
             dialog:close()
 
-            ThemeManager:Load(onload, onreset)
-
+            ThemeManager:Load(onload)
 
             -- Reopen the dialog
             bounds.height = dialog.sizeHint.height

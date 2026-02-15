@@ -154,7 +154,7 @@ local LoadButtonIdPrefix = "saved-theme-load-"
 local ExportButtonIdPrefix = "saved-theme-export-"
 local DeleteButtonIdPrefix = "saved-theme-delete-"
 
-function ThemeManager:Load(onload, onreset)
+function ThemeManager:Load(onload)
     local pages = math.ceil(#self.storage.savedThemes / ConfigurationsPerPage)
 
     CurrentPage = math.min(CurrentPage, pages)
@@ -269,7 +269,7 @@ function ThemeManager:Load(onload, onreset)
                     table.remove(self.storage.savedThemes, skip + index)
 
                     browseDialog:close()
-                    self:Load(onload, onreset)
+                    self:Load(onload)
                 end
             end
         }
@@ -336,7 +336,7 @@ function ThemeManager:Load(onload, onreset)
 
             if confirmation == 1 then
                 browseDialog:close()
-                onreset()
+                onload()
             end
         end
     }
