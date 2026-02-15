@@ -144,9 +144,3 @@ Unreleased:
 
 - Add an option to playback a Tag Sequence in a randomized order
 - Add separate commands for sequence and randomized sequence playbacks with default keyboard shortcuts (Alt+Enter and Alt+Shift+Enter respectively)
-
-## Brush Transformations
-
-Unreleased:
-
-- Fix extension commands to only be enabled if there's an active sprite
