@@ -1,4 +1,7 @@
 local CopyColor = dofile("./CopyColor.lua")
+local Theme = dofile("./Theme.lua")
+
+local ThemeTemplate = Theme()
 
 local joinPath = app.fs.joinPath
 
@@ -51,11 +54,11 @@ local function UpdateThemeXml(theme)
     WriteAll(Path.ThemeXml, xmlContent)
 end
 
-return function(template, theme)
+return function(theme)
     -- Prepare color lookup
     local Map = {}
 
-    for id, templateColor in pairs(template.colors) do
+    for id, templateColor in pairs(ThemeTemplate.colors) do
         -- Map the template color to the theme color
         Map[ColorToHex(templateColor)] = theme.colors[id]
     end
