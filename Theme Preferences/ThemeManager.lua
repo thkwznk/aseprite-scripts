@@ -3,6 +3,7 @@ local ExportConfigurationDialog = dofile(
                                       "./Dialogs/ExportConfigurationDialog.lua")
 local ImportConfigurationDialog = dofile(
                                       "./Dialogs/ImportConfigurationDialog.lua")
+local SaveConfigurationDialog = dofile("./Dialogs/SaveConfigurationDialog.lua")
 
 local ThemeManager = {storage = nil}
 
@@ -48,77 +49,45 @@ function ThemeManager:Find(name)
 end
 
 function ThemeManager:Save(theme, onsave, isImport)
-    local title = "Save Configuration"
-    local okButtonText = "OK"
+    local saveDialog
+    saveDialog = SaveConfigurationDialog {
+        theme = theme,
+        isImport = isImport,
+        onsave = function(options)
+            local applyImmediately = options and options.apply
+            local isNameUsed = self:Find(saveDialog.data.name)
 
-    if isImport then
-        title = "Import Configuration"
-        okButtonText = "Save"
-    end
+            if isNameUsed then
+                local overwriteConfirmation = app.alert {
+                    title = "Configuration overwrite",
+                    text = "Configuration with a name " .. saveDialog.data.name ..
+                        " already exists, do you want to overwrite it?",
+                    buttons = {"Yes", "No"}
+                }
 
-    local saveDialog = Dialog(title)
+                if overwriteConfirmation ~= 1 then return end
+            end
 
-    local save = function(options)
-        local applyImmediately = options and options.apply
-        local isNameUsed = self:Find(saveDialog.data.name)
+            theme.name = saveDialog.data.name
 
-        if isNameUsed then
-            local overwriteConfirmation = app.alert {
-                title = "Configuration overwrite",
-                text = "Configuration with a name " .. saveDialog.data.name ..
-                    " already exists, do you want to overwrite it?",
-                buttons = {"Yes", "No"}
-            }
+            if not isImport or (isImport and applyImmediately) then
+                onsave(theme)
+            end
 
-            if overwriteConfirmation ~= 1 then return end
+            local code = Base64.EncodeSigned(theme.name, theme.parameters,
+                                             theme.colors)
+
+            if isNameUsed then
+                self.storage.savedThemes[isNameUsed] = code
+            else
+                table.insert(self.storage.savedThemes, code)
+            end
+
+            saveDialog:close()
         end
+    }
 
-        theme.name = saveDialog.data.name
-
-        if not isImport or (isImport and applyImmediately) then
-            onsave(theme)
-        end
-
-        local code = Base64.EncodeSigned(theme.name, theme.parameters,
-                                         theme.colors)
-
-        if isNameUsed then
-            self.storage.savedThemes[isNameUsed] = code
-        else
-            table.insert(self.storage.savedThemes, code)
-        end
-
-        saveDialog:close()
-    end
-
-    saveDialog --
-    :entry{
-        id = "name",
-        label = "Name",
-        text = theme.name,
-        onchange = function()
-            saveDialog:modify{id = "ok", enabled = #saveDialog.data.name > 0} --
-        end
-    } --
-    :separator() --
-    :button{
-        id = "ok",
-        text = okButtonText,
-        enabled = #theme.name > 0,
-        onclick = function() save() end
-    } --
-
-    if isImport then
-        saveDialog:button{
-            text = "Save and Apply",
-            enabled = #theme.name > 0,
-            onclick = function() save {apply = true} end
-        }
-    end
-
-    saveDialog --
-    :button{text = "Cancel"} --
-    :show()
+    saveDialog:show()
 end
 
 local CurrentPage = 1
