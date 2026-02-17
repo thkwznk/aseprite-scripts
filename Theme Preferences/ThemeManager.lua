@@ -1,6 +1,8 @@
 local Base64 = dofile("./Base64.lua")
-
-local EXPORT_DIALOG_WIDTH = 540
+local ExportConfigurationDialog = dofile(
+                                      "./Dialogs/ExportConfigurationDialog.lua")
+local ImportConfigurationDialog = dofile(
+                                      "./Dialogs/ImportConfigurationDialog.lua")
 
 local ThemeManager = {storage = nil}
 
@@ -117,34 +119,6 @@ function ThemeManager:Save(theme, onsave, isImport)
     saveDialog --
     :button{text = "Cancel"} --
     :show()
-
-end
-
-function ThemeManager:ShowExportDialog(name, code, onclose)
-    local isFirstOpen = true
-
-    local exportDialog = Dialog {
-        title = "Export " .. name,
-        onclose = function() if not isFirstOpen then onclose() end end
-    }
-
-    exportDialog --
-    :entry{label = "Code", text = code} --
-    :separator() --
-    :button{text = "Close"} --
-
-    -- Open and close to initialize bounds
-    exportDialog:show{wait = false}
-    exportDialog:close()
-
-    isFirstOpen = false
-
-    local bounds = exportDialog.bounds
-    bounds.x = bounds.x - (EXPORT_DIALOG_WIDTH - bounds.width) / 2
-    bounds.width = EXPORT_DIALOG_WIDTH
-    exportDialog.bounds = bounds
-
-    exportDialog:show()
 end
 
 local CurrentPage = 1
@@ -243,12 +217,13 @@ function ThemeManager:Load(onload)
                 local theme = Base64.DecodeSigned(savedthemeCode)
 
                 browseDialog:close()
-                local onExportDialogClose = function()
-                    browseDialog:show()
-                end
 
-                self:ShowExportDialog(theme.name, savedthemeCode,
-                                      onExportDialogClose)
+                local exportDialog = ExportConfigurationDialog {
+                    name = theme.name,
+                    code = savedthemeCode,
+                    onclose = function() browseDialog:show() end
+                }
+                exportDialog:show()
             end
         } --
         :button{
@@ -286,40 +261,11 @@ function ThemeManager:Load(onload)
         text = "Import",
         onclick = function()
             browseDialog:close()
-            local importDialog = Dialog("Import")
-
-            importDialog --
-            :entry{id = "code", label = "Code"} --
-            :separator{id = "separator"} --
-            :button{
-                text = "Import",
-                onclick = function()
-                    local code = importDialog.data.code
-                    local theme = Base64.DecodeSigned(code)
-
-                    if not theme then
-                        importDialog:modify{
-                            id = "separator",
-                            text = "Incorrect code"
-                        }
-                        return
-                    end
-
-                    importDialog:close()
-
+            local importDialog = ImportConfigurationDialog {
+                onclick = function(theme)
                     self:Save(theme, onload, true)
                 end
-            } --
-            :button{text = "Cancel"} --
-
-            -- Open and close to initialize bounds
-            importDialog:show{wait = false}
-            importDialog:close()
-
-            local bounds = importDialog.bounds
-            bounds.x = bounds.x - (EXPORT_DIALOG_WIDTH - bounds.width) / 2
-            bounds.width = EXPORT_DIALOG_WIDTH
-            importDialog.bounds = bounds
+            }
 
             importDialog:show()
         end
@@ -332,6 +278,8 @@ function ThemeManager:Load(onload)
                 text = "Unsaved changes will be lost, do you want to continue?",
                 buttons = {"Yes", "No"}
             }
+
+            -- TODO: Just replace this with a Default entry on the list of themes
 
             if confirmation == 1 then
                 browseDialog:close()

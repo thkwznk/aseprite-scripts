@@ -551,3 +551,4 @@ end
 -- TODO: Test switching modes, there seems to be an issue where some advanced colors are not changed after switching to "Simple" mode
 -- TODO: Rename "Simple" mode to "Basic"?
 -- TODO: Fix loading a configuration marking current theme as modified
+-- TODO: Test showing configuration export code in a non-editable field instead of a dialog
