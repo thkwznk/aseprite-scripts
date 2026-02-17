@@ -29,21 +29,20 @@ Update v2.3.0:
 
 Unreleased:
 
-- ...
+- Removed the option to change fonts, this feature is already implemented natively in Aseprite (TODO: add the version number to designate when it was added)
+- Fix dialog reopening in the same location after loading a theme?
 
 Update v2.0.0:
 
-- [Test-Feature] Tint Mode where you can only edit the Tab color + optional underglow
 - [Improvement] A new color (set) - Window Title Bar
-- [Improvement] Read font names from TTF files
+- [Improvement] Implement a new widget with a native-like list of theme configurations
+- [Improvement] Implement exporting and importing theme configurations via an image
 
 Future:
 
 - [Feature] Add a Dark theme template
 - [Feature] [Blocked] Separate "field_background" when Aseprite fixes the menu shadow
 - [Feature] [Blocked] Add separate color for Tooltip Text (Tooltip Section?) - currently it doesn't work due to a bug
-- [Feature] Generating a theme from the current color palette
-- [Refactor] Add a Default model next to Template - Template is a template, default is default
 
 ## FX
 
