@@ -481,6 +481,9 @@ local function ThemePreferencesDialog(options)
     :button{text = "Apply", onclick = function() ApplyToCurrentTheme() end} -- 
     :button{text = "Cancel", onclick = function() dialog:close() end} --
 
+    -- Load the current theme into the dialog
+    LoadTheme(currentTheme)
+
     return dialog
 end
 
@@ -530,6 +533,5 @@ function exit(plugin)
     -- 
 end
 
--- TODO: Test switching modes, there seems to be an issue where some advanced colors are not changed after switching to "Simple" mode
 -- TODO: Rename "Simple" mode to "Basic"?
 -- TODO: Test showing configuration export code in a non-editable field instead of a dialog
