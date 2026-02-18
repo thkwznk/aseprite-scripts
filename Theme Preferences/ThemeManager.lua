@@ -40,6 +40,12 @@ function ThemeManager:GetCurrentTheme()
     end
 end
 
+function ThemeManager:SetIsThemeModified(value)
+    self.storage.isThemeModified = value
+end
+
+function ThemeManager:GetIsThemeModified() return self.storage.isThemeModified end
+
 function ThemeManager:Find(name)
     for i, savedthemeCode in ipairs(self.storage.savedThemes) do
         if Base64.DecodeName(savedthemeCode) == name then return i end
