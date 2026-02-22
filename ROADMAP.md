@@ -31,6 +31,7 @@ Unreleased:
 
 - Removed the option to change fonts, this feature is already implemented natively in Aseprite (TODO: add the version number to designate when it was added)
 - Fix dialog reopening in the same location after loading a theme?
+- Update the theme template to align with the default theme for Aseprite v1.3.16
 
 Update v2.0.0:
 
