@@ -13,6 +13,10 @@ local Path = {
     ThemeXml = app.fs.joinPath(BaseDirectory, "theme.xml")
 }
 
+-- Load the template image at the start
+-- This helps avoid a bug where applying a theme while on the Home page jumps to the last open sprite 
+local TemplateImage = Image {fromFile = Path.SheetTemplate}
+
 local function ColorToHex(color)
     return string.format("#%02x%02x%02x", color.red, color.green, color.blue)
 end
@@ -62,7 +66,7 @@ return function(theme)
     end
 
     -- Prepare sheet.png
-    local image = Image {fromFile = Path.SheetTemplate}
+    local image = Image(TemplateImage)
     local pixelValue, newColor, pixelData, pixelColor, pixelValueKey,
           resultColor
 
