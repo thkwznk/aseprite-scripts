@@ -29,7 +29,10 @@ local AdvancedWidgetIds = {
 local function ThemePreferencesDialog(options)
     local dialog
     local isModified = ThemeManager:GetIsThemeModified()
-    local currentTheme = ThemeManager:GetCurrentTheme()
+
+    -- Use the current theme saved in plugin preferences or the Default theme
+    -- The latter is necessary for a fresh install to work correctly
+    local currentTheme = ThemeManager:GetCurrentTheme() or Theme()
 
     local function ApplyToCurrentTheme()
         UpdateThemeFiles(currentTheme)
