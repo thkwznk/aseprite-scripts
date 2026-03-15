@@ -3,9 +3,9 @@ local PixelCache = dofile("../PixelCache.lua")
 
 local OutlineLiveMode = {canExtend = true}
 
-local function Distance(x, y, x2, y2)
-    return math.sqrt((x - x2) ^ 2 + (y - y2) ^ 2)
-end
+local sqrt = math.sqrt
+
+local function Distance(x, y, x2, y2) return sqrt((x - x2) ^ 2 + (y - y2) ^ 2) end
 
 local function IsErasing(change, sprite)
     if app.tool.id == "eraser" then return true end
@@ -55,6 +55,9 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
 
     -- TODO: Optimize calls to `outlinePixelCache:SetPixel`
 
+    local GetPixel = pixelCache.GetPixel
+    local SetPixel = outlinePixelCache.SetPixel
+
     if isErasing then
         for _, pixel in ipairs(change.pixels) do
             local ix = pixel.x - cx + dpx
@@ -67,11 +70,12 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
                     if (ix + xx >= 0 and ix + xx < width and iy + yy >= 0 and iy +
                         yy < height) and InSelection(pixel.x + xx, pixel.y + yy) and
                         Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
-                        local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
+                        local pixelValue =
+                            GetPixel(pixelCache, ix + xx, iy + yy)
 
                         if not IsTransparentValue(pixelValue) and
                             not Equals(Create(pixelValue), color) then
-                            outlinePixelCache:SetPixel(ix, iy, true)
+                            SetPixel(outlinePixelCache, ix, iy, true)
 
                             isOutline = true
                             break
@@ -91,17 +95,18 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
                 for yy = -outlineSize, outlineSize do
                     if InSelection(pixel.x + xx, pixel.y + yy) and
                         Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
-                        local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
+                        local pixelValue =
+                            GetPixel(pixelCache, ix + xx, iy + yy)
 
                         if parameters.outlineOtherColors then
                             if not Equals(Create(pixelValue), pixel.newColor) then
-                                outlinePixelCache:SetPixel(ix + xx, iy + yy,
-                                                           true)
+                                SetPixel(outlinePixelCache, ix + xx, iy + yy,
+                                         true)
                             end
                         else
                             if IsTransparentValue(pixelValue) then
-                                outlinePixelCache:SetPixel(ix + xx, iy + yy,
-                                                           true)
+                                SetPixel(outlinePixelCache, ix + xx, iy + yy,
+                                         true)
                             end
                         end
                     end

@@ -1,5 +1,8 @@
 local GetBoundsForPixels = dofile("../GetBoundsForPixels.lua")
 
+local ceil, random, sqrt, max = math.ceil, math.random, math.sqrt, math.max
+local insert = table.insert
+
 local GraffitiMode = {canExtend = true}
 
 function GraffitiMode:Process(change, sprite, cel, parameters)
@@ -20,33 +23,33 @@ function GraffitiMode:Process(change, sprite, cel, parameters)
     local dripChance = power / sizeFactor
     local speckChance = speckPower / sizeFactor
 
-    local maxDripLength = math.ceil(brushSize * 8)
-    local maxDripSize = math.ceil(brushSize * power)
+    local maxDripLength = ceil(brushSize * 8)
+    local maxDripSize = ceil(brushSize * power)
 
-    local maxSpeckDist = math.max((brushSize * 2), 3)
-    local maxSpeckSize = math.ceil(brushSize * speckPower)
+    local maxSpeckDist = max((brushSize * 2), 3)
+    local maxSpeckSize = ceil(brushSize * speckPower)
 
-    if brushSize > 1 then maxSpeckSize = math.max(maxSpeckSize, 2) end
+    if brushSize > 1 then maxSpeckSize = max(maxSpeckSize, 2) end
 
     local paintPixels = {}
 
     for _, pixel in ipairs(change.pixels) do
-        local shouldDrip = math.random() <= dripChance
-        local shouldSpeck = math.random() <= speckChance
+        local shouldDrip = random() <= dripChance
+        local shouldSpeck = random() <= speckChance
 
         if shouldDrip then
-            local proportions = math.random(10) / 10
-            local length = math.ceil(math.random(maxDripLength) * proportions)
-            local size = math.ceil(math.random(maxDripSize) * (1 - proportions))
+            local proportions = random(10) / 10
+            local length = ceil(random(maxDripLength) * proportions)
+            local size = ceil(random(maxDripSize) * (1 - proportions))
 
             self:_DrawDrip(pixel.x, pixel.y, length, size, pixel.newColor,
                            paintPixels)
         end
 
         if shouldSpeck then
-            local distX = math.ceil((math.random() - 0.5) * maxSpeckDist)
-            local distY = math.ceil((math.random() - 0.5) * maxSpeckDist)
-            local size = math.ceil(math.random() * maxSpeckSize)
+            local distX = ceil((random() - 0.5) * maxSpeckDist)
+            local distY = ceil((random() - 0.5) * maxSpeckDist)
+            local size = ceil(random() * maxSpeckSize)
 
             local speckX = pixel.x + distX
             local speckY = pixel.y + distY
@@ -81,20 +84,17 @@ end
 function GraffitiMode:_DrawDrip(x, y, length, size, color, pixels)
     if length < 1 or size < 1 then return end
 
+    local xx = x - (size / 2)
+
     for i = 1, length do
         for j = 1, size do
-            table.insert(pixels,
-                         {x = x - (size / 2) + j, y = y + i, color = color})
+            insert(pixels, {x = xx + j, y = y + i, color = color})
         end
     end
 
-    for j = 1, size do
-        table.insert(pixels, {
-            x = x - (size / 2) + j,
-            y = y + length + 2,
-            color = color
-        })
-    end
+    local yy = y + length + 2
+
+    for j = 1, size do insert(pixels, {x = xx + j, y = yy, color = color}) end
 end
 
 function GraffitiMode:_DrawSpeck(x, y, size, color, pixels)
@@ -102,8 +102,8 @@ function GraffitiMode:_DrawSpeck(x, y, size, color, pixels)
 
     for ex = x - size, x + size do
         for ey = y - size, y + size do
-            if math.sqrt(((ex - x) ^ 2) + ((ey - y) ^ 2)) <= size then
-                table.insert(pixels, {x = ex, y = ey, color = color})
+            if sqrt(((ex - x) ^ 2) + ((ey - y) ^ 2)) <= size then
+                insert(pixels, {x = ex, y = ey, color = color})
             end
         end
     end

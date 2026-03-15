@@ -751,3 +751,4 @@ return MagicPencilDialog
 -- TODO: Try using Image.version to skip processing images when nothing has changed
 -- TODO: Fix Lift, doesn't seem to work correctly
 -- TODO: Fix Merge, throws an error if there's only one layer
+-- TODO: Fix, if a change makes the cel smaller it incorrectly calculates the changed pixels

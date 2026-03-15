@@ -5,7 +5,7 @@ local SelectionMode = {
 }
 
 function SelectionMode:Process(change, sprite, cel, parameters)
-    -- FIX: If the whole selection is out of the original cel's bounds it will not be processed
+    -- TODO: Fix, If the whole selection is out of the original cel's bounds it will not be processed
 
     local newSelection = Selection()
 
