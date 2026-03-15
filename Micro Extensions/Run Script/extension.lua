@@ -1,3 +1,5 @@
+local profiler = dofile("./profiler.lua")
+
 local SCRIPTS_DIRECTORY = app.fs.joinPath(app.fs.userConfigPath, "scripts")
 
 local function StartsWith(s, prefix) return s:sub(1, prefix:len()) == prefix end
@@ -65,11 +67,6 @@ local function SearchScriptsRecursively(fileStructure, searchText, pattern,
     end
 end
 
-local function CopyToResults(matches, results)
-    -- TODO: This could be optimized
-    for _, match in ipairs(matches) do insert(results, match) end
-end
-
 local function SearchScripts(searchText, fileStructure)
     local exactMatches, prefixMatches, fuzzyMatches, results = {}, {}, {}, {}
 
@@ -88,9 +85,9 @@ local function SearchScripts(searchText, fileStructure)
     table.sort(prefixMatches, function(a, b) return a.filename < b.filename end)
     table.sort(fuzzyMatches, function(a, b) return a.filename < b.filename end)
 
-    CopyToResults(exactMatches, results)
-    CopyToResults(prefixMatches, results)
-    CopyToResults(fuzzyMatches, results)
+    for _, match in ipairs(exactMatches) do insert(results, match) end
+    for _, match in ipairs(prefixMatches) do insert(results, match) end
+    for _, match in ipairs(fuzzyMatches) do insert(results, match) end
 
     return results
 end
@@ -281,8 +278,58 @@ function init(plugin)
             end
         end
     }
+
+    local repeatTimes = 10
+
+    plugin:newCommand{
+        id = "ProfileLastScript",
+        title = "Profile Last Script",
+        onenabled = function() return lastRunOption ~= nil end,
+        onclick = function()
+            local dialog = Dialog {
+                title = "Profile Script: " .. fileTitle(lastRunOption.filepath)
+            }
+
+            dialog --
+            :number{
+                id = "repeatTimes",
+                label = "Iterations:",
+                text = tostring(repeatTimes),
+                decimals = 0,
+                onchange = function()
+                    dialog:modify{
+                        id = "okButton",
+                        enabled = type(dialog.data.repeatTimes) == "number" and
+                            dialog.data.repeatTimes > 0
+                    }
+                end
+            } --
+            :button{
+                id = "okButton",
+                text = "&OK",
+                focus = true,
+                onclick = function()
+                    dialog:close()
+
+                    repeatTimes = dialog.data.repeatTimes
+
+                    profiler.start()
+
+                    for _ = 1, repeatTimes do
+                        dofile(lastRunOption.filepath)
+                    end
+
+                    profiler.stop()
+                    profiler.report("C:\\profiler.log")
+
+                    print("Finished")
+                end
+            } --
+            :button{text = "&Cancel"}
+
+            dialog:show()
+        end
+    }
 end
 
 function exit(plugin) end
-
--- TODO: Add a profiler and options for repeating a script

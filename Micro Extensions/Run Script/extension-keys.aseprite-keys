@@ -3,5 +3,6 @@
     <commands>
         <key command="RunScriptAdvanced" shortcut="Ctrl+Alt+Space" />
         <key command="RepeatScriptAdvanced" shortcut="Ctrl+Shift+Alt+Space" />
+        <key command="ProfileLastScript" shortcut="Ctrl+Shift+Alt+P" />
     </commands>
 </keyboard>
