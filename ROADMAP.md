@@ -29,11 +29,7 @@ Update v2.3.0:
 
 Unreleased:
 
-- [Fix] No longer render the locked the Palette icon under the unlocked Palette icon
-- [Fix] Correctly scale inactive tab elements for smaller fonts
-- [Fix] Correctly set selection handles colors to mirror the Cursor colors
-- [Fix] Correctly set button icon colors for Transparent Color Options and Rotation Pivot
-- [Improvement] Theme was updated to align with changes to the default theme up to, and including, Aseprite v1.3.17
+- 
 
 Update v2.0.0:
 
