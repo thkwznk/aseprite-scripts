@@ -93,3 +93,5 @@ function ColorContext:AverageColorsHSV(colors)
 end
 
 return ColorContext
+
+-- TODO: Refactor this to instead be one function ColorContext(sprite) that returns an object with functions that can be extracted to save time on indexing

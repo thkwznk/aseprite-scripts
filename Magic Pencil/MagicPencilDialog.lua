@@ -10,11 +10,6 @@ local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 
 local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
 
-local function RectangleContains(rect, x, y)
-    return x >= rect.x and x <= rect.x + rect.width - 1 and --
-    y >= rect.y and y <= rect.y + rect.height - 1
-end
-
 local function GetButtonsPressedFromEmpty(pixels)
     if #pixels == 0 then return end
 
@@ -105,76 +100,109 @@ local function CalculateChange(previous, next, canExtend)
     --     CalculateChangeWhenNextSmaller(previous, next, canExtend)
     -- end
 
+    local insert = table.insert
+
+    local nextX, nextY, nextWidth, nextHeight, nextImage = next.position.x,
+                                                           next.position.y,
+                                                           next.bounds.width,
+                                                           next.bounds.height,
+                                                           next.image
+
+    local previousX, previousY, previousWidth, previousHeight, previousImage =
+        previous.position.x, previous.position.y, previous.bounds.width,
+        previous.bounds.height, previous.image
+
+    local sprite = app.activeSprite
+    local colorMode = sprite.colorMode
+
+    -- TODO: Finish refactoring the implementation of ColorContext
+
+    -- local IsTransparentValue = colorMode == ColorMode.RGB -- 
+    -- and function(value) return app.pixelColor.rgbaA(value) == 0 end -- 
+    -- or function(value) return value == 0 end
+
+    -- local Create = colorMode == ColorMode.RGB -- 
+    -- and function(value) return Color(value) end -- 
+    -- or function(value) return Color {index = value} end
+
+    local rgbaA = app.pixelColor.rgbaA
+
+    local function IsTransparentValue(value) return rgbaA(value) == 0 end
+
+    local function Create(value) return Color(value) end
+
+    local nextXEnd = nextX + nextWidth - 1
+    local nextYEnd = nextY + nextHeight - 1
+
+    local function RectangleContains(x, y)
+        return x >= nextX and x <= nextXEnd and y >= nextY and y <= nextYEnd
+    end
+
     -- It's faster without registering any local variables inside the loops
     if nextArea > previousArea and canExtend then -- Can extend, iterate over the new image
-        local shift = {
-            x = next.position.x - previous.position.x,
-            y = next.position.y - previous.position.y
-        }
+        local shiftX = nextX - previousX
+        local shiftY = nextY - previousY
         local shiftedX, shiftedY, nextPixelValue
 
-        for x = 0, next.image.width - 1 do
-            for y = 0, next.image.height - 1 do
+        for x = 0, nextWidth - 1 do
+            for y = 0, nextHeight - 1 do
                 -- Save X and Y as canvas global
-                shiftedX = x + shift.x
-                shiftedY = y + shift.y
+                shiftedX = x + shiftX
+                shiftedY = y + shiftY
 
-                prevPixelValue = getPixel(previous.image, shiftedX, shiftedY)
-                nextPixelValue = getPixel(next.image, x, y)
+                prevPixelValue = getPixel(previousImage, shiftedX, shiftedY)
+                nextPixelValue = getPixel(nextImage, x, y)
 
                 -- Out of bounds of the previous image or transparent
-                if (shiftedX < 0 or shiftedX > previous.image.width - 1 or
-                    shiftedY < 0 or shiftedY > previous.image.height - 1) then
-                    if not ColorContext:IsTransparentValue(nextPixelValue) then
-                        table.insert(pixels, {
-                            x = x + next.position.x,
-                            y = y + next.position.y,
-                            color = ColorContext:Create(0),
-                            newColor = ColorContext:Create(nextPixelValue)
+                if (shiftedX < 0 or shiftedX > previousWidth - 1 or shiftedY < 0 or
+                    shiftedY > previousHeight - 1) then
+                    if not IsTransparentValue(nextPixelValue) then
+                        insert(pixels, {
+                            x = x + nextX,
+                            y = y + nextY,
+                            color = Create(0),
+                            newColor = Create(nextPixelValue)
                         })
                     end
                 elseif prevPixelValue ~= nextPixelValue then
-                    table.insert(pixels, {
-                        x = x + next.position.x,
-                        y = y + next.position.y,
-                        color = ColorContext:Create(prevPixelValue),
-                        newColor = ColorContext:Create(nextPixelValue)
+                    insert(pixels, {
+                        x = x + nextX,
+                        y = y + nextY,
+                        color = Create(prevPixelValue),
+                        newColor = Create(nextPixelValue)
                     })
                 end
             end
         end
     else -- Cannot extend, iterate over the previous image
-        local shift = {
-            x = previous.position.x - next.position.x,
-            y = previous.position.y - next.position.y
-        }
+        local shiftX = nextX - previousX
+        local shiftY = nextY - previousY
 
-        for x = 0, previous.image.width - 1 do
-            for y = 0, previous.image.height - 1 do
-                prevPixelValue = getPixel(previous.image, x, y)
+        for x = 0, previousWidth - 1 do
+            for y = 0, previousHeight - 1 do
+                prevPixelValue = getPixel(previousImage, x, y)
 
                 -- Next image in some rare cases can be smaller
-                if RectangleContains(next.bounds, x + previous.position.x,
-                                     y + previous.position.y) then
+                if RectangleContains(x + previousX, y + previousY) then
                     -- Saving the new pixel's colors would be necessary for working with brushes, I think
                     local nextPixelValue =
-                        getPixel(next.image, x + shift.x, y + shift.y)
+                        getPixel(nextImage, x + shiftX, y + shiftY)
 
                     if prevPixelValue ~= nextPixelValue then
                         -- Save X and Y as canvas global
-                        table.insert(pixels, {
-                            x = x + previous.position.x,
-                            y = y + previous.position.y,
-                            color = ColorContext:Create(prevPixelValue),
-                            newColor = ColorContext:Create(nextPixelValue)
+                        insert(pixels, {
+                            x = x + previousX,
+                            y = y + previousY,
+                            color = Create(prevPixelValue),
+                            newColor = Create(nextPixelValue)
                         })
                     end
-                elseif not ColorContext:IsTransparentValue(prevPixelValue) then
-                    table.insert(pixels, {
-                        x = x + previous.position.x,
-                        y = y + previous.position.y,
-                        color = ColorContext:Create(prevPixelValue),
-                        newColor = ColorContext:Create(0)
+                elseif not IsTransparentValue(prevPixelValue) then
+                    insert(pixels, {
+                        x = x + previousX,
+                        y = y + previousY,
+                        color = Create(prevPixelValue),
+                        newColor = Create(0)
                     })
                 end
             end
@@ -727,3 +755,6 @@ end
 return MagicPencilDialog
 
 -- TODO: Last cel data might include a cache of pixels to speed up processing
+-- TODO: Try using Image.version to skip processing images when nothing has changed
+-- TODO: Fix Lift, doesn't seem to work correctly
+-- TODO: Fix Merge, throws an error if there's only one layer
