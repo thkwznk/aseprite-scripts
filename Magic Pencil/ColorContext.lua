@@ -1,97 +1,33 @@
-local ColorContext = {}
+local rgbaA = app.pixelColor.rgbaA
+local sqrt = math.sqrt
 
-function ColorContext:IsTransparent(color)
-    local sprite = app.activeSprite
-    if sprite and sprite.colorMode == ColorMode.RGB then
-        return color.alpha == 0
+local function Distance(a, b)
+    return sqrt((a.red - b.red) ^ 2 + (a.green - b.green) ^ 2 +
+                    (a.blue - b.blue) ^ 2 + (a.alpha - b.alpha) ^ 2)
+end
+
+return function(sprite)
+    if sprite and sprite.colorMode ~= ColorMode.RGB then
+        return {
+            IsTransparent = function(color) return color.index == 0 end,
+            IsTransparentValue = function(value) return value == 0 end,
+            Create = function(value) return Color {index = value} end,
+            Copy = function(color) return Color {index = color.index} end,
+            Compare = function(a, b) return a.index == b.index end,
+            Equals = function(a, b) return a.index == b.index end,
+            Distance = Distance
+        }
     end
 
-    return color.index == 0
-end
-
-function ColorContext:IsTransparentValue(value)
-    local sprite = app.activeSprite
-    if sprite and sprite.colorMode == ColorMode.RGB then
-        return app.pixelColor.rgbaA(value) == 0
-    end
-
-    return value == 0
-end
-
-function ColorContext:Create(value)
-    local sprite = app.activeSprite
-    if sprite and sprite.colorMode == ColorMode.RGB then return Color(value) end
-
-    return Color {index = value}
-end
-
-function ColorContext:Copy(color)
-    local sprite = app.activeSprite
-    if sprite and sprite.colorMode == ColorMode.RGB then
-        return Color(color.rgbaPixel)
-    end
-
-    return Color {index = color.index}
-end
-
-function ColorContext:Compare(a, b)
-    local sprite = app.activeSprite
-    if sprite and sprite.colorMode == ColorMode.RGB then
-        return a.red == b.red and a.green == b.green and a.blue == b.blue
-    end
-
-    return a.index == b.index
-end
-
-function ColorContext:Equals(a, b)
-    local sprite = app.activeSprite
-    if sprite and sprite.colorMode == ColorMode.RGB then
-        return a.rgbaPixel == b.rgbaPixel
-    end
-
-    return a.index == b.index
-end
-
-function ColorContext:Distance(a, b)
-    return math.sqrt((a.red - b.red) ^ 2 + (a.green - b.green) ^ 2 +
-                         (a.blue - b.blue) ^ 2 + (a.alpha - b.alpha) ^ 2)
-end
-
-function ColorContext:AverageColorsRGB(colors)
-    local r, g, b = 0, 0, 0
-
-    for _, color in ipairs(colors) do
-        r = r + color.red
-        g = g + color.green
-        b = b + color.blue
-    end
-
-    return Color {
-        red = math.floor(r / #colors),
-        green = math.floor(g / #colors),
-        blue = math.floor(b / #colors),
-        alpha = 255
+    return {
+        IsTransparent = function(color) return color.alpha == 0 end,
+        IsTransparentValue = function(value) return rgbaA(value) == 0 end,
+        Create = function(value) return Color(value) end,
+        Copy = function(color) return Color(color.rgbaPixel) end,
+        Compare = function(a, b)
+            return a.red == b.red and a.green == b.green and a.blue == b.blue
+        end,
+        Equals = function(a, b) return a.rgbaPixel == b.rgbaPixel end,
+        Distance = Distance
     }
 end
-
-function ColorContext:AverageColorsHSV(colors)
-    local h1, h2, s, v = 0, 0, 0, 0
-
-    for _, color in ipairs(colors) do
-        h1 = h1 + math.cos(math.rad(color.hsvHue))
-        h2 = h2 + math.sin(math.rad(color.hsvHue))
-        s = s + color.hsvSaturation
-        v = v + color.hsvValue
-    end
-
-    return Color {
-        hue = math.deg(math.atan(h2, h1)) % 360,
-        saturation = s / #colors,
-        value = v / #colors,
-        alpha = 255
-    }
-end
-
-return ColorContext
-
--- TODO: Refactor this to instead be one function ColorContext(sprite) that returns an object with functions that can be extracted to save time on indexing

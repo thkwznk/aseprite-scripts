@@ -7,26 +7,28 @@ local function Distance(x, y, x2, y2)
     return math.sqrt((x - x2) ^ 2 + (y - y2) ^ 2)
 end
 
-local function IsErasing(change)
+local function IsErasing(change, sprite)
     if app.tool.id == "eraser" then return true end
 
+    local colorContext = ColorContext(sprite)
+
     if change.leftPressed then
-        return ColorContext:IsTransparent(app.fgColor)
+        return colorContext.IsTransparent(app.fgColor)
     elseif change.rightPressed then
-        return ColorContext:IsTransparent(app.bgColor)
+        return colorContext.IsTransparent(app.bgColor)
     end
 
     return false
 end
 
 function OutlineLiveMode:Process(change, sprite, cel, parameters)
-    local isErasing = IsErasing(change)
+    local isErasing = IsErasing(change, sprite)
     if isErasing and not parameters.outlineErasingEnable then return end
 
     local color = parameters.outlineColor
 
     local selection = sprite.selection
-    local InSelection = function(x, y)
+    local InSelection = function(x, y) -- TODO: Optimize this
         return selection.isEmpty or
                    (not selection.isEmpty and selection:contains(x, y))
     end
@@ -46,6 +48,13 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
 
     newImage:drawImage(app.activeCel.image, Point(dpx, dpy))
 
+    local colorContext = ColorContext(sprite)
+    local IsTransparentValue, Equals, Create = colorContext.IsTransparentValue,
+                                               colorContext.Equals,
+                                               colorContext.Create
+
+    -- TODO: Optimize calls to `outlinePixelCache:SetPixel`
+
     if isErasing then
         for _, pixel in ipairs(change.pixels) do
             local ix = pixel.x - cx + dpx
@@ -60,9 +69,8 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
                         Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
                         local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
 
-                        if not ColorContext:IsTransparentValue(pixelValue) and
-                            not ColorContext:Equals(
-                                ColorContext:Create(pixelValue), color) then
+                        if not IsTransparentValue(pixelValue) and
+                            not Equals(Create(pixelValue), color) then
                             outlinePixelCache:SetPixel(ix, iy, true)
 
                             isOutline = true
@@ -86,13 +94,12 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
                         local pixelValue = pixelCache:GetPixel(ix + xx, iy + yy)
 
                         if parameters.outlineOtherColors then
-                            if not ColorContext:Equals(
-                                ColorContext:Create(pixelValue), pixel.newColor) then
+                            if not Equals(Create(pixelValue), pixel.newColor) then
                                 outlinePixelCache:SetPixel(ix + xx, iy + yy,
                                                            true)
                             end
                         else
-                            if ColorContext:IsTransparentValue(pixelValue) then
+                            if IsTransparentValue(pixelValue) then
                                 outlinePixelCache:SetPixel(ix + xx, iy + yy,
                                                            true)
                             end

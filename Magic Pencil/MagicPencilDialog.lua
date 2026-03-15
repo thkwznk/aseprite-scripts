@@ -10,38 +10,40 @@ local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 
 local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
 
-local function GetButtonsPressedFromEmpty(pixels)
+local insert = table.insert
+
+local function GetButtonsPressedFromEmpty(pixels, colorContext)
     if #pixels == 0 then return end
 
     local pixel = pixels[1]
 
-    if ColorContext:Compare(app.fgColor, pixel.newColor) then
+    if colorContext.Compare(app.fgColor, pixel.newColor) then
         return true, false
-    elseif ColorContext:Compare(app.bgColor, pixel.newColor) then
+    elseif colorContext.Compare(app.bgColor, pixel.newColor) then
         return false, true
     end
 
     return false, false
 end
 
-local function GetButtonsPressed(pixels)
+local function GetButtonsPressed(pixels, colorContext)
     if #pixels == 0 then return false, false end
 
     local leftPressed, rightPressed = false, false
     local pixel = pixels[1]
 
-    if ColorContext:IsTransparent(app.fgColor) and
-        not ColorContext:IsTransparent(pixel.newColor) then
+    if colorContext.IsTransparent(app.fgColor) and
+        not colorContext.IsTransparent(pixel.newColor) then
         return false, true
-    elseif ColorContext:IsTransparent(app.bgColor) and
-        not ColorContext:IsTransparent(pixel.newColor) then
+    elseif colorContext.IsTransparent(app.bgColor) and
+        not colorContext.IsTransparent(pixel.newColor) then
         return true, false
     end
 
-    local fgColorDistance = ColorContext:Distance(pixel.newColor, app.fgColor) -
-                                ColorContext:Distance(pixel.color, app.fgColor)
-    local bgColorDistance = ColorContext:Distance(pixel.newColor, app.bgColor) -
-                                ColorContext:Distance(pixel.color, app.bgColor)
+    local fgColorDistance = colorContext.Distance(pixel.newColor, app.fgColor) -
+                                colorContext.Distance(pixel.color, app.fgColor)
+    local bgColorDistance = colorContext.Distance(pixel.newColor, app.bgColor) -
+                                colorContext.Distance(pixel.color, app.bgColor)
 
     if fgColorDistance < bgColorDistance then
         leftPressed = true
@@ -56,6 +58,9 @@ local function CalculateChangeFromEmpty(cel)
     local pixels = {}
     local pixelValue
 
+    local colorContext = ColorContext(app.activeSprite)
+    local Create = colorContext.Create
+
     local getPixel = cel.image.getPixel
 
     for x = 0, cel.image.width - 1 do
@@ -63,17 +68,18 @@ local function CalculateChangeFromEmpty(cel)
             pixelValue = getPixel(cel.image, x, y)
 
             if pixelValue > 0 then
-                table.insert(pixels, {
+                insert(pixels, {
                     x = x + cel.position.x,
                     y = y + cel.position.y,
-                    color = ColorContext:Create(0),
-                    newColor = ColorContext:Create(pixelValue)
+                    color = Create(0),
+                    newColor = Create(pixelValue)
                 })
             end
         end
     end
 
-    local leftPressed, rightPressed = GetButtonsPressedFromEmpty(pixels)
+    local leftPressed, rightPressed = GetButtonsPressedFromEmpty(pixels,
+                                                                 colorContext)
 
     return {
         pixels = pixels,
@@ -100,8 +106,6 @@ local function CalculateChange(previous, next, canExtend)
     --     CalculateChangeWhenNextSmaller(previous, next, canExtend)
     -- end
 
-    local insert = table.insert
-
     local nextX, nextY, nextWidth, nextHeight, nextImage = next.position.x,
                                                            next.position.y,
                                                            next.bounds.width,
@@ -112,24 +116,9 @@ local function CalculateChange(previous, next, canExtend)
         previous.position.x, previous.position.y, previous.bounds.width,
         previous.bounds.height, previous.image
 
-    local sprite = app.activeSprite
-    local colorMode = sprite.colorMode
-
-    -- TODO: Finish refactoring the implementation of ColorContext
-
-    -- local IsTransparentValue = colorMode == ColorMode.RGB -- 
-    -- and function(value) return app.pixelColor.rgbaA(value) == 0 end -- 
-    -- or function(value) return value == 0 end
-
-    -- local Create = colorMode == ColorMode.RGB -- 
-    -- and function(value) return Color(value) end -- 
-    -- or function(value) return Color {index = value} end
-
-    local rgbaA = app.pixelColor.rgbaA
-
-    local function IsTransparentValue(value) return rgbaA(value) == 0 end
-
-    local function Create(value) return Color(value) end
+    local colorContext = ColorContext(app.activeSprite)
+    local IsTransparentValue, Create = colorContext.IsTransparentValue,
+                                       colorContext.Create
 
     local nextXEnd = nextX + nextWidth - 1
     local nextYEnd = nextY + nextHeight - 1
@@ -210,7 +199,7 @@ local function CalculateChange(previous, next, canExtend)
     end
 
     local bounds = GetBoundsForPixels(pixels)
-    local leftPressed, rightPressed = GetButtonsPressed(pixels)
+    local leftPressed, rightPressed = GetButtonsPressed(pixels, colorContext)
 
     return {
         pixels = pixels,
@@ -223,14 +212,16 @@ local function CalculateChange(previous, next, canExtend)
 end
 
 local function MagicPencilDialog(options)
+    local colorContext = ColorContext(app.activeSprite)
+
     local dialog
     local isRefresh = false
     local colorModel = ColorModels.HSV
     local selectedMode = Mode.Regular
     local sprite = app.activeSprite
     local lastCel
-    local lastFgColor = ColorContext:Copy(app.fgColor)
-    local lastBgColor = ColorContext:Copy(app.bgColor)
+    local lastFgColor = colorContext.Copy(app.fgColor)
+    local lastBgColor = colorContext.Copy(app.bgColor)
     local isMinimized = options.isminimized
 
     local function RefreshDialog()
@@ -488,7 +479,8 @@ local function MagicPencilDialog(options)
                 resetColors = true
             end
 
-            lastFgColor = ColorContext:Copy(app.fgColor)
+            local colorContext = ColorContext(app.activeSprite)
+            lastFgColor = colorContext.Copy(app.fgColor)
         end
     end
 
@@ -504,7 +496,8 @@ local function MagicPencilDialog(options)
                 resetColors = true
             end
 
-            lastBgColor = ColorContext:Copy(app.bgColor)
+            local colorContext = ColorContext(app.activeSprite)
+            lastBgColor = colorContext.Copy(app.bgColor)
         end
     end
 
