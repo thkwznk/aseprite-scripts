@@ -30,6 +30,7 @@ Update v2.3.0:
 Unreleased:
 
 - [Fix] No longer render the locked the Palette icon under the unlocked Palette icon
+- [Fix] Correctly scale inactive tab elements for smaller fonts
 
 Update v2.0.0:
 
