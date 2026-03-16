@@ -756,6 +756,3 @@ local function MagicPencilDialog(options)
 end
 
 return MagicPencilDialog
-
--- TODO: Last cel data might include a cache of pixels to speed up processing
--- TODO: Try using Image.version to skip processing images when nothing has changed
