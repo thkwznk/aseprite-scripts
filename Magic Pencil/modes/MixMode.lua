@@ -1,4 +1,5 @@
 local MixMode = dofile("./MixModeBase.lua")
+local insert = table.insert
 
 local function Contains(collection, expectedValue)
     for _, value in ipairs(collection) do
@@ -9,11 +10,11 @@ end
 function MixMode:_GetColors(pixels)
     local colors = {}
 
+    local color
     for _, pixel in ipairs(pixels) do
-        if pixel.color and pixel.color.alpha == 255 then
-            if not Contains(colors, pixel.color) then
-                table.insert(colors, pixel.color)
-            end
+        color = pixel.color
+        if color and color.alpha == 255 then
+            if not Contains(colors, color) then insert(colors, color) end
         end
     end
 
