@@ -1,29 +1,36 @@
 local ColorizeMode = {ignoreEmptyCel = true, deleteOnEmptyCel = true}
 
 function ColorizeMode:Process(change, sprite, cel, parameters)
-    local x, y, c
-    local hue = change.leftPressed and app.fgColor.hsvHue or app.bgColor.hsvHue
+    local targetColor = change.leftPressed and app.fgColor or app.bgColor
+    local hue = targetColor.hsvHue
+    local saturation = targetColor.hsvSaturation
 
+    local cx, cy, image = cel.position.x, cel.position.y, cel.image
     local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
 
+    local palette = sprite.palettes[1]
+    local getColor = palette.getColor
+
+    local isIndexed = parameters.indexedMode and sprite.colorMode ==
+                          ColorMode.RGB
+
+    local x, y, c
     for _, pixel in ipairs(change.pixels) do
-        x = pixel.x - cel.position.x
-        y = pixel.y - cel.position.y
-        c = Color(getPixel(cel.image, x, y))
+        x = pixel.x - cx
+        y = pixel.y - cy
+        c = Color(getPixel(image, x, y))
 
         if c.alpha > 0 then
             c.hsvHue = hue
-            c.hsvSaturation = (c.hsvSaturation + app.fgColor.hsvSaturation) / 2
+            c.hsvSaturation = (c.hsvSaturation + saturation) / 2
 
-            if parameters.indexedMode and cel.sprite.colorMode == ColorMode.RGB then
-                c = sprite.palettes[1]:getColor(c.index)
-            end
+            if isIndexed then c = getColor(palette, c.index) end
 
-            drawPixel(cel.image, x, y, c)
+            drawPixel(image, x, y, c)
         end
     end
 
-    app.activeCel.image = cel.image
+    app.activeCel.image = image
     app.activeCel.position = cel.position
 end
 

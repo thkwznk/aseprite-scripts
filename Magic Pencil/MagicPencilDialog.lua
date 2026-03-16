@@ -752,3 +752,4 @@ return MagicPencilDialog
 -- TODO: Fix Lift, doesn't seem to work correctly
 -- TODO: Fix Merge, throws an error if there's only one layer
 -- TODO: Fix, if a change makes the cel smaller it incorrectly calculates the changed pixels
+-- TODO: Fix, Colorize outside of the current cel colorizes everything
