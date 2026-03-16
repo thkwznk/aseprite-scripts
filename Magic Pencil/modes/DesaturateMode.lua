@@ -5,30 +5,36 @@ local DesaturateMode = {
 }
 
 function DesaturateMode:Process(change, sprite, cel, parameters)
-    local x, y, c
-
+    local cx, cy, image = cel.position.x, cel.position.y, cel.image
     local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
 
-    for _, pixel in ipairs(change.pixels) do
-        x = pixel.x - cel.position.x
-        y = pixel.y - cel.position.y
-        c = Color(getPixel(cel.image, x, y))
+    local palette = sprite.palettes[1]
+    local getColor = palette.getColor
 
-        if c.alpha > 0 then
-            c = Color {
-                gray = 0.299 * c.red + 0.114 * c.blue + 0.587 * c.green,
-                alpha = c.alpha
+    local isIndexed = parameters.indexedMode and sprite.colorMode ==
+                          ColorMode.RGB
+
+    local x, y, color, alpha
+    for _, pixel in ipairs(change.pixels) do
+        x = pixel.x - cx
+        y = pixel.y - cy
+        color = Color(getPixel(image, x, y))
+        alpha = color.alpha
+
+        if alpha > 0 then
+            color = Color {
+                gray = 0.299 * color.red + 0.114 * color.blue + 0.587 *
+                    color.green,
+                alpha = alpha
             }
 
-            if parameters.indexedMode and cel.sprite.colorMode == ColorMode.RGB then
-                c = sprite.palettes[1]:getColor(c.index)
-            end
+            if isIndexed then color = getColor(palette, color.index) end
 
-            drawPixel(cel.image, x, y, c)
+            drawPixel(image, x, y, color)
         end
     end
 
-    app.activeCel.image = cel.image
+    app.activeCel.image = image
     app.activeCel.position = cel.position
 end
 
