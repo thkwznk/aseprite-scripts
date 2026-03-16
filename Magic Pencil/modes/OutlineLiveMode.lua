@@ -28,9 +28,12 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
     local color = parameters.outlineColor
 
     local selection = sprite.selection
-    local InSelection = function(x, y) -- TODO: Optimize this
-        return selection.isEmpty or
-                   (not selection.isEmpty and selection:contains(x, y))
+    local InSelection
+    if selection.isEmpty then
+        InSelection = function() return true end
+    else
+        local constains = selection.contains
+        InSelection = function(x, y) return constains(selection, x, y) end
     end
 
     local outlineSize = parameters.outlineSize
@@ -53,29 +56,28 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
                                                colorContext.Equals,
                                                colorContext.Create
 
-    -- TODO: Optimize calls to `outlinePixelCache:SetPixel`
-
     local GetPixel = pixelCache.GetPixel
     local SetPixel = outlinePixelCache.SetPixel
 
     if isErasing then
         for _, pixel in ipairs(change.pixels) do
-            local ix = pixel.x - cx + dpx
-            local iy = pixel.y - cy + dpy
+            local x = pixel.x - cx + dpx
+            local y = pixel.y - cy + dpy
 
             local isOutline = false
 
-            for xx = -outlineSize, outlineSize do
-                for yy = -outlineSize, outlineSize do
-                    if (ix + xx >= 0 and ix + xx < width and iy + yy >= 0 and iy +
-                        yy < height) and InSelection(pixel.x + xx, pixel.y + yy) and
-                        Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
-                        local pixelValue =
-                            GetPixel(pixelCache, ix + xx, iy + yy)
+            for dx = -outlineSize, outlineSize do
+                for dy = -outlineSize, outlineSize do
+                    local nx, ny = x + dx, y + dy
+
+                    if (nx >= 0 and nx < width and ny >= 0 and y + dy < height) and
+                        InSelection(pixel.x + dx, pixel.y + dy) and
+                        Distance(x, y, nx, ny) <= outlineSize * 1.2 then
+                        local pixelValue = GetPixel(pixelCache, nx, ny)
 
                         if not IsTransparentValue(pixelValue) and
                             not Equals(Create(pixelValue), color) then
-                            SetPixel(outlinePixelCache, ix, iy, true)
+                            SetPixel(outlinePixelCache, x, y, true)
 
                             isOutline = true
                             break
@@ -88,25 +90,24 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
         end
     else
         for _, pixel in ipairs(change.pixels) do
-            local ix = pixel.x - cx + dpx
-            local iy = pixel.y - cy + dpy
+            local x = pixel.x - cx + dpx
+            local y = pixel.y - cy + dpy
 
-            for xx = -outlineSize, outlineSize do
-                for yy = -outlineSize, outlineSize do
-                    if InSelection(pixel.x + xx, pixel.y + yy) and
-                        Distance(ix, iy, ix + xx, iy + yy) <= outlineSize * 1.2 then
-                        local pixelValue =
-                            GetPixel(pixelCache, ix + xx, iy + yy)
+            for dx = -outlineSize, outlineSize do
+                for dy = -outlineSize, outlineSize do
+                    local nx, ny = x + dx, y + dy
+
+                    if InSelection(pixel.x + dx, pixel.y + dy) and
+                        Distance(x, y, nx, ny) <= outlineSize * 1.2 then
+                        local pixelValue = GetPixel(pixelCache, nx, ny)
 
                         if parameters.outlineOtherColors then
                             if not Equals(Create(pixelValue), pixel.newColor) then
-                                SetPixel(outlinePixelCache, ix + xx, iy + yy,
-                                         true)
+                                SetPixel(outlinePixelCache, nx, ny, true)
                             end
                         else
                             if IsTransparentValue(pixelValue) then
-                                SetPixel(outlinePixelCache, ix + xx, iy + yy,
-                                         true)
+                                SetPixel(outlinePixelCache, nx, ny, true)
                             end
                         end
                     end
