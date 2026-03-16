@@ -119,3 +119,5 @@ function MergeMode:Process(change, sprite, cel, parameters)
 end
 
 return MergeMode
+
+-- TODO: Optimize

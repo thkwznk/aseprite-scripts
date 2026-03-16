@@ -61,16 +61,18 @@ local function CalculateChangeFromEmpty(cel)
     local colorContext = ColorContext(app.activeSprite)
     local Create = colorContext.Create
 
+    local image = cel.image
     local getPixel = cel.image.getPixel
+    local cx, cy = cel.position.x, cel.position.y
 
-    for x = 0, cel.image.width - 1 do
-        for y = 0, cel.image.height - 1 do
-            pixelValue = getPixel(cel.image, x, y)
+    for x = 0, image.width - 1 do
+        for y = 0, image.height - 1 do
+            pixelValue = getPixel(image, x, y)
 
             if pixelValue > 0 then
                 insert(pixels, {
-                    x = x + cel.position.x,
-                    y = y + cel.position.y,
+                    x = x + cx,
+                    y = y + cy,
                     color = Create(0),
                     newColor = Create(pixelValue)
                 })
@@ -206,8 +208,7 @@ local function CalculateChange(previous, next, canExtend)
         bounds = bounds,
         leftPressed = leftPressed,
         rightPressed = rightPressed,
-        sizeChanged = previous.bounds.width ~= next.bounds.width or
-            previous.bounds.height ~= next.bounds.height
+        sizeChanged = previousWidth ~= nextWidth or previousHeight ~= nextHeight
     }
 end
 
@@ -751,4 +752,3 @@ return MagicPencilDialog
 -- TODO: Try using Image.version to skip processing images when nothing has changed
 -- TODO: Fix Lift, doesn't seem to work correctly
 -- TODO: Fix Merge, throws an error if there's only one layer
--- TODO: Fix, if a change makes the cel smaller it incorrectly calculates the changed pixels
