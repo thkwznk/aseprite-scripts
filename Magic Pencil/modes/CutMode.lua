@@ -8,27 +8,28 @@ function CutMode:Process(change, sprite, cel, parameters)
     local newImage = Image(change.bounds.width, change.bounds.height,
                            cel.sprite.colorMode)
 
+    local cx, cy, image = cel.position.x, cel.position.y, cel.image
     local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
     local ox, oy = change.bounds.x, change.bounds.y
 
     local x, y, color = nil, nil, nil
-
     for _, pixel in ipairs(change.pixels) do
-        x = pixel.x - cel.position.x
-        y = pixel.y - cel.position.y
+        x = pixel.x - cx
+        y = pixel.y - cy
 
-        color = getPixel(cel.image, x, y)
+        color = getPixel(image, x, y)
 
-        drawPixel(cel.image, x, y, 0)
+        drawPixel(image, x, y, 0)
         drawPixel(newImage, pixel.x - ox, pixel.y - oy, color)
     end
 
-    app.activeCel.image = cel.image
+    app.activeCel.image = image
     app.activeCel.position = cel.position
 
     local activeLayerIndex = app.activeLayer.stackIndex
     local activeLayerParent = app.activeLayer.parent
 
+    -- v This causes a site change and that calls the UpdateLast in MagicPencilDialog
     local newLayer = sprite:newLayer()
     newLayer.name = "Lifted Content"
     newLayer.parent = activeLayerParent

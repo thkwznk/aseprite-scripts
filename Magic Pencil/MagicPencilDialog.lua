@@ -274,7 +274,12 @@ local function MagicPencilDialog(options)
         dialog:show{wait = false, bounds = newBounds}
     end
 
+    -- We need to suspend updating the last cel while processing to avoid unpredictable behaviour
+    local suspendUpdateLast = false
+
     local function UpdateLast()
+        if suspendUpdateLast then return end
+
         if app.activeCel then
             lastCel = {
                 image = app.activeCel.image:clone(),
@@ -337,8 +342,12 @@ local function MagicPencilDialog(options)
         if #change.pixels == 0 or lastCel.empty and modeProcessor.ignoreEmptyCel then
             -- Ignore, do nothing
         elseif change.leftPressed or change.rightPressed then
+            suspendUpdateLast = true
+
             -- Only respond if it's known which button the user pressed
             modeProcessor:Process(change, sprite, lastCel, dialog.data)
+
+            suspendUpdateLast = false
         end
 
         if lastCel.empty and modeProcessor.deleteOnEmptyCel then
@@ -750,5 +759,3 @@ return MagicPencilDialog
 
 -- TODO: Last cel data might include a cache of pixels to speed up processing
 -- TODO: Try using Image.version to skip processing images when nothing has changed
--- TODO: Fix Lift, doesn't seem to work correctly
--- TODO: Fix Merge, throws an error if there's only one layer

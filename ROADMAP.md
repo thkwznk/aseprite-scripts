@@ -63,6 +63,7 @@ Future:
 
 Unreleased:
 
+- [Fix] Correctly process Lift and Merge modes
 - [Improvement] Improve performance
 
 Future:
