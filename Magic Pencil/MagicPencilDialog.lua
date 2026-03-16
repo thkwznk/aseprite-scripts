@@ -164,8 +164,8 @@ local function CalculateChange(previous, next, canExtend)
             end
         end
     else -- Cannot extend, iterate over the previous image
-        local shiftX = nextX - previousX
-        local shiftY = nextY - previousY
+        local shiftX = previousX - nextX
+        local shiftY = previousY - nextY
 
         for x = 0, previousWidth - 1 do
             for y = 0, previousHeight - 1 do
@@ -752,4 +752,3 @@ return MagicPencilDialog
 -- TODO: Fix Lift, doesn't seem to work correctly
 -- TODO: Fix Merge, throws an error if there's only one layer
 -- TODO: Fix, if a change makes the cel smaller it incorrectly calculates the changed pixels
--- TODO: Fix, Colorize outside of the current cel colorizes everything
