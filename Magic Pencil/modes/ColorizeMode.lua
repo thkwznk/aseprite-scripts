@@ -14,19 +14,19 @@ function ColorizeMode:Process(change, sprite, cel, parameters)
     local isIndexed = parameters.indexedMode and sprite.colorMode ==
                           ColorMode.RGB
 
-    local x, y, c
+    local x, y, color
     for _, pixel in ipairs(change.pixels) do
         x = pixel.x - cx
         y = pixel.y - cy
-        c = Color(getPixel(image, x, y))
+        color = Color(getPixel(image, x, y))
 
-        if c.alpha > 0 then
-            c.hsvHue = hue
-            c.hsvSaturation = (c.hsvSaturation + saturation) / 2
+        if color.alpha > 0 then
+            color.hsvHue = hue
+            color.hsvSaturation = (color.hsvSaturation + saturation) / 2
 
-            if isIndexed then c = getColor(palette, c.index) end
+            if isIndexed then color = getColor(palette, color.index) end
 
-            drawPixel(image, x, y, c)
+            drawPixel(image, x, y, color)
         end
     end
 

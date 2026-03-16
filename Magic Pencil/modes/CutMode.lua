@@ -12,7 +12,7 @@ function CutMode:Process(change, sprite, cel, parameters)
     local getPixel, drawPixel = cel.image.getPixel, cel.image.drawPixel
     local ox, oy = change.bounds.x, change.bounds.y
 
-    local x, y, color = nil, nil, nil
+    local x, y, color
     for _, pixel in ipairs(change.pixels) do
         x = pixel.x - cx
         y = pixel.y - cy

@@ -59,21 +59,22 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
     local GetPixel = pixelCache.GetPixel
     local SetPixel = outlinePixelCache.SetPixel
 
+    local x, y, isOutline, nx, ny, pixelValue
     if isErasing then
         for _, pixel in ipairs(change.pixels) do
-            local x = pixel.x - cx + dpx
-            local y = pixel.y - cy + dpy
+            x = pixel.x - cx + dpx
+            y = pixel.y - cy + dpy
 
-            local isOutline = false
+            isOutline = false
 
             for dx = -outlineSize, outlineSize do
                 for dy = -outlineSize, outlineSize do
-                    local nx, ny = x + dx, y + dy
+                    nx, ny = x + dx, y + dy
 
                     if (nx >= 0 and nx < width and ny >= 0 and y + dy < height) and
                         InSelection(pixel.x + dx, pixel.y + dy) and
                         Distance(x, y, nx, ny) <= outlineSize * 1.2 then
-                        local pixelValue = GetPixel(pixelCache, nx, ny)
+                        pixelValue = GetPixel(pixelCache, nx, ny)
 
                         if not IsTransparentValue(pixelValue) and
                             not Equals(Create(pixelValue), color) then
@@ -90,16 +91,16 @@ function OutlineLiveMode:Process(change, sprite, cel, parameters)
         end
     else
         for _, pixel in ipairs(change.pixels) do
-            local x = pixel.x - cx + dpx
-            local y = pixel.y - cy + dpy
+            x = pixel.x - cx + dpx
+            y = pixel.y - cy + dpy
 
             for dx = -outlineSize, outlineSize do
                 for dy = -outlineSize, outlineSize do
-                    local nx, ny = x + dx, y + dy
+                    nx, ny = x + dx, y + dy
 
                     if InSelection(pixel.x + dx, pixel.y + dy) and
                         Distance(x, y, nx, ny) <= outlineSize * 1.2 then
-                        local pixelValue = GetPixel(pixelCache, nx, ny)
+                        pixelValue = GetPixel(pixelCache, nx, ny)
 
                         if parameters.outlineOtherColors then
                             if not Equals(Create(pixelValue), pixel.newColor) then
