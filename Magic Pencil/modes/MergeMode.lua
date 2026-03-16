@@ -73,21 +73,28 @@ function MergeMode:Process(change, sprite, cel, parameters)
         end
     end)
 
-    for _, pixel in ipairs(change.pixels) do
-        for i = #layerCels, 1, -1 do
-            local layerCel = layerCels[i]
-            if RectangleContains(layerCel.bounds, pixel.x, pixel.y) then
-                x = pixel.x - layerCel.position.x
-                y = pixel.y - layerCel.position.y
+    local chx, chy = change.bounds.x, change.bounds.y
 
-                color = getPixel(layerCel.image, x, y)
+    for i = #layerCels, 1, -1 do
+        local layerCel = layerCels[i]
+        local lx, ly = layerCel.position.x, layerCel.position.y
+        local image, bounds = layerCel.image, layerCel.bounds
+
+        local px, py
+        for _, pixel in ipairs(change.pixels) do
+            px, py = pixel.x, pixel.y
+
+            if RectangleContains(bounds, px, py) then
+                x = px - lx
+                y = py - ly
+
+                color = getPixel(image, x, y)
 
                 if color > 0 then
-                    drawPixel(newImage, pixel.x - change.bounds.x,
-                              pixel.y - change.bounds.y, color)
+                    drawPixel(newImage, px - chx, py - chy, color)
 
                     -- I'm not sure if the Merge Mode should clear pixels
-                    -- drawPixel(layerCel.image, x, y, 0)
+                    -- drawPixel(image, x, y, 0)
 
                     layerCel.updated = true
                 end
@@ -119,5 +126,3 @@ function MergeMode:Process(change, sprite, cel, parameters)
 end
 
 return MergeMode
-
--- TODO: Optimize
