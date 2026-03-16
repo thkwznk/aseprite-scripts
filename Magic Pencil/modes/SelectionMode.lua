@@ -5,12 +5,11 @@ local SelectionMode = {
 }
 
 function SelectionMode:Process(change, sprite, cel, parameters)
-    -- TODO: Fix, If the whole selection is out of the original cel's bounds it will not be processed
-
     local newSelection = Selection()
+    local add = newSelection.add
 
     for _, pixel in ipairs(change.pixels) do
-        newSelection:add(Rectangle(pixel.x, pixel.y, 1, 1))
+        add(newSelection, Rectangle(pixel.x, pixel.y, 1, 1))
     end
 
     if change.leftPressed then
