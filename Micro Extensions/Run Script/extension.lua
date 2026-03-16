@@ -269,7 +269,7 @@ function init(plugin)
     }
 
     plugin:newCommand{
-        id = "RepeatScriptAdvanced",
+        id = "RunLastScriptAdvanced",
         title = "Run Last Script",
         onenabled = function() return lastRunOption ~= nil end,
         onclick = function()
