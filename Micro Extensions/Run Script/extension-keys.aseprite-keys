@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <keyboard version="1">
     <commands>
-        <key command="RunScriptAdvanced" shortcut="\" />
-        <key command="RunLastScriptAdvanced" shortcut="Ctrl+\" />
-        <key command="ProfileLastScript" shortcut="Shift+|" />
+        <key command="RunScriptAdvanced" shortcut="Ctrl+R" />
+        <key command="RunLastScriptAdvanced" shortcut="Ctrl+Shift+R" />
     </commands>
 </keyboard>

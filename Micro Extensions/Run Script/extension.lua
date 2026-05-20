@@ -198,11 +198,8 @@ local function RunScriptDialog(options)
                 -- Close the dialog first to avoid having it left open if the scripts opens it's own dialog with option `wait=true`
                 dialog:close()
 
-                -- Execute the selected script
-                dofile(result.filepath)
-
                 if options.onrun then
-                    options.onrun(result, dialog.data)
+                    options.onrun(result, dialog.data.repeatTimes)
                 end
             end
         } --
@@ -221,22 +218,42 @@ local function RunScriptDialog(options)
             dialog:modify{id = "result-1", focus = true}
         end
     } --
+    :separator{text = "Profiler Iterations:"} --
+    :number{id = "repeatTimes", text = tostring(0), decimals = 0} --
 
     return dialog
 end
 
 function init(plugin)
-    local lastRunOption
+    local lastRunOption, lastRepeatTimes
+
+    local function ExecuteScript(option, times)
+        if not times or times == 0 then
+            dofile(option.filepath)
+            return
+        end
+
+        profiler.start()
+        for _ = 1, times do dofile(option.filepath) end
+
+        profiler.stop()
+        profiler.report("C:\\profiler.log")
+
+        print("Finished")
+    end
 
     plugin:newCommand{
         id = "RunScriptAdvanced", -- RunScript is already a native command
-        title = "Run...",
+        title = "Run Script",
         group = "file_scripts",
         onclick = function()
             local dialog = RunScriptDialog {
                 title = "Run Script",
-                onrun = function(option, data)
+                onrun = function(option, repeatTimes)
+                    ExecuteScript(option, repeatTimes)
+
                     lastRunOption = option
+                    lastRepeatTimes = repeatTimes
                 end
             }
             dialog:show{
@@ -251,61 +268,19 @@ function init(plugin)
         title = "Run Last Script",
         onenabled = function() return lastRunOption ~= nil end,
         onclick = function()
-            if lastRunOption.filepath and app.fs.isFile(lastRunOption.filepath) then
-                dofile(lastRunOption.filepath)
+            if not lastRunOption --
+            or not lastRunOption.filepath then
+                print("No script has been run!")
+                return
             end
-        end
-    }
 
-    local repeatTimes = 10
+            if not app.fs.isFile(lastRunOption.filepath) then
+                print("Script \"" .. lastRunOption.filepath ..
+                          "\" no longer exists!")
+                return
+            end
 
-    plugin:newCommand{
-        id = "ProfileLastScript",
-        title = "Profile Last Script",
-        onenabled = function() return lastRunOption ~= nil end,
-        onclick = function()
-            local dialog = Dialog {
-                title = "Profile Script: " .. fileTitle(lastRunOption.filepath)
-            }
-
-            dialog --
-            :number{
-                id = "repeatTimes",
-                label = "Iterations:",
-                text = tostring(repeatTimes),
-                decimals = 0,
-                onchange = function()
-                    dialog:modify{
-                        id = "okButton",
-                        enabled = type(dialog.data.repeatTimes) == "number" and
-                            dialog.data.repeatTimes > 0
-                    }
-                end
-            } --
-            :button{
-                id = "okButton",
-                text = "&OK",
-                focus = true,
-                onclick = function()
-                    dialog:close()
-
-                    repeatTimes = dialog.data.repeatTimes
-
-                    profiler.start()
-
-                    for _ = 1, repeatTimes do
-                        dofile(lastRunOption.filepath)
-                    end
-
-                    profiler.stop()
-                    profiler.report("C:\\profiler.log")
-
-                    print("Finished")
-                end
-            } --
-            :button{text = "&Cancel"}
-
-            dialog:show()
+            ExecuteScript(lastRunOption, lastRepeatTimes)
         end
     }
 end
