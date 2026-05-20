@@ -1,3 +1,4 @@
+local TableDialog = dofile("./TableDialog.lua")
 local profiler = dofile("./profiler.lua")
 
 local SCRIPTS_DIRECTORY = app.fs.joinPath(app.fs.userConfigPath, "scripts")
@@ -237,9 +238,14 @@ function init(plugin)
         for _ = 1, times do dofile(option.filepath) end
 
         profiler.stop()
-        profiler.report("C:\\profiler.log")
+        local r = profiler.report()
 
-        print("Finished")
+        local dialog = TableDialog {
+            title = "Profiling " .. fileTitle(option.filepath) .. " (" ..
+                tostring(times) .. " iterations) " .. r.time,
+            data = r.data
+        }
+        dialog:show()
     end
 
     plugin:newCommand{
