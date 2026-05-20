@@ -302,7 +302,12 @@ local function MagicPencilDialog(options)
 
     local skip = false
 
-    local onBeforeCommand = function(ev) skip = true end
+    local onBeforeCommand = function(ev)
+        -- Only set the "skip" flag for commands other tahn "Undo" and "Redo"
+        -- These two commands do not emit the "onAfterCommand" event
+        -- We already skip them because they set the "fromUndo" from on the SpriteChange event 
+        if ev.name ~= "Undo" and ev.name ~= "Redo" then skip = true end
+    end
 
     local onAfterCommand = function(ev)
         skip = false

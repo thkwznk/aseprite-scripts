@@ -64,6 +64,7 @@ Future:
 Unreleased:
 
 - [Fix] Correctly process Lift and Merge modes
+- [Fix] Correctly respond to Undo and Redo commands to not break the image processing of Magic Pencil
 - [Improvement] Improve performance
 
 Future:
