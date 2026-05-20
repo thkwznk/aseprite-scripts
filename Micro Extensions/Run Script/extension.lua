@@ -128,13 +128,10 @@ local function RunScriptDialog(options)
         for i = 1, resultsOnPage do
             local result = results[skip + i]
 
-            local name = result.name
-            if dialog.data.showPaths then name = result.path end
-
             dialog:modify{
                 id = "result-" .. tostring(i),
                 visible = true,
-                text = name,
+                text = result.path,
                 enabled = result.enabled
             }
         end
@@ -224,27 +221,11 @@ local function RunScriptDialog(options)
             dialog:modify{id = "result-1", focus = true}
         end
     } --
-    :separator{text = "Options:"} -- 
-    :check{
-        id = "showPaths",
-        text = "Show paths",
-        selected = options.showPaths,
-        onclick = function() SearchAll() end
-    } --
 
     return dialog
 end
 
 function init(plugin)
-    local preferences = plugin.preferences
-
-    local function CopyPreferences(data)
-        -- "data" can be either plugin.preferences or dialog.data
-        preferences.showPaths = data.showPaths or false
-    end
-
-    CopyPreferences(preferences)
-
     local lastRunOption
 
     plugin:newCommand{
@@ -254,12 +235,9 @@ function init(plugin)
         onclick = function()
             local dialog = RunScriptDialog {
                 title = "Run Script",
-                showPaths = preferences.showPaths,
                 onrun = function(option, data)
-                    CopyPreferences(data)
                     lastRunOption = option
-                end,
-                onclose = function(data) CopyPreferences(data) end
+                end
             }
             dialog:show{
                 bounds = Rectangle(app.window.width / 2 - 140, 28, 280,
