@@ -759,9 +759,10 @@ local function MagicPencilDialog(options)
         selected = isMinimized,
         onclick = ToggleMinimize
     } --
-    :separator{text = "Debug"} --
+    :separator{text = "Debug", visible = false} --
     :button{
         text = "Profile",
+        visible = false,
         onclick = function()
             -- Reset the lastCel to an empty one
             lastCel = {
