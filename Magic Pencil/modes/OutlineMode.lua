@@ -52,9 +52,16 @@ function OutlineMode:Process(change, sprite, cel, parameters)
     end
 end
 
+local getPixel
+local selectionContains
+
 function OutlineMode:_Outline(selection, change, cel)
     local outlinePixels = {}
     local visited = {}
+
+    -- Save references to these functions to improve performance
+    getPixel = cel.image.getPixel
+    selectionContains = selection.Contains
 
     for _, pixel in ipairs(change.pixels) do
         local x = pixel.x - cel.position.x
@@ -73,12 +80,14 @@ end
 function OutlineMode:_RecursiveOutline(selection, image, x, y, outlinePixels,
                                        visited, skip)
     -- Out of selection
-    if selection then if not selection:Contains(x, y) then return end end
+    if selection and not selectionContains(selection, x, y) then return end
 
-    if x < 0 or x > image.width - 1 or y < 0 or y > image.height - 1 or -- Out of bounds
-        image:getPixel(x, y) == 0 -- Transparent
+    if x < 0 or x > image.width - 1 or y < 0 or y > image.height - 1 -- Out of bounds
+    or getPixel(image, x, y) == 0 -- Transparent
     then
-        if not skip then table.insert(outlinePixels, {x = x, y = y}) end
+        if not skip then
+            outlinePixels[#outlinePixels + 1] = {x = x, y = y}
+        end
         return
     end
 

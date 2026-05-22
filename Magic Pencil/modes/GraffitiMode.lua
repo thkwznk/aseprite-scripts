@@ -1,7 +1,6 @@
 local GetBoundsForPixels = dofile("../GetBoundsForPixels.lua")
 
 local ceil, random, sqrt, max = math.ceil, math.random, math.sqrt, math.max
-local insert = table.insert
 
 local GraffitiMode = {canExtend = true}
 
@@ -85,25 +84,33 @@ function GraffitiMode:_DrawDrip(x, y, length, size, color, pixels)
     if length < 1 or size < 1 then return end
 
     local xx = x - (size / 2)
+    local pi = #pixels
 
     for i = 1, length do
         for j = 1, size do
-            insert(pixels, {x = xx + j, y = y + i, color = color})
+            pi = pi + 1
+            pixels[pi] = {x = xx + j, y = y + i, color = color}
         end
     end
 
     local yy = y + length + 2
 
-    for j = 1, size do insert(pixels, {x = xx + j, y = yy, color = color}) end
+    for j = 1, size do
+        pi = pi + 1
+        pixels[pi] = {x = xx + j, y = yy, color = color}
+    end
 end
 
 function GraffitiMode:_DrawSpeck(x, y, size, color, pixels)
     if size < 1 then return end
 
+    local pi = #pixels
+
     for ex = x - size, x + size do
         for ey = y - size, y + size do
             if sqrt(((ex - x) ^ 2) + ((ey - y) ^ 2)) <= size then
-                insert(pixels, {x = ex, y = ey, color = color})
+                pi = pi + 1
+                pixels[pi] = {x = ex, y = ey, color = color}
             end
         end
     end

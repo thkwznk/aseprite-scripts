@@ -10,8 +10,6 @@ local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 
 local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
 
-local insert = table.insert
-
 local function GetButtonsPressedFromEmpty(pixels, colorContext)
     if #pixels == 0 then return end
 
@@ -56,6 +54,7 @@ end
 
 local function CalculateChangeFromEmpty(cel)
     local pixels = {}
+    local pi = 0
     local pixelValue
 
     local colorContext = ColorContext(app.activeSprite)
@@ -70,12 +69,13 @@ local function CalculateChangeFromEmpty(cel)
             pixelValue = getPixel(image, x, y)
 
             if pixelValue > 0 then
-                insert(pixels, {
+                pi = pi + 1
+                pixels[pi] = {
                     x = x + cx,
                     y = y + cy,
                     color = Create(0),
                     newColor = Create(pixelValue)
-                })
+                }
             end
         end
     end
@@ -97,6 +97,7 @@ local function CalculateChange(previous, next, canExtend)
     -- Pencil can only add which means the new image can only be bigger (not true, you COULD paint with color 0...)
 
     local pixels = {}
+    local pi = 0
     local prevPixelValue = nil
 
     local getPixel = previous.image.getPixel
@@ -125,10 +126,6 @@ local function CalculateChange(previous, next, canExtend)
     local nextXEnd = nextX + nextWidth - 1
     local nextYEnd = nextY + nextHeight - 1
 
-    local function RectangleContains(x, y)
-        return x >= nextX and x <= nextXEnd and y >= nextY and y <= nextYEnd
-    end
-
     -- It's faster without registering any local variables inside the loops
     if nextArea > previousArea and canExtend then -- Can extend, iterate over the new image
         local shiftX = nextX - previousX
@@ -148,20 +145,22 @@ local function CalculateChange(previous, next, canExtend)
                 if (shiftedX < 0 or shiftedX > previousWidth - 1 or shiftedY < 0 or
                     shiftedY > previousHeight - 1) then
                     if not IsTransparentValue(nextPixelValue) then
-                        insert(pixels, {
+                        pi = pi + 1
+                        pixels[pi] = {
                             x = x + nextX,
                             y = y + nextY,
                             color = Create(0),
                             newColor = Create(nextPixelValue)
-                        })
+                        }
                     end
                 elseif prevPixelValue ~= nextPixelValue then
-                    insert(pixels, {
+                    pi = pi + 1
+                    pixels[pi] = {
                         x = x + nextX,
                         y = y + nextY,
                         color = Create(prevPixelValue),
                         newColor = Create(nextPixelValue)
-                    })
+                    }
                 end
             end
         end
@@ -172,29 +171,33 @@ local function CalculateChange(previous, next, canExtend)
         for x = 0, previousWidth - 1 do
             for y = 0, previousHeight - 1 do
                 prevPixelValue = getPixel(previousImage, x, y)
+                local gx, gy = x + previousX, y + previousY
 
                 -- Next image in some rare cases can be smaller
-                if RectangleContains(x + previousX, y + previousY) then
+                if gx >= nextX and gx <= nextXEnd --
+                and gy >= nextY and gy <= nextYEnd then
                     -- Saving the new pixel's colors would be necessary for working with brushes, I think
                     local nextPixelValue =
                         getPixel(nextImage, x + shiftX, y + shiftY)
 
                     if prevPixelValue ~= nextPixelValue then
                         -- Save X and Y as canvas global
-                        insert(pixels, {
+                        pi = pi + 1
+                        pixels[pi] = {
                             x = x + previousX,
                             y = y + previousY,
                             color = Create(prevPixelValue),
                             newColor = Create(nextPixelValue)
-                        })
+                        }
                     end
                 elseif not IsTransparentValue(prevPixelValue) then
-                    insert(pixels, {
+                    pi = pi + 1
+                    pixels[pi] = {
                         x = x + previousX,
                         y = y + previousY,
                         color = Create(prevPixelValue),
                         newColor = Create(0)
-                    })
+                    }
                 end
             end
         end
