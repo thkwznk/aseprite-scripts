@@ -10,6 +10,16 @@ local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 
 local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
 
+local function EmptyLastCel(sprite)
+    return {
+        image = Image(0, 0),
+        position = Point(0, 0),
+        bounds = Rectangle(0, 0, 0, 0),
+        sprite = sprite,
+        empty = true
+    }
+end
+
 local simulateLeftButtonPressed = false
 
 local function GetButtonsPressedFromEmpty(pixels, colorContext)
@@ -33,19 +43,21 @@ local function GetButtonsPressed(pixels, colorContext)
 
     local leftPressed, rightPressed = false, false
     local pixel = pixels[1]
+    local color, newColor = pixel.color, pixel.newColor
+    local fgColor, bgColor = app.fgColor, app.bgColor
+    local IsTransparent, Distance = colorContext.IsTransparent,
+                                    colorContext.Distance
 
-    if colorContext.IsTransparent(app.fgColor) and
-        not colorContext.IsTransparent(pixel.newColor) then
+    if IsTransparent(fgColor) and not IsTransparent(newColor) then
         return false, true
-    elseif colorContext.IsTransparent(app.bgColor) and
-        not colorContext.IsTransparent(pixel.newColor) then
+    elseif IsTransparent(bgColor) and not IsTransparent(newColor) then
         return true, false
     end
 
-    local fgColorDistance = colorContext.Distance(pixel.newColor, app.fgColor) -
-                                colorContext.Distance(pixel.color, app.fgColor)
-    local bgColorDistance = colorContext.Distance(pixel.newColor, app.bgColor) -
-                                colorContext.Distance(pixel.color, app.bgColor)
+    local fgColorDistance = Distance(newColor, fgColor) -
+                                Distance(color, fgColor)
+    local bgColorDistance = Distance(newColor, bgColor) -
+                                Distance(color, bgColor)
 
     if fgColorDistance < bgColorDistance then
         leftPressed = true
@@ -97,9 +109,6 @@ local function CalculateChangeFromEmpty(cel)
 end
 
 local function CalculateChange(previous, next, canExtend)
-    -- If size changed then it's a clear indicator of a change
-    -- Pencil can only add which means the new image can only be bigger (not true, you COULD paint with color 0...)
-
     local pixels = {}
     local pi = 0
     local prevPixelValue = nil
@@ -108,10 +117,6 @@ local function CalculateChange(previous, next, canExtend)
 
     local previousArea = previous.bounds.width * previous.bounds.height
     local nextArea = next.bounds.width * next.bounds.height
-
-    -- if nextArea < previousArea then
-    --     CalculateChangeWhenNextSmaller(previous, next, canExtend)
-    -- end
 
     local nextX, nextY, nextWidth, nextHeight, nextImage = next.position.x,
                                                            next.position.y,
@@ -295,13 +300,7 @@ local function MagicPencilDialog(options)
                 sprite = sprite
             }
         else
-            lastCel = {
-                image = Image(0, 0),
-                position = Point(0, 0),
-                bounds = Rectangle(0, 0, 0, 0),
-                sprite = sprite,
-                empty = true
-            }
+            return EmptyLastCel(sprite)
         end
     end
 
@@ -765,13 +764,7 @@ local function MagicPencilDialog(options)
         visible = false,
         onclick = function()
             -- Reset the lastCel to an empty one
-            lastCel = {
-                image = Image(0, 0),
-                position = Point(0, 0),
-                bounds = Rectangle(0, 0, 0, 0),
-                sprite = sprite,
-                empty = true
-            }
+            lastCel = EmptyLastCel(sprite)
 
             simulateLeftButtonPressed = true
 
