@@ -10,7 +10,10 @@ local MagicTeal = Color {red = 0, green = 128, blue = 128, alpha = 128}
 
 local ColorModels = {HSV = "HSV", HSL = "HSL", RGB = "RGB"}
 
+local simulateLeftButtonPressed = false
+
 local function GetButtonsPressedFromEmpty(pixels, colorContext)
+    if simulateLeftButtonPressed then return true, false end
     if #pixels == 0 then return end
 
     local pixel = pixels[1]
@@ -25,6 +28,7 @@ local function GetButtonsPressedFromEmpty(pixels, colorContext)
 end
 
 local function GetButtonsPressed(pixels, colorContext)
+    if simulateLeftButtonPressed then return true, false end
     if #pixels == 0 then return false, false end
 
     local leftPressed, rightPressed = false, false
@@ -754,6 +758,50 @@ local function MagicPencilDialog(options)
         text = "Minimize",
         selected = isMinimized,
         onclick = ToggleMinimize
+    } --
+    :separator{text = "Debug"} --
+    :button{
+        text = "Profile",
+        onclick = function()
+            -- Reset the lastCel to an empty one
+            lastCel = {
+                image = Image(0, 0),
+                position = Point(0, 0),
+                bounds = Rectangle(0, 0, 0, 0),
+                sprite = sprite,
+                empty = true
+            }
+
+            simulateLeftButtonPressed = true
+
+            local iterations = 50
+            print("Profiling, " .. tostring(iterations) .. " iterations...")
+            local results = {}
+            local ri = 0
+
+            local startTime = os.clock()
+            for _ = 1, iterations do
+                local iterationStartTime = os.clock()
+                app.transaction("Magic Pencil Debug", function()
+                    onSpriteChange({fromUndo = false})
+                end)
+                app.undo()
+                local iterationDuration = os.clock() - iterationStartTime
+                ri = ri + 1
+                results[ri] = iterationDuration
+            end
+            local duration = os.clock() - startTime
+
+            for i = 1, #results do
+                local iterationDuration = results[i]
+                print("Iteration processing finished after " ..
+                          tostring(iterationDuration))
+            end
+            print("Processing finished after " ..
+                      tostring(duration / iterations))
+
+            simulateLeftButtonPressed = false
+        end
     }
 
     RefreshDialog()
