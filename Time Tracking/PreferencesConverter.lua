@@ -1,8 +1,8 @@
 local PreferencesConverter = {supportedVersion = 2}
 
 function PreferencesConverter:Convert(storedData)
-    -- If there's no version - assume v1
-    local version = storedData.version or 1
+    -- If there's no version - assume a fresh install of the extension
+    local version = storedData.version or self.supportedVersion
 
     if version > self.supportedVersion then
         print("Stored data is from a newer version of the extensions...")
