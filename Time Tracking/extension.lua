@@ -1,4 +1,3 @@
-local View = dofile("./View.lua")
 local TimeTracker = dofile("./TimeTracker.lua")
 local ChangeTracker = dofile("./ChangeTracker.lua")
 local StatisticsDialog = dofile("./Dialogs/StatisticsDialog.lua")
@@ -6,9 +5,6 @@ local StatisticsDialog = dofile("./Dialogs/StatisticsDialog.lua")
 -- local MilestonesDialog = dofile("./Dialogs/MilestonesDialog.lua")
 
 function init(plugin)
-    -- Initialize the view
-    plugin.preferences.view = plugin.preferences.view or View.Basic
-
     -- Initialize the milestones
     -- plugin.preferences.milestones = plugin.preferences.milestones or {}
 
@@ -27,6 +23,8 @@ function init(plugin)
     -- This fixes time tracking being stopped after updating the extension
     if app.activeSprite then TimeTracker:OnSiteEnter(app.activeSprite) end
 
+    local selectedSpriteStatisticsTab
+
     -- Register commands
     plugin:newCommand{
         id = "SpriteStatistics",
@@ -36,7 +34,11 @@ function init(plugin)
         onclick = function()
             local dialog = StatisticsDialog {
                 sprite = app.activeSprite,
-                preferences = plugin.preferences
+                preferences = plugin.preferences,
+                selectedTab = selectedSpriteStatisticsTab,
+                onclose = function(dialogData)
+                    selectedSpriteStatisticsTab = dialogData["statistics-tab"]
+                end
             }
             dialog:show()
         end
