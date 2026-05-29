@@ -2,15 +2,15 @@ local View = dofile("./View.lua")
 local TimeTracker = dofile("./TimeTracker.lua")
 local ChangeTracker = dofile("./ChangeTracker.lua")
 local StatisticsDialog = dofile("./Dialogs/StatisticsDialog.lua")
-local TimeDialog = dofile("./Dialogs/TimeDialog.lua")
-local MilestonesDialog = dofile("./Dialogs/MilestonesDialog.lua")
+-- local TimeDialog = dofile("./Dialogs/TimeDialog.lua")
+-- local MilestonesDialog = dofile("./Dialogs/MilestonesDialog.lua")
 
 function init(plugin)
     -- Initialize the view
     plugin.preferences.view = plugin.preferences.view or View.Basic
 
     -- Initialize the milestones
-    plugin.preferences.milestones = plugin.preferences.milestones or {}
+    -- plugin.preferences.milestones = plugin.preferences.milestones or {}
 
     -- Initialize the tracker
     TimeTracker:Init(plugin.preferences)
@@ -42,46 +42,46 @@ function init(plugin)
         end
     }
 
-    plugin:newCommand{
-        id = "SpriteMilestones",
-        title = "Milestones",
-        group = "sprite_color",
-        onenabled = function() return app.activeSprite ~= nil end,
-        onclick = function()
-            local dialog = MilestonesDialog {
-                sprite = app.activeSprite,
-                preferences = plugin.preferences
-            }
-            dialog:show()
-        end
-    }
+    -- plugin:newCommand{
+    --     id = "SpriteMilestones",
+    --     title = "Milestones",
+    --     group = "sprite_color",
+    --     onenabled = function() return app.activeSprite ~= nil end,
+    --     onclick = function()
+    --         local dialog = MilestonesDialog {
+    --             sprite = app.activeSprite,
+    --             preferences = plugin.preferences
+    --         }
+    --         dialog:show()
+    --     end
+    -- }
 
-    local isSessionTimeOpen = false
+    -- local isSessionTimeOpen = false
 
-    plugin:newCommand{
-        id = "SessionTime",
-        title = "Session Time",
-        group = "view_controls",
-        onenabled = function()
-            return app.activeSprite and not isSessionTimeOpen
-        end,
-        onclick = function()
-            isSessionTimeOpen = true
+    -- plugin:newCommand{
+    --     id = "SessionTime",
+    --     title = "Session Time",
+    --     group = "view_controls",
+    --     onenabled = function()
+    --         return app.activeSprite and not isSessionTimeOpen
+    --     end,
+    --     onclick = function()
+    --         isSessionTimeOpen = true
 
-            local dialog = TimeDialog {
-                notitlebar = true,
-                preferences = plugin.preferences,
-                onpause = function() ChangeTracker:Stop() end,
-                onresume = function() ChangeTracker:Resume() end,
-                onclose = function() isSessionTimeOpen = false end
-            }
-            dialog:show{wait = false}
-            local newBounds = Rectangle(dialog.bounds)
-            newBounds.x = app.window.width - newBounds.width - 26
-            newBounds.y = 48
-            dialog.bounds = newBounds
-        end
-    }
+    --         local dialog = TimeDialog {
+    --             notitlebar = true,
+    --             preferences = plugin.preferences,
+    --             onpause = function() ChangeTracker:Stop() end,
+    --             onresume = function() ChangeTracker:Resume() end,
+    --             onclose = function() isSessionTimeOpen = false end
+    --         }
+    --         dialog:show{wait = false}
+    --         local newBounds = Rectangle(dialog.bounds)
+    --         newBounds.x = app.window.width - newBounds.width - 26
+    --         newBounds.y = 48
+    --         dialog.bounds = newBounds
+    --     end
+    -- }
 end
 
 function exit(plugin)

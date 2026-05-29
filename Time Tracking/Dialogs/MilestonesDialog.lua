@@ -7,7 +7,7 @@ return function(options)
     local dialog = Dialog {title = "Milestones"}
 
     -- TODO: Get milestones from Statistics
-    local milestones = options.preferences.milestones[id]
+    local milestones = options.preferences.milestones[id] or {}
 
     for i = #milestones, 1, -1 do
         local milestone = milestones[i]

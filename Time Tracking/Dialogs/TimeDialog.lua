@@ -11,6 +11,17 @@ local ButtonState = {
     selected = {part = "toolbutton_pushed", color = "button_selected_text"}
 }
 
+function ReadAll(filePath)
+    local file = assert(io.open(filePath, "rb"))
+    local content = file:read("*all")
+    file:close()
+    return content
+end
+
+local function GetThemeData()
+    local selectedTheme = app.preferences.theme.selected
+end
+
 return function(options)
     Preferences:Init(options.preferences)
     Statistics:Init(options.preferences)
@@ -30,7 +41,7 @@ return function(options)
 
     local dialog = Dialog {
         title = "Session Time",
-        notitlebar = options.notitlebar,
+        -- notitlebar = options.notitlebar,
         onclose = function()
             -- If dialog is just minimized then skip
             if isMinimized then return end
@@ -78,6 +89,35 @@ return function(options)
     --     end
     -- end
 
+    local screenScale = app.preferences.general["screen_scale"]
+    local uiScale = app.preferences.general["ui_scale"]
+
+    -- TODO: Open theme.xml of the current theme and find the "toolbutton_normal" size? Add to it the size of the border?
+    -- TODO: Get the tab height from the theme?
+
+    -- TODO: Get the font sizes from theme.xml? Top menu height depends on them
+
+    local function UpdateDialogBounds()
+        screenScale = app.preferences.general["screen_scale"]
+        uiScale = app.preferences.general["ui_scale"]
+
+        GetThemeData()
+
+        -- app.theme.dimension.scrollbar_size
+        local toolbutton_normal = app.theme:styleMetrics("toolbutton_normal")
+                                      .border
+
+        local width = 63 * uiScale * screenScale
+        local x = app.window.width - 76 * uiScale * screenScale
+        local y = 24 * uiScale * screenScale
+
+        if dialog.bounds.width ~= width -- 
+        or dialog.bounds.x ~= x or dialog.bounds.y ~= y then
+            dialog.bounds = Rectangle(x, y, width, dialog.bounds.y)
+            app.refresh()
+        end
+    end
+
     local function UpdateDialog(sprite)
         if sprite == nil then return end
 
@@ -92,16 +132,7 @@ return function(options)
         -- UpdateLastMilestone(filename)
         dialog:repaint()
 
-        if dialog.bounds.width ~= 126 -- 
-        or dialog.bounds.x ~= app.window.width - 152 --
-        or dialog.bounds.y ~= 48 then
-            local newBounds = Rectangle(dialog.bounds)
-            newBounds.width = 126
-            newBounds.x = app.window.width - 152
-            newBounds.y = 48
-            dialog.bounds = newBounds
-            app.refresh()
-        end
+        UpdateDialogBounds()
     end
 
     onSiteChangeListener = app.events:on("sitechange", function()
@@ -205,8 +236,8 @@ return function(options)
         :label{id = tab .. "-empty-label", visible = false} -- Tab needs at least one  widget to not glue all canvases together in the first one
         :canvas{
             id = tab .. "-canvas",
-            width = 120,
-            height = 17,
+            width = 120 * uiScale * screenScale,
+            height = 17 * uiScale * screenScale,
             onpaint = function(ev)
                 local ctx = ev.context
                 local mouseOver = false
