@@ -63,7 +63,7 @@ Future:
 
 Unreleased:
 
-- 
+- [Fix] Correctly handle empty cells
 
 Future:
 

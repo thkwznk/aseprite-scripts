@@ -300,7 +300,7 @@ local function MagicPencilDialog(options)
                 sprite = sprite
             }
         else
-            return EmptyLastCel(sprite)
+            lastCel = EmptyLastCel(sprite)
         end
     end
 
@@ -500,8 +500,7 @@ local function MagicPencilDialog(options)
                 resetColors = true
             end
 
-            local colorContext = ColorContext(app.activeSprite)
-            lastFgColor = colorContext.Copy(app.fgColor)
+            lastFgColor = ColorContext(app.activeSprite).Copy(app.fgColor)
         end
     end
 
@@ -517,8 +516,7 @@ local function MagicPencilDialog(options)
                 resetColors = true
             end
 
-            local colorContext = ColorContext(app.activeSprite)
-            lastBgColor = colorContext.Copy(app.bgColor)
+            lastBgColor = ColorContext(app.activeSprite).Copy(app.bgColor)
         end
     end
 
