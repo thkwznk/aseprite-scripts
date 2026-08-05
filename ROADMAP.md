@@ -63,7 +63,7 @@ Future:
 
 Unreleased:
 
-- [Fix] Correctly process selections for the Change/Outline Mode
+-
 
 Future:
 
