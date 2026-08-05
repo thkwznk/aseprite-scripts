@@ -53,7 +53,7 @@ function OutlineMode:Process(change, sprite, cel, parameters)
 end
 
 local getPixel
-local selectionContains
+local selectionContains = Selection().contains
 
 function OutlineMode:_Outline(selection, change, cel)
     local outlinePixels = {}
@@ -61,7 +61,6 @@ function OutlineMode:_Outline(selection, change, cel)
 
     -- Save references to these functions to improve performance
     getPixel = cel.image.getPixel
-    selectionContains = selection.Contains
 
     for _, pixel in ipairs(change.pixels) do
         local x = pixel.x - cel.position.x
