@@ -4,9 +4,7 @@
 
 Unreleased:
 
-- [Improvement] Live update time in the Sprite Statistics dialog window
-- [Improvement] Update the Sprite Statistics dialog window with tabs for data ranges
-- [Fix] Correctly save time when closing Aseprite with multiple files open
+- 
 
 Update v2.0.0:
 
